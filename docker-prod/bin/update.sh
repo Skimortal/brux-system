@@ -15,8 +15,9 @@ else
   exit 1
 fi
 
+docker exec "$PHP_CONTAINER_NAME" dos2unix bin/console
 docker exec "$PHP_CONTAINER_NAME" bin/console doctrine:migrations:migrate --no-interaction --env=prod
 docker exec "$PHP_CONTAINER_NAME" bin/console cache:clear --env=prod
 docker exec "$PHP_CONTAINER_NAME" bin/console cache:warmup --env=prod
 
-docker exec "$NGINX_CONTAINER_NAME" chown -R www-data:www-data var/ public/
+docker exec "$NGINX_CONTAINER_NAME" chown -R www-data:www-data var/

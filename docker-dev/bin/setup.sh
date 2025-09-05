@@ -16,6 +16,8 @@ else
 fi
 
 docker exec "$PHP_CONTAINER_NAME" composer install
+docker exec "$PHP_CONTAINER_NAME" dos2unix bin/console
 docker exec "$PHP_CONTAINER_NAME" bin/console doctrine:migrations:migrate
+cd ../../APP/
 npm install
 npm run build
