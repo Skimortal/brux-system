@@ -19,5 +19,4 @@ docker exec "$PHP_CONTAINER_NAME" composer install
 docker exec "$PHP_CONTAINER_NAME" dos2unix bin/console
 docker exec "$PHP_CONTAINER_NAME" bin/console doctrine:migrations:migrate
 cd ../../APP/
-npm install
-npm run build
+npm install && ../docker-dev/bin/prepare-adminator.sh && npm run build
