@@ -73,7 +73,7 @@
                                         <span class="badge bg-info"><i class="ti-pencil-alt"></i></span>
                                     </a>
                                     {% if is_granted('ROLE_ADMIN') %}
-                                        <a href="{{ path('user_delete', {id: user.id}) }}" class="confirmRemoveItem" title="{{ 'delete'|trans }}" data-confirm-message="{{ 'confirm_remove'|trans }}">
+                                        <a href="{{ path('user_delete', {id: user.id}) }}" class="confirmRemoveItem" title="{{ 'delete'|trans }}" role="button" data-confirm="{}" data-confirm-message="{{ 'confirm_remove'|trans }}">
                                             <span class="badge bg-danger"><i class="ti-trash"></i></span>
                                         </a>
                                     {% endif %}

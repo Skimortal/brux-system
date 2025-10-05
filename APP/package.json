@@ -37,6 +37,7 @@
         "mini-css-extract-plugin": "^2.9.4",
         "resolve-url-loader": "^5.0.0",
         "simple-datatables": "^10.0.0",
-        "themify-icons": "^1.0.0"
+        "themify-icons": "^1.0.0",
+        "tom-select": "^2.4.3"
     }
 }

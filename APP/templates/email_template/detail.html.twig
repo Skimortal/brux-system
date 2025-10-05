@@ -26,7 +26,7 @@
         </div>
         <div class="col-sm-4" style="text-align: right;">
             {% if email_template.id and is_granted('ROLE_ADMIN') %}
-                <a href="{{ path('email_template_delete', {'id': email_template.id}) }}" class="btn btn-danger confirmRemoveItem" data-confirm-message="{{ 'confirm_remove'|trans }}">{{ 'delete'|trans }}</a>
+                <a href="{{ path('email_template_delete', {'id': email_template.id}) }}" class="btn btn-danger confirmRemoveItem" role="button" data-confirm="{}" data-confirm-message="{{ 'confirm_remove'|trans }}">{{ 'delete'|trans }}</a>
             {% endif %}
         </div>
     </div>

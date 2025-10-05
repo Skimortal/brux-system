@@ -5,16 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ 'homepage_title'|trans }} - {% block title %}{% endblock %}</title>
-
-{#    {% if app.environment == 'dev' %}#}
-{#        #}{# Lokale Umgebung #}
-{#        {{ encore_entry_link_tags('app') }}#}
-{#    {% else %}#}
-{#        #}{# Produktion #}
-{#        <link rel="stylesheet" href="{{ asset('build/app.css') }}">#}
-{#    {% endif %}#}
-{#    <link rel="stylesheet" href="{{ asset('adminator/style.css') }}">#}
-
     <link rel="icon" href="{{ asset('images/favicon/favicon.ico') }}" type="image/svg+xml">
     <link rel="icon" href="{{ asset('images/favicon/favicon-32x32.png') }}" sizes="32x32">
     <link rel="icon" href="{{ asset('images/favicon/favicon-16x16.png') }}" sizes="16x16">
@@ -28,21 +18,11 @@
         {{ encore_entry_link_tags('app') }}
     {% endblock %}
 
-{#    {% if app.environment == 'dev' %}#}
-{#        #}{# Lokale Umgebung #}
-{#        {{ encore_entry_script_tags('app') }}#}
-{#    {% else %}#}
-{#        #}{# Produktion #}
-{#        <script src="{{ asset('build/runtime.js') }}"></script>#}
-{#        <script src="{{ asset('build/vendors-node_modules_symfony_stimulus-bridge_dist_index_js-node_modules_core-js_modules_es_ar-81d16d.js') }}"></script>#}
-{#        <script src="{{ asset('build/app.js') }}"></script>#}
-{#    {% endif %}#}
+    {% block javascripts %}
+        {{ encore_entry_script_tags('app') }}
+    {% endblock %}
 </head>
 <body class="app">
 {% block body %}{% endblock %}
-
-{% block javascripts %}
-    {{ encore_entry_script_tags('app') }}
-{% endblock %}
 </body>
 </html>
