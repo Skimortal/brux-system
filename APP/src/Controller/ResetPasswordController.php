@@ -69,7 +69,7 @@ class ResetPasswordController extends AbstractController
                     ]);
 
                     $email = (new \Symfony\Component\Mime\Email())
-                        ->from(new Address('no-reply@mc-base.at', 'MC Base'))
+                        ->from(new Address('no-reply@brux.at', 'Brux OT'))
                         ->to($user->getEmail())
                         ->subject($rendered->subject)
                         ->html($rendered->html);

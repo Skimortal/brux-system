@@ -21,7 +21,7 @@ Anpassen der .env.local
 ```
 DATABASE_URL="mysql://DB_PW:DB_USER@DB_HOST:3306/symfony?serverVersion=8.0&charset=utf8mb4"
 APP_SECRET="insert_generated_secret"
-MAILER_DSN=smtp://mc_base_mail:1025
+MAILER_DSN=smtp://brux_system_mail:1025
 ```
 
 ## 4. im Docker-Ordner
