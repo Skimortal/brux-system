@@ -1,0 +1,68 @@
+{% extends 'base_logged_in.html.twig' %}
+
+{% block title %}{{ 'technician.list'|trans }}{% endblock %}
+
+{% block logged_in_content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="bgc-white bd bdrs-3 p-20 mB-20">
+                    <h4 class="c-grey-900 mB-20">
+                        {{ 'technician.list'|trans }}
+
+                        <div class="float-end">
+                            <a href="{{ path('app_technician_new') }}" class="btn btn-success">{{ 'create_new'|trans }}</a>
+                        </div>
+                    </h4>
+
+                    {% for label, messages in app.flashes(['success', 'danger', 'warning', 'info']) %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
+                                {{ message|trans }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+
+                    <table class="mcDataTable table table-striped table-bordered" cellspacing="0" width="100%">
+                        <thead>
+                        <tr>
+                            <th>{{ 'technician.name'|trans }}</th>
+                            <th>{{ 'technician.email'|trans }}</th>
+                            <th>{{ 'technician.phone'|trans }}</th>
+                            <th>{{ 'action'|trans }}</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th>{{ 'technician.name'|trans }}</th>
+                            <th>{{ 'technician.email'|trans }}</th>
+                            <th>{{ 'technician.phone'|trans }}</th>
+                            <th>{{ 'action'|trans }}</th>
+                        </tr>
+                        </tfoot>
+                        <tbody>
+                        {% for technician in technicians %}
+                            <tr>
+                                <td><a href="{{ path('app_technician_edit', { id: technician.id }) }}">{{ technician.name }}</a></td>
+                                <td><a href="{{ path('app_technician_edit', { id: technician.id }) }}">{{ technician.email }}</a></td>
+                                <td><a href="{{ path('app_technician_edit', { id: technician.id }) }}">{{ technician.phone }}</a></td>
+                                <td class="text-nowrap">
+                                    <a href="{{ path('app_technician_edit', {id: technician.id}) }}" title="{{ 'edit'|trans }}">
+                                        <span class="badge bg-info"><i class="ti-pencil-alt"></i></span>
+                                    </a>
+                                    {% if is_granted('ROLE_ADMIN') %}
+                                        <a href="{{ path('app_technician_delete', {id: technician.id}) }}" class="confirmRemoveItem" title="{{ 'delete'|trans }}" role="button" data-confirm="{}" data-confirm-message="{{ 'confirm_remove'|trans }}">
+                                            <span class="badge bg-danger"><i class="ti-trash"></i></span>
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

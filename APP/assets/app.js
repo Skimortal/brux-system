@@ -29,11 +29,56 @@ function initTomSelect() {
     });
 }
 
+
+function initProductionTypeToggle() {
+    const typeSelect = document.querySelector('#production_type');
+    const groupFields = document.getElementById('group-fields');
+    const individualFields = document.getElementById('individual-fields');
+
+    if (!typeSelect || !groupFields || !individualFields) return;
+
+    function toggleFields() {
+        const selectedValue = typeSelect.value;
+        console.log('toggleFields', selectedValue);
+
+        // Hide both initially
+        groupFields.style.display = 'none';
+        individualFields.style.display = 'none';
+
+        // Show based on selection
+        if (selectedValue === 'group') {
+            groupFields.style.display = 'block';
+        } else if (selectedValue === 'individual') {
+            individualFields.style.display = 'block';
+        }
+    }
+
+    // Remove old event listener if exists
+    if (typeSelect._productionTypeToggleListener) {
+        typeSelect.removeEventListener('change', typeSelect._productionTypeToggleListener);
+    }
+
+    // Store reference to listener for cleanup
+    typeSelect._productionTypeToggleListener = toggleFields;
+    typeSelect.addEventListener('change', toggleFields);
+
+    // Initial call to set correct state
+    toggleFields();
+}
+
 function boot() {
     initTomSelect();
     initAdminator();
+    initProductionTypeToggle();
 }
 
+function bootAlways() {
+    initProductionTypeToggle();
+}
+
+document.addEventListener('DOMContentLoaded', bootAlways);
+document.addEventListener('turbo:load', bootAlways);
+document.addEventListener('turbo:render', bootAlways);
 document.addEventListener('turbo:visit', boot);
 
 // Dein vorhandenes Setup bleibt

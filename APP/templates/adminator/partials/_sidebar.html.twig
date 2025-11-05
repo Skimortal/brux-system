@@ -17,21 +17,25 @@
             </div>
         </div><!-- ### $Sidebar Menu ### -->
 
-        {# --- Top-Level Basis --- #}
+        {# --- Top-Level Menüpunkte --- #}
         {% set menu = [
-            { route: 'app_dashboard', icon: 'ti-home c-blue-500',     label: 'dashboard',  roles: ['ROLE_USER'] },
-            { route: 'my_profile',    icon: 'ti-user c-orange-500',   label: 'my_profile', roles: ['ROLE_USER'] },
+            { route: 'app_dashboard', icon: 'ti-home c-blue-500', label: 'dashboard', roles: ['ROLE_USER'] },
+            { route: 'app_room_index', icon: 'ti-layout c-indigo-500', label: 'room.list', roles: ['ROLE_USER'] },
+            { route: 'app_production_index', icon: 'ti-video-camera c-pink-500', label: 'production.list', roles: ['ROLE_USER'] },
+            { route: 'app_production_technician_index', icon: 'ti-id-badge c-cyan-500', label: 'production_technician.list', roles: ['ROLE_USER'] },
+            { route: 'app_production_event_index', icon: 'ti-calendar c-purple-500', label: 'production_event.list', roles: ['ROLE_USER'] },
+            { route: 'app_technician_index', icon: 'ti-settings c-orange-500', label: 'technician.list', roles: ['ROLE_USER'] },
+            { route: 'app_cleaning_index', icon: 'ti-spray c-green-500', label: 'cleaning.list', roles: ['ROLE_USER'] },
+            { route: 'app_volunteer_index', icon: 'ti-heart c-red-500', label: 'volunteer.list', roles: ['ROLE_USER'] },
+            { route: 'app_key_management_index', icon: 'ti-key c-brown-500', label: 'key_management.list', roles: ['ROLE_USER'] },
         ] %}
-
-        {# Weitere Top-Level Items #}
-        {% set menu = menu|merge([
-            { route: 'user_list',     icon: 'ti-user c-red-500',        label: 'users',      roles: ['ROLE_SUPERUSER'] },
-        ]) %}
 
         {# --- Settings Dropdown dynamisch zusammenbauen --- #}
         {% set settingsChildren = [] %}
 
         {% set settingsChildren = settingsChildren|merge([
+            { route: 'my_profile', icon: 'ti-user c-orange-500', label: 'my_profile', roles: ['ROLE_USER'] },
+            { route: 'user_list', icon: 'ti-user c-red-500', label: 'users', roles: ['ROLE_SUPERUSER'] },
             { route: 'email_template_list', icon: 'ti-email c-purple-500', label: 'email_templates', roles: ['ROLE_ADMIN'] },
         ]) %}
 
