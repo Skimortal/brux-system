@@ -5,20 +5,136 @@
 {% block logged_in_content %}
     <div class="main-content bgc-grey-100">
         <div class="mainContent">
-            <div class="row gap-20 pos-r">
-                <div class="col-md-6">
+            <div class="row gap-20">
+                {# Linke Spalte: Tagesübersicht #}
+                <div class="col-md-3">
+                    <div class="bdrs-3 ov-h bgc-white bd">
+                        <div class="bgc-deep-purple-500 ta-c p-30">
+                            <h1 class="fw-300 mB-5 lh-1 c-white">01<span class="fsz-def">st</span></h1>
+                            <h3 class="c-white">Monday</h3>
+                        </div>
+                        <div class="pos-r">
+                            <button type="button" class="mT-nv-50 pos-a r-10 t-2 btn cur-p bdrs-50p p-0 w-3r h-3r btn-warning">
+                                <i class="ti-plus"></i>
+                            </button>
+                            <ul class="m-0 p-0 mT-20">
+                                <li class="bdB peers ai-c jc-sb fxw-nw">
+                                    <a class="td-n p-20 peers fxw-nw me-20 peer-greed c-grey-900" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#calendar-edit">
+                                        <div class="peer mR-15">
+                                            <i class="fa fa-fw fa-clock-o c-red-500"></i>
+                                        </div>
+                                        <div class="peer">
+                                            <span class="fw-600">All Day Event</span>
+                                            <div class="c-grey-600">
+                                                <span class="c-grey-700">Nov 01 - </span>
+                                                <i>Website Development</i>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <div class="peers mR-15">
+                                        <div class="peer">
+                                            <a href="" class="td-n c-deep-purple-500 cH-blue-500 fsz-md p-5">
+                                                <i class="ti-pencil"></i>
+                                            </a>
+                                        </div>
+                                        <div class="peer">
+                                            <a href="" class="td-n c-red-500 cH-blue-500 fsz-md p-5">
+                                                <i class="ti-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="bdB peers ai-c jc-sb fxw-nw">
+                                    <a class="td-n p-20 peers fxw-nw me-20 peer-greed c-grey-900" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#calendar-edit">
+                                        <div class="peer mR-15">
+                                            <i class="fa fa-fw fa-clock-o c-blue-500"></i>
+                                        </div>
+                                        <div class="peer">
+                                            <span class="fw-600">All Day Event</span>
+                                            <div class="c-grey-600">
+                                                <span class="c-grey-700">Nov 01 - </span>
+                                                <i>Website Development</i>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <div class="peers mR-15">
+                                        <div class="peer">
+                                            <a href="" class="td-n c-deep-purple-500 cH-blue-500 fsz-md p-5">
+                                                <i class="ti-pencil"></i>
+                                            </a>
+                                        </div>
+                                        <div class="peer">
+                                            <a href="" class="td-n c-red-500 cH-blue-500 fsz-md p-5">
+                                                <i class="ti-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="bdB peers ai-c jc-sb fxw-nw">
+                                    <a class="td-n p-20 peers fxw-nw mR-20 peer-greed c-grey-900" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#calendar-edit">
+                                        <div class="peer mR-15">
+                                            <i class="fa fa-fw fa-clock-o c-indigo-500"></i>
+                                        </div>
+                                        <div class="peer">
+                                            <span class="fw-600">All Day Event</span>
+                                            <div class="c-grey-600">
+                                                <span class="c-grey-700">Nov 01 - </span>
+                                                <i>Website Development</i>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <div class="peers mR-15">
+                                        <div class="peer">
+                                            <a href="" class="td-n c-deep-purple-500 cH-blue-500 fsz-md p-5">
+                                                <i class="ti-pencil"></i>
+                                            </a>
+                                        </div>
+                                        <div class="peer">
+                                            <a href="" class="td-n c-red-500 cH-blue-500 fsz-md p-5">
+                                                <i class="ti-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="bdB peers ai-c jc-sb fxw-nw">
+                                    <a class="td-n p-20 peers fxw-nw mR-20 peer-greed c-grey-900" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#calendar-edit">
+                                        <div class="peer mR-15">
+                                            <i class="fa fa-fw fa-clock-o c-green-500"></i>
+                                        </div>
+                                        <div class="peer">
+                                            <span class="fw-600">All Day Event</span>
+                                            <div class="c-grey-600">
+                                                <span class="c-grey-700">Nov 01 - </span>
+                                                <i>Website Development</i>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    <div class="peers mR-15">
+                                        <div class="peer">
+                                            <a href="" class="td-n c-deep-purple-500 cH-blue-500 fsz-md p-5">
+                                                <i class="ti-pencil"></i>
+                                            </a>
+                                        </div>
+                                        <div class="peer">
+                                            <a href="" class="td-n c-red-500 cH-blue-500 fsz-md p-5">
+                                                <i class="ti-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                {# Rechte Spalte: Kalender #}
+                <div class="col-md-9">
                     <div class="layers bd bgc-white p-20">
-                        <div class="layer w-100 mB-10">
-                            <h1>Willkommen, {{ user }},</h1>
+                        <div class="layer w-100 mB-20">
+                            <h6 class="lh-1">Kalender</h6>
                         </div>
                         <div class="layer w-100">
-                            <p>
-                                zu Ihrem Verwaltungssystem.
-                            </p>
-
-                            <p class="mt-3">
-                                Los geht’s: Wählen Sie einfach den gewünschten Bereich im Menü – diese System führt Sie Schritt für Schritt durch alle Aufgaben.
-                            </p>
+                            <div id="dashboard-calendar"></div>
                         </div>
                     </div>
                 </div>

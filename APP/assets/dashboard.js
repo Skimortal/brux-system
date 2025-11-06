@@ -1,4 +1,7 @@
 import Chart from 'chart.js/auto';
+import { Calendar } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
 
 
 var doughnutChart;
@@ -50,5 +53,53 @@ function initDoughnutChart() {
     // }
 }
 
-document.addEventListener('DOMContentLoaded', initDoughnutChart);
-document.addEventListener('turbo:render', initDoughnutChart);
+var calendar;
+function initCalendar() {
+    const calendarEl = document.getElementById('dashboard-calendar');
+
+    if (calendarEl) {
+        calendar = new Calendar(calendarEl, {
+            plugins: [dayGridPlugin, interactionPlugin],
+            initialView: 'dayGridMonth',
+            locale: 'de',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,dayGridWeek'
+            },
+            editable: true,
+            selectable: true,
+            selectMirror: true,
+            dayMaxEvents: true,
+            weekends: true,
+            events: [
+                // Beispiel-Events - hier kannst du später deine echten Events einfügen
+                {
+                    title: 'Meeting',
+                    start: new Date().toISOString().split('T')[0],
+                    color: '#4285f4'
+                }
+            ],
+            dateClick: function(info) {
+                console.log('Datum geklickt: ' + info.dateStr);
+                // Hier kannst du später eine Funktion zum Hinzufügen von Events einbauen
+            },
+            eventClick: function(info) {
+                console.log('Event geklickt: ' + info.event.title);
+                // Hier kannst du später Event-Details anzeigen
+            }
+        });
+
+        calendar.render();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initDoughnutChart();
+    initCalendar();
+});
+
+document.addEventListener('turbo:render', function() {
+    initDoughnutChart();
+    initCalendar();
+});

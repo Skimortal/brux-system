@@ -92,3 +92,45 @@ table.table.dataTable>:not(caption)>*>*,
 .collapse-toggle[aria-expanded="true"] .chev {
     transform: rotate(180deg);
 }
+
+/* FullCalendar Custom Styling für Adminator Theme */
+#dashboard-calendar {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.fc {
+    font-family: inherit;
+}
+
+.fc .fc-button {
+    background-color: #4285f4;
+    border-color: #4285f4;
+    text-transform: capitalize;
+}
+
+.fc .fc-button:hover {
+    background-color: #3367d6;
+    border-color: #3367d6;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+    background-color: #2a56c6;
+    border-color: #2a56c6;
+}
+
+.fc-daygrid-day-number {
+    color: #333;
+    padding: 4px;
+}
+
+.fc-daygrid-day.fc-day-today {
+    background-color: #e8f0fe !important;
+}
+
+.fc-event {
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+}
