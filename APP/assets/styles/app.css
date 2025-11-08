@@ -94,6 +94,8 @@ table.table.dataTable>:not(caption)>*>*,
 }
 
 /* FullCalendar Custom Styling für Adminator Theme */
+
+/* Dashboard Calendar Styles */
 #dashboard-calendar {
     max-width: 100%;
     margin: 0 auto;
@@ -107,6 +109,8 @@ table.table.dataTable>:not(caption)>*>*,
     background-color: #4285f4;
     border-color: #4285f4;
     text-transform: capitalize;
+    padding: 0.4em 0.65em;
+    font-size: 0.9em;
 }
 
 .fc .fc-button:hover {
@@ -129,8 +133,69 @@ table.table.dataTable>:not(caption)>*>*,
     background-color: #e8f0fe !important;
 }
 
+/* Cursor als Hand für Kalender-Tage */
+.fc-daygrid-day {
+    cursor: pointer;
+}
+
+.fc-daygrid-day:hover {
+    background-color: #f5f5f5;
+}
+
 .fc-event {
     border-radius: 3px;
     border: none;
     cursor: pointer;
+}
+
+/* Today's Events List */
+#today-events-list li:last-child {
+    border-bottom: none !important;
+}
+
+#today-events-list li[data-event-id] {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#today-events-list li[data-event-id]:hover {
+    background-color: #f5f5f5;
+}
+
+#calendar-date {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+#calendar-weekday {
+    font-size: 0.95rem;
+    text-transform: capitalize;
+}
+
+/* Color Options */
+.color-option {
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.color-option.selected {
+    border: 3px solid #333 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.color-option.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
 }
