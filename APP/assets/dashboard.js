@@ -1,6 +1,8 @@
+
 import Chart from 'chart.js/auto';
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import deLocale from '@fullcalendar/core/locales/de';
 import { Modal } from 'bootstrap';
@@ -117,6 +119,8 @@ function displayEventsForDate(date, events) {
             </li>
         `;
     } else {
+        const now = new Date();
+
         listEl.innerHTML = dayEvents.map(event => {
             const eventColor = event.color || event.backgroundColor || '#4285f4';
             const iconClass = colorToIconClass[eventColor] || 'c-blue-500';
@@ -131,8 +135,14 @@ function displayEventsForDate(date, events) {
                 month: 'short'
             });
 
+            // Prüfe, ob Event in der Vergangenheit liegt
+            const eventEnd = event.end ? new Date(event.end) : new Date(event.start);
+            const isPast = eventEnd < now;
+            const pastClass = isPast ? 'style="opacity: 0.5;"' : '';
+            const pastTextDecoration = isPast ? 'style="text-decoration: line-through;"' : '';
+
             return `
-                <li class="bdB peers ai-c jc-sb fxw-nw">
+                <li class="bdB peers ai-c jc-sb fxw-nw" ${pastClass}>
                     <a class="td-n p-20 peers fxw-nw mR-20 peer-greed c-grey-900 event-item"
                        href="javascript:void(0);"
                        data-event-id="${event.id}">
@@ -140,7 +150,7 @@ function displayEventsForDate(date, events) {
                             <i class="fa fa-fw fa-clock-o ${iconClass}"></i>
                         </div>
                         <div class="peer">
-                            <span class="fw-600">${event.title}</span>
+                            <span class="fw-600" ${pastTextDecoration}>${event.title}</span>
                             <div class="c-grey-600">
                                 <span class="c-grey-700">${dateStr}${eventTime ? ' - ' + eventTime + ' Uhr' : ''}</span>
                                 ${event.allDay ? '<i class="mL-5">(Ganztägig)</i>' : ''}
@@ -206,7 +216,7 @@ function initCalendar() {
     appointmentModal = new Modal(modalEl);
 
     calendar = new Calendar(calendarEl, {
-        plugins: [dayGridPlugin, interactionPlugin],
+        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
         initialView: 'dayGridMonth',
         locale: deLocale,
         timeZone: 'Europe/Berlin',
@@ -214,14 +224,19 @@ function initCalendar() {
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
-            right: 'dayGridMonth,dayGridWeek'
+            right: 'timeGridDay,timeGridWeek,dayGridMonth,dayGridYear'
         },
         buttonText: {
             today: 'Heute',
             month: 'Monat',
             week: 'Woche',
-            day: 'Tag'
+            day: 'Tag',
+            timeGridWeek: 'Woche (Zeit)',
+            timeGridDay: 'Tag (Zeit)'
         },
+        slotMinTime: '06:00:00',
+        slotMaxTime: '24:00:00',
+        allDaySlot: true,
         eventTimeFormat: {
             hour: '2-digit',
             minute: '2-digit',
@@ -229,10 +244,21 @@ function initCalendar() {
             meridiem: false
         },
         editable: true,
-        selectable: true,
-        selectMirror: true,
+        selectable: false,  // Deaktivieren, da wir dateClick verwenden
+        selectMirror: false,  // Deaktivieren
         dayMaxEvents: true,
         weekends: true,
+        eventDidMount: function(info) {
+            // Prüfe, ob das Event in der Vergangenheit liegt
+            const now = new Date();
+            const eventEnd = info.event.end || info.event.start;
+
+            if (eventEnd < now) {
+                // Füge Style für vergangene Events hinzu
+                info.el.style.opacity = '0.5';
+                info.el.style.textDecoration = 'line-through';
+            }
+        },
         events: function(info, successCallback, failureCallback) {
             fetch('/appointments/all')
                 .then(response => response.json())
@@ -248,17 +274,37 @@ function initCalendar() {
                 });
         },
         dateClick: function(info) {
-            if (clickTimeout !== null) {
-                clearTimeout(clickTimeout);
-                clickTimeout = null;
-                openAppointmentModal(info.dateStr);
-            } else {
-                clickTimeout = setTimeout(() => {
+            // Für dayGrid-Ansichten
+            if (info.view.type.startsWith('dayGrid')) {
+                if (clickTimeout !== null) {
+                    clearTimeout(clickTimeout);
                     clickTimeout = null;
-                    const clickedDate = new Date(info.dateStr);
-                    displayDate(clickedDate);
-                    displayEventsForDate(clickedDate, allEvents);
-                }, 300);
+                    openAppointmentModal(info.dateStr);
+                } else {
+                    clickTimeout = setTimeout(() => {
+                        clickTimeout = null;
+                        const clickedDate = new Date(info.dateStr);
+                        displayDate(clickedDate);
+                        displayEventsForDate(clickedDate, allEvents);
+                    }, 300);
+                }
+            } else if (info.view.type.startsWith('timeGrid')) {
+                // Für timeGrid-Ansichten: Doppelklick zum Erstellen
+                if (clickTimeout !== null) {
+                    clearTimeout(clickTimeout);
+                    clickTimeout = null;
+                    // Doppelklick erkannt - Modal mit vorausgewählter Zeit öffnen
+                    // info.date ist bereits in lokaler Zeit
+                    openAppointmentModal(null, null, info.date);
+                } else {
+                    clickTimeout = setTimeout(() => {
+                        clickTimeout = null;
+                        // Einzelklick - nur Datum anzeigen
+                        const clickedDate = new Date(info.date);
+                        displayDate(clickedDate);
+                        displayEventsForDate(clickedDate, allEvents);
+                    }, 300);
+                }
             }
         },
         eventClick: function(info) {
@@ -295,7 +341,7 @@ function initCalendar() {
     });
 }
 
-function openAppointmentModal(dateStr = null, event = null) {
+function openAppointmentModal(dateStr = null, event = null, clickedDateTime = null) {
     const modalTitle = document.getElementById('appointmentModalLabel');
     const deleteBtn = document.getElementById('deleteAppointmentBtn');
 
@@ -314,8 +360,13 @@ function openAppointmentModal(dateStr = null, event = null) {
             endDate = adjustedEnd;
         }
 
-        document.getElementById('appointmentStart').value = formatDateForInput(event.start, event.allDay);
-        document.getElementById('appointmentEnd').value = formatDateForInput(endDate, event.allDay);
+        // event.start und event.end sind FullCalendar Date-Objekte
+        // Die müssen wir korrekt behandeln
+        const startDate = event.start;
+        const finalEndDate = endDate;
+
+        document.getElementById('appointmentStart').value = formatDateForInput(startDate, event.allDay);
+        document.getElementById('appointmentEnd').value = formatDateForInput(finalEndDate, event.allDay);
         document.getElementById('appointmentAllDay').checked = event.allDay;
 
         if (event.allDay) {
@@ -344,14 +395,33 @@ function openAppointmentModal(dateStr = null, event = null) {
         document.getElementById('appointmentTitle').value = '';
         document.getElementById('appointmentDescription').value = '';
 
-        const startDate = new Date(dateStr);
-        startDate.setHours(9, 0, 0, 0);
-        const endDate = new Date(dateStr);
-        endDate.setHours(10, 0, 0, 0);
+        let startDate, endDate;
+
+        if (clickedDateTime) {
+            // Doppelklick in timeGrid - verwende die angeklickte Zeit
+            // clickedDateTime ist bereits ein lokales Date-Objekt von FullCalendar
+            startDate = clickedDateTime;
+            startDate.setHours(startDate.getHours() - 1);
+            endDate = new Date(clickedDateTime.getTime());
+            endDate.setHours(endDate.getHours() + 1); // 1 Stunde später als Endzeit
+
+            document.getElementById('appointmentStart').type = 'datetime-local';
+            document.getElementById('appointmentEnd').type = 'datetime-local';
+            document.getElementById('appointmentAllDay').checked = false;
+        } else {
+            // Normales Erstellen (z.B. über Plus-Button oder dayGrid)
+            startDate = new Date(dateStr);
+            startDate.setHours(9, 0, 0, 0);
+            endDate = new Date(dateStr);
+            endDate.setHours(10, 0, 0, 0);
+
+            document.getElementById('appointmentStart').type = 'datetime-local';
+            document.getElementById('appointmentEnd').type = 'datetime-local';
+            document.getElementById('appointmentAllDay').checked = false;
+        }
 
         document.getElementById('appointmentStart').value = formatDateForInput(startDate);
         document.getElementById('appointmentEnd').value = formatDateForInput(endDate);
-        document.getElementById('appointmentAllDay').checked = false;
         document.getElementById('appointmentColor').value = '#4285f4';
 
         document.querySelectorAll('.color-option').forEach(option => {
@@ -368,7 +438,10 @@ function openAppointmentModal(dateStr = null, event = null) {
 
 function formatDateForInput(date, isAllDay = false) {
     if (!date) return '';
-    const d = new Date(date);
+
+    // Wenn es ein FullCalendar Date-Objekt ist, konvertiere es
+    const d = date instanceof Date ? date : new Date(date);
+
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');

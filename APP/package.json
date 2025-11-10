@@ -25,6 +25,7 @@
         "@fullcalendar/core": "^6.1.19",
         "@fullcalendar/daygrid": "^6.1.19",
         "@fullcalendar/interaction": "^6.1.19",
+        "@fullcalendar/timegrid": "^6.1.19",
         "@hotwired/turbo": "^8.0.13",
         "@symfony/ux-turbo": "^2.27.0",
         "adminator-admin-dashboard": "^2.8.0",

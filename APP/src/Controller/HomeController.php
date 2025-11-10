@@ -155,8 +155,8 @@ class HomeController extends AbstractController {
             return [
                 'id' => $appointment->getId(),
                 'title' => $appointment->getTitle(),
-                'start' => $appointment->getStartDate()->format('c'),
-                'end' => $endDate->format('c'),
+                'start' => $appointment->getStartDate()->format('Y-m-d\TH:i:s'),
+                'end' => $endDate->format('Y-m-d\TH:i:s'),
                 'allDay' => $appointment->isAllDay(),
                 'color' => $appointment->getColor(),
                 'description' => $appointment->getDescription(),
@@ -165,4 +165,5 @@ class HomeController extends AbstractController {
 
         return $this->json($events);
     }
+
 }
