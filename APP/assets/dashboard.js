@@ -401,7 +401,7 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
             // Doppelklick in timeGrid - verwende die angeklickte Zeit
             // clickedDateTime ist bereits ein lokales Date-Objekt von FullCalendar
             startDate = clickedDateTime;
-            startDate.setHours(startDate.getHours() - 1);
+            startDate.setHours(startDate.getHours());
             endDate = new Date(clickedDateTime.getTime());
             endDate.setHours(endDate.getHours() + 1); // 1 Stunde später als Endzeit
 
@@ -450,7 +450,7 @@ function formatDateForInput(date, isAllDay = false) {
         return `${year}-${month}-${day}`;
     }
 
-    const hours = String(d.getHours()).padStart(2, '0');
+    const hours = String(d.getHours()-1).padStart(2, '0');
     const minutes = String(d.getMinutes()).padStart(2, '0');
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
