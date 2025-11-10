@@ -84,7 +84,7 @@ back: 'Zurück'
 no_records_found: 'Keine Einträge gefunden'
 
 # Room
-room.list: 'Raumliste'
+room.list: 'Räume'
 room.detail_title: 'Raum Details'
 room.add_new: 'Neuer Raum'
 room.name: 'Name'
@@ -93,7 +93,7 @@ room.updated_successfully: 'Raum erfolgreich aktualisiert'
 room.deleted_successfully: 'Raum erfolgreich gelöscht'
 
 # Production
-production.list: 'Produktionsliste'
+production.list: 'Produktionen'
 production.detail_title: 'Produktions Details'
 production.add_new: 'Neue Produktion'
 production.name: 'Name'
@@ -117,7 +117,7 @@ production.updated_successfully: 'Produktion erfolgreich aktualisiert'
 production.deleted_successfully: 'Produktion erfolgreich gelöscht'
 
 # Production Technician
-production_technician.list: 'Produktionstechniker Liste'
+production_technician.list: 'Produktionstechniker'
 production_technician.detail_title: 'Produktionstechniker Details'
 production_technician.add_new: 'Neuer Produktionstechniker'
 production_technician.name: 'Name'
@@ -128,7 +128,7 @@ production_technician.updated_successfully: 'Produktionstechniker erfolgreich ak
 production_technician.deleted_successfully: 'Produktionstechniker erfolgreich gelöscht'
 
 # Production Event
-production_event.list: 'Produktionsveranstaltungen Liste'
+production_event.list: 'Produktionsveranstaltungen'
 production_event.detail_title: 'Produktionsveranstaltung Details'
 production_event.add_new: 'Neue Produktionsveranstaltung'
 production_event.name: 'Name der Veranstaltung'
@@ -159,7 +159,7 @@ production_event.updated_successfully: 'Produktionsveranstaltung erfolgreich akt
 production_event.deleted_successfully: 'Produktionsveranstaltung erfolgreich gelöscht'
 
 # Technician
-technician.list: 'Techniker Liste'
+technician.list: 'Techniker'
 technician.detail_title: 'Techniker Details'
 technician.add_new: 'Neuer Techniker'
 technician.name: 'Name'
@@ -172,7 +172,7 @@ technician.updated_successfully: 'Techniker erfolgreich aktualisiert'
 technician.deleted_successfully: 'Techniker erfolgreich gelöscht'
 
 # Cleaning
-cleaning.list: 'Reinigungsliste'
+cleaning.list: 'Reinigungsfirmen'
 cleaning.detail_title: 'Reinigung Details'
 cleaning.add_new: 'Neue Reinigung'
 cleaning.name: 'Name'
@@ -192,7 +192,7 @@ cleaning.updated_successfully: 'Reinigung erfolgreich aktualisiert'
 cleaning.deleted_successfully: 'Reinigung erfolgreich gelöscht'
 
 # Volunteer
-volunteer.list: 'Freiwilligen Liste'
+volunteer.list: 'Freiwillige'
 volunteer.detail_title: 'Freiwillige(r) Details'
 volunteer.add_new: 'Neue(r) Freiwillige(r)'
 volunteer.name: 'Name'
