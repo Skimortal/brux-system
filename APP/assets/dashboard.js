@@ -215,17 +215,29 @@ function initCalendar() {
 
     appointmentModal = new Modal(modalEl);
 
+    // Mobile-Check
+    const isMobile = window.innerWidth <= 767;
+
     calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-        initialView: 'dayGridMonth',
+        initialView: isMobile ? 'timeGridDay' : 'dayGridMonth',
         locale: deLocale,
         timeZone: 'Europe/Berlin',
         firstDay: 1,
-        headerToolbar: {
+        // Mobile-optimierte Header-Toolbar
+        headerToolbar: isMobile ? {
+            left: 'prev,next',
+            center: 'title',
+            right: 'today'
+        } : {
             left: 'prev,next today',
             center: 'title',
             right: 'timeGridDay,timeGridWeek,dayGridMonth,dayGridYear'
         },
+        // Footer-Toolbar für View-Wechsel auf Mobile
+        footerToolbar: isMobile ? {
+            center: 'timeGridDay,timeGridWeek,dayGridMonth'
+        } : false,
         buttonText: {
             today: 'Heute',
             month: 'Monat',
@@ -243,11 +255,17 @@ function initCalendar() {
             hour12: false,
             meridiem: false
         },
-        editable: true,
-        selectable: false,  // Deaktivieren, da wir dateClick verwenden
-        selectMirror: false,  // Deaktivieren
-        dayMaxEvents: true,
+        // Drag & Drop auf Mobile deaktivieren (optional)
+        editable: !isMobile,
+        selectable: false,
+        selectMirror: false,
+        dayMaxEvents: isMobile ? 2 : true, // Weniger Events auf Mobile anzeigen
         weekends: true,
+        // Mobile: Höhe anpassen
+        height: isMobile ? 'auto' : undefined,
+        contentHeight: isMobile ? 600 : undefined,
+        // Touch-Interaktion verbessern
+        longPressDelay: isMobile ? 500 : 1000,
         eventDidMount: function(info) {
             // Prüfe, ob das Event in der Vergangenheit liegt
             const now = new Date();
@@ -273,37 +291,57 @@ function initCalendar() {
                     failureCallback(error);
                 });
         },
+        // Callback wenn sich die Ansicht ändert (z.B. Tag wechseln)
+        datesSet: function(dateInfo) {
+            // Bei timeGridDay: Das angezeigte Datum verwenden
+            if (dateInfo.view.type === 'timeGridDay') {
+                const viewDate = dateInfo.view.currentStart;
+                displayDate(viewDate);
+                displayEventsForDate(viewDate, allEvents);
+            }
+            // Bei timeGridWeek: Das Start-Datum der Woche verwenden
+            else if (dateInfo.view.type === 'timeGridWeek') {
+                const viewDate = dateInfo.view.currentStart;
+                displayDate(viewDate);
+                displayEventsForDate(viewDate, allEvents);
+            }
+        },
         dateClick: function(info) {
-            // Für dayGrid-Ansichten
-            if (info.view.type.startsWith('dayGrid')) {
-                if (clickTimeout !== null) {
-                    clearTimeout(clickTimeout);
-                    clickTimeout = null;
-                    openAppointmentModal(info.dateStr);
-                } else {
-                    clickTimeout = setTimeout(() => {
-                        clickTimeout = null;
-                        const clickedDate = new Date(info.dateStr);
-                        displayDate(clickedDate);
-                        displayEventsForDate(clickedDate, allEvents);
-                    }, 300);
-                }
-            } else if (info.view.type.startsWith('timeGrid')) {
-                // Für timeGrid-Ansichten: Doppelklick zum Erstellen
-                if (clickTimeout !== null) {
-                    clearTimeout(clickTimeout);
-                    clickTimeout = null;
-                    // Doppelklick erkannt - Modal mit vorausgewählter Zeit öffnen
-                    // info.date ist bereits in lokaler Zeit
+            // Auf Mobile: Einfacher Tap öffnet direkt Modal
+            if (isMobile) {
+                if (info.view.type.startsWith('timeGrid')) {
                     openAppointmentModal(null, null, info.date);
                 } else {
-                    clickTimeout = setTimeout(() => {
+                    openAppointmentModal(info.dateStr);
+                }
+            } else {
+                // Desktop: Bestehende Doppelklick-Logik
+                if (info.view.type.startsWith('dayGrid')) {
+                    if (clickTimeout !== null) {
+                        clearTimeout(clickTimeout);
                         clickTimeout = null;
-                        // Einzelklick - nur Datum anzeigen
-                        const clickedDate = new Date(info.date);
-                        displayDate(clickedDate);
-                        displayEventsForDate(clickedDate, allEvents);
-                    }, 300);
+                        openAppointmentModal(info.dateStr);
+                    } else {
+                        clickTimeout = setTimeout(() => {
+                            clickTimeout = null;
+                            const clickedDate = new Date(info.dateStr);
+                            displayDate(clickedDate);
+                            displayEventsForDate(clickedDate, allEvents);
+                        }, 300);
+                    }
+                } else if (info.view.type.startsWith('timeGrid')) {
+                    if (clickTimeout !== null) {
+                        clearTimeout(clickTimeout);
+                        clickTimeout = null;
+                        openAppointmentModal(null, null, info.date);
+                    } else {
+                        clickTimeout = setTimeout(() => {
+                            clickTimeout = null;
+                            const clickedDate = new Date(info.date);
+                            displayDate(clickedDate);
+                            displayEventsForDate(clickedDate, allEvents);
+                        }, 300);
+                    }
                 }
             }
         },
@@ -320,16 +358,38 @@ function initCalendar() {
 
     calendar.render();
 
-    // Event Listener für Plus-Button
-    document.getElementById('add-appointment-btn').addEventListener('click', function() {
-        const dateStr = currentSelectedDate.toISOString().split('T')[0];
-        openAppointmentModal(dateStr);
+    // Responsive: Bei Fenster-Größenänderung Kalender neu laden
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            const wasMobile = calendar.currentData.options.footerToolbar !== false;
+            const isNowMobile = window.innerWidth <= 767;
+
+            if (wasMobile !== isNowMobile) {
+                calendar.destroy();
+                initCalendar();
+            }
+        }, 250);
     });
 
+    // Event Listener für Plus-Button
+    const addBtn = document.getElementById('add-appointment-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', function() {
+            const dateStr = currentSelectedDate.toISOString().split('T')[0];
+            openAppointmentModal(dateStr);
+        });
+    }
+
     // Event Listeners für Modal
-    document.getElementById('saveAppointmentBtn').addEventListener('click', saveAppointment);
-    document.getElementById('deleteAppointmentBtn').addEventListener('click', deleteAppointment);
-    document.getElementById('appointmentAllDay').addEventListener('change', toggleAllDay);
+    const saveBtn = document.getElementById('saveAppointmentBtn');
+    const deleteBtn = document.getElementById('deleteAppointmentBtn');
+    const allDayCheckbox = document.getElementById('appointmentAllDay');
+
+    if (saveBtn) saveBtn.addEventListener('click', saveAppointment);
+    if (deleteBtn) deleteBtn.addEventListener('click', deleteAppointment);
+    if (allDayCheckbox) allDayCheckbox.addEventListener('change', toggleAllDay);
 
     // Event Listener für Farbauswahl
     document.querySelectorAll('.color-option').forEach(option => {
@@ -360,8 +420,6 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
             endDate = adjustedEnd;
         }
 
-        // event.start und event.end sind FullCalendar Date-Objekte
-        // Die müssen wir korrekt behandeln
         const startDate = event.start;
         const finalEndDate = endDate;
 
@@ -399,7 +457,6 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
 
         if (clickedDateTime) {
             // Doppelklick in timeGrid - verwende die angeklickte Zeit
-            // clickedDateTime ist bereits ein lokales Date-Objekt von FullCalendar
             startDate = clickedDateTime;
             startDate.setHours(startDate.getHours());
             endDate = new Date(clickedDateTime.getTime());

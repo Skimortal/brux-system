@@ -218,3 +218,110 @@ table.table.dataTable>:not(caption)>*>*,
 .fc-timegrid-slot-label {
     cursor: pointer;
 }
+
+/* FullCalendar Mobile Optimierungen */
+@media screen and (max-width: 767px) {
+    /* Kalender-Container */
+    #dashboard-calendar {
+        font-size: 0.85rem;
+    }
+
+    /* Toolbar-Buttons kleiner und besser angeordnet */
+    .fc .fc-toolbar {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px 5px;
+    }
+
+    .fc .fc-toolbar-chunk {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .fc .fc-button {
+        padding: 0.3em 0.4em;
+        font-size: 0.75em;
+    }
+
+    /* Titel zentriert und kleiner */
+    .fc .fc-toolbar-title {
+        font-size: 1.2rem;
+    }
+
+    /* View-Buttons kompakter */
+    .fc .fc-button-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+    }
+
+    /* Tages-Nummern größer für bessere Touch-Targets */
+    .fc-daygrid-day-number {
+        font-size: 1rem;
+        padding: 8px;
+    }
+
+    /* Events kompakter darstellen */
+    .fc-event {
+        font-size: 0.75rem;
+        padding: 2px 4px;
+    }
+
+    .fc-daygrid-event {
+        white-space: normal;
+        line-height: 1.2;
+    }
+
+    /* Zeitraster-Ansicht optimieren */
+    .fc-timegrid-slot-label {
+        font-size: 0.7rem;
+    }
+
+    .fc-timegrid-event {
+        font-size: 0.75rem;
+    }
+
+    /* Header für Wochentage */
+    .fc-col-header-cell {
+        font-size: 0.8rem;
+        padding: 5px 2px;
+    }
+
+    /* Mehr Platz für Events */
+    .fc-daygrid-day-frame {
+        min-height: 60px;
+    }
+}
+
+@media screen and (max-width: 479px) {
+    /* Für sehr kleine Screens */
+    #dashboard-calendar {
+        font-size: 0.75rem;
+    }
+
+    .fc .fc-toolbar-title {
+        font-size: 1rem;
+    }
+
+    .fc .fc-button {
+        padding: 0.25em 0.3em;
+        font-size: 0.7em;
+    }
+
+    /* Wochentage abkürzen durch Überschreiben */
+    .fc-col-header-cell-cushion {
+        padding: 2px;
+    }
+
+    /* Events noch kompakter */
+    .fc-event-title {
+        font-size: 0.65rem;
+    }
+
+    .fc-daygrid-day-frame {
+        min-height: 50px;
+    }
+}
+
