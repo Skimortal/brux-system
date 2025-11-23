@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Production;
 use App\Entity\ProductionEvent;
 use App\Form\ProductionEventType;
 use App\Repository\ProductionEventRepository;
@@ -29,6 +30,16 @@ class ProductionEventController extends AbstractController
     public function new(Request $request, EntityManagerInterface $entityManager, TranslatorInterface $t): Response
     {
         $productionEvent = new ProductionEvent();
+
+        // Prüfen, ob eine Production-ID übergeben wurde
+        $productionId = $request->query->get('production');
+        if ($productionId) {
+            $production = $entityManager->getRepository(Production::class)->find($productionId);
+            if ($production) {
+                $productionEvent->setProduction($production);
+            }
+        }
+
         $form = $this->createForm(ProductionEventType::class, $productionEvent);
         $form->handleRequest($request);
 
@@ -38,6 +49,12 @@ class ProductionEventController extends AbstractController
                 $entityManager->flush();
 
                 $this->addFlash('success', $t->trans('data_saved_success'));
+
+                // Wenn von einer Production gekommen, dorthin zurückleiten
+                if ($productionEvent->getProduction()) {
+                    return $this->redirectToRoute('app_production_edit', ['id' => $productionEvent->getProduction()->getId()]);
+                }
+
                 return $this->redirectToRoute('app_production_event_index', [], Response::HTTP_SEE_OTHER);
             } catch (\Throwable $e) {
                 $this->addFlash('danger', $t->trans('data_save_error'));
@@ -62,6 +79,12 @@ class ProductionEventController extends AbstractController
                 $entityManager->flush();
 
                 $this->addFlash('success', $t->trans('data_saved_success'));
+
+                // Optional: Zurück zur Production-Detailseite leiten, wenn eine Production zugewiesen ist
+                 if ($productionEvent->getProduction()) {
+                    return $this->redirectToRoute('app_production_edit', ['id' => $productionEvent->getProduction()->getId()]);
+                 }
+
                 return $this->redirectToRoute('app_production_event_edit', ['id' => $productionEvent->getId()]);
             } catch (\Throwable $e) {
                 $this->addFlash('danger', $t->trans('data_save_error'));

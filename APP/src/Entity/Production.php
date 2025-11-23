@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Enum\ProductionType;
 use App\Repository\ProductionRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -47,6 +49,18 @@ class Production extends Base
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $personEmail = null;
+
+    #[ORM\OneToMany(targetEntity: ProductionTechnician::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $technicians;
+
+    #[ORM\OneToMany(targetEntity: ProductionEvent::class, mappedBy: 'production')]
+    private Collection $events;
+
+    public function __construct()
+    {
+        $this->technicians = new ArrayCollection();
+        $this->events = new ArrayCollection();
+    }
 
     public function getType(): ?ProductionType
     {
@@ -188,6 +202,66 @@ class Production extends Base
     public function setPersonEmail(?string $personEmail): static
     {
         $this->personEmail = $personEmail;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductionTechnician>
+     */
+    public function getTechnicians(): Collection
+    {
+        return $this->technicians;
+    }
+
+    public function addTechnician(ProductionTechnician $technician): static
+    {
+        if (!$this->technicians->contains($technician)) {
+            $this->technicians->add($technician);
+            $technician->setProduction($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTechnician(ProductionTechnician $technician): static
+    {
+        if ($this->technicians->removeElement($technician)) {
+            // set the owning side to null (unless already changed)
+            if ($technician->getProduction() === $this) {
+                $technician->setProduction(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductionEvent>
+     */
+    public function getEvents(): Collection
+    {
+        return $this->events;
+    }
+
+    public function addEvent(ProductionEvent $event): static
+    {
+        if (!$this->events->contains($event)) {
+            $this->events->add($event);
+            $event->setProduction($this);
+        }
+
+        return $this;
+    }
+
+    public function removeEvent(ProductionEvent $event): static
+    {
+        if ($this->events->removeElement($event)) {
+            // set the owning side to null (unless already changed)
+            if ($event->getProduction() === $this) {
+                $event->setProduction(null);
+            }
+        }
 
         return $this;
     }

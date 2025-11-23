@@ -128,9 +128,9 @@ production_technician.updated_successfully: 'Produktionstechniker erfolgreich ak
 production_technician.deleted_successfully: 'Produktionstechniker erfolgreich gelöscht'
 
 # Production Event
-production_event.list: 'Produktionsveranstaltungen'
-production_event.detail_title: 'Produktionsveranstaltung Details'
-production_event.add_new: 'Neue Produktionsveranstaltung'
+production_event.list: 'Veranstaltungen'
+production_event.detail_title: 'Veranstaltung Details'
+production_event.add_new: 'Neue Veranstaltung'
 production_event.name: 'Name der Veranstaltung'
 production_event.production: 'Produktion'
 production_event.presence_period: 'Anwesenheit im Brux'
@@ -154,9 +154,9 @@ production_event.duration: 'Länge des Stückes'
 production_event.credits_and_bios: 'Credits & Bios der Künstler*innen'
 production_event.technical_rider: 'Technical Rider'
 production_event.external_technicians: 'Externe Techniker'
-production_event.created_successfully: 'Produktionsveranstaltung erfolgreich erstellt'
-production_event.updated_successfully: 'Produktionsveranstaltung erfolgreich aktualisiert'
-production_event.deleted_successfully: 'Produktionsveranstaltung erfolgreich gelöscht'
+production_event.created_successfully: 'Veranstaltung erfolgreich erstellt'
+production_event.updated_successfully: 'Veranstaltung erfolgreich aktualisiert'
+production_event.deleted_successfully: 'Veranstaltung erfolgreich gelöscht'
 
 # Technician
 technician.list: 'Techniker'
@@ -226,3 +226,14 @@ key_management.signature_help: 'Name der Person, die den Schlüssel ausgeliehen 
 key_management.created_successfully: 'Schlüssel erfolgreich erstellt'
 key_management.updated_successfully: 'Schlüssel erfolgreich aktualisiert'
 key_management.deleted_successfully: 'Schlüssel erfolgreich gelöscht'
+
+production.technicians: "Techniker"
+add_technician: "Techniker hinzufügen"
+
+production:
+    data: "Produktionsdaten"
+    events: "Veranstaltungen"
+production_event:
+    name: "Name"
+    dates: "Datum"
+no_events: "Keine Veranstaltungen vorhanden"

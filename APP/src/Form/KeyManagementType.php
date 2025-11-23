@@ -16,6 +16,13 @@ class KeyManagementType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
+            ->add('room', EntityType::class, [
+                'class' => Room::class,
+                'choice_label' => 'name',
+                'label' => 'Raum',
+                'placeholder' => 'Bitte wählen (Optional)',
+                'required' => false,
+            ])
             ->add('keyColor', TextType::class, [
                 'label' => 'key_management.key_color',
                 'required' => true,

@@ -16,41 +16,182 @@
         {% endfor %}
     {% endfor %}
 
-    {{ form_start(form, { attr: { 'data-turbo': 'false' } }) }}
+    <div class="row gap-20 pos-r">
+        {# Linke Spalte: Produktions-Daten #}
+        <div class="col-md-6">
+            <div class="bgc-white p-20 bd">
+                <h6 class="c-grey-900">{{ 'production.data'|trans }}</h6>
+                <div class="mT-30">
+                    {{ form_start(form, { attr: { 'data-turbo': 'false' } }) }}
 
-    {{ form_row(form.type) }}
+                    {{ form_row(form.type) }}
 
-    <div id="group-fields">
-        <h5>{{ 'production.group_information'|trans }}</h5>
-        {{ form_row(form.groupName) }}
-        {{ form_row(form.mainContactName) }}
-        {{ form_row(form.mainContactFunction) }}
-        {{ form_row(form.address) }}
-        {{ form_row(form.phone) }}
-        {{ form_row(form.email) }}
-    </div>
+                    <div id="group-fields">
+                        <h5>{{ 'production.group_information'|trans }}</h5>
+                        {{ form_row(form.groupName) }}
+                        {{ form_row(form.mainContactName) }}
+                        {{ form_row(form.mainContactFunction) }}
+                        {{ form_row(form.address) }}
+                        {{ form_row(form.phone) }}
+                        {{ form_row(form.email) }}
+                    </div>
 
-    <div id="individual-fields">
-        <h5>{{ 'production.individual_information'|trans }}</h5>
-        {{ form_row(form.personName) }}
-        {{ form_row(form.personAddress) }}
-        {{ form_row(form.personPhone) }}
-        {{ form_row(form.personEmail) }}
-    </div>
+                    <div id="individual-fields">
+                        <h5>{{ 'production.individual_information'|trans }}</h5>
+                        {{ form_row(form.personName) }}
+                        {{ form_row(form.personAddress) }}
+                        {{ form_row(form.personPhone) }}
+                        {{ form_row(form.personEmail) }}
+                    </div>
 
-    <div class="mb-3 row">
-        <div class="col-sm-8">
-            <a href="{{ path('app_production_index') }}" class="btn btn-secondary">{{ 'back_to_list'|trans }}</a>
-            <button type="submit" class="btn btn-primary">{{ 'save'|trans }}</button>
+                    {# Technicians Collection #}
+                    <div class="bd bgc-white p-20 mt-4">
+                        <div class="layers">
+                            <div class="layer w-100 mB-10">
+                                <h3 class="lh-1">{{ 'production.technicians'|trans }}</h3>
+                                {{ form_errors(form.technicians) }}
+                            </div>
+
+                            <div class="layer w-100"
+                                 data-controller="form-collection"
+                                 data-turbo="false"
+                                 data-form-collection-index-value="{{ form.technicians|length }}">
+
+                                {# Prototype-Zeile für neue Items #}
+                                <template data-form-collection-target="prototype">
+                                    <tr data-collection-item>
+                                        <td><span data-collection-counter>__n__</span></td>
+                                        <td>{{ form_widget(form.technicians.vars.prototype.name) }}</td>
+                                        <td>{{ form_widget(form.technicians.vars.prototype.email) }}</td>
+                                        <td>{{ form_widget(form.technicians.vars.prototype.phone) }}</td>
+                                        <td>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger confirmRemoveItem js-collection-remove"
+                                                    data-action="click->form-collection#remove"
+                                                    role="button" data-confirm="{}"
+                                                    data-confirm-message="{{ 'confirm_remove'|trans }}">
+                                                {{ 'remove'|trans }}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+
+                                <table class="table table-bordered">
+                                    <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th style="width: 30%;">{{ 'production_technician.name'|trans }}</th>
+                                        <th style="width: 25%;">{{ 'production_technician.email'|trans }}</th>
+                                        <th style="width: 20%;">{{ 'production_technician.phone'|trans }}</th>
+                                        <th style="width: 15%;">{{ 'action'|trans }}</th>
+                                    </tr>
+                                    </thead>
+
+                                    <tbody data-form-collection-target="list">
+                                    {% for technicianForm in form.technicians %}
+                                        <tr data-collection-item>
+                                            <td width="5%"><span data-collection-counter>{{ loop.index }}</span></td>
+                                            <td>{{ form_widget(technicianForm.name) }}</td>
+                                            <td>{{ form_widget(technicianForm.email) }}</td>
+                                            <td>{{ form_widget(technicianForm.phone) }}</td>
+                                            <td>
+                                                <button type="button"
+                                                        class="btn btn-outline-danger confirmRemoveItem js-collection-remove"
+                                                        data-action="click->form-collection#remove"
+                                                        role="button" data-confirm="{}"
+                                                        data-confirm-message="{{ 'confirm_remove'|trans }}">
+                                                    {{ 'remove'|trans }}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+
+                                    <tfoot>
+                                    <tr>
+                                        <td colspan="5">
+                                            <button type="button"
+                                                    class="btn btn-success mt-3 js-collection-add">
+                                                {{ 'add_technician'|trans }}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 row">
+                        <div class="col-sm-8">
+                            <a href="{{ path('app_production_index') }}" class="btn btn-secondary">{{ 'back_to_list'|trans }}</a>
+                            <button type="submit" class="btn btn-primary">{{ 'save'|trans }}</button>
+                        </div>
+                        <div class="col-sm-4" style="text-align: right;">
+                            {% if production.id and is_granted('ROLE_ADMIN') %}
+                                <a href="{{ path('app_production_delete', {'id': production.id}) }}" class="btn btn-danger confirmRemoveItem" role="button" data-confirm="{}" data-confirm-message="{{ 'confirm_remove'|trans }}">{{ 'delete'|trans }}</a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {{ form_rest(form) }}
+                    {{ form_end(form) }}
+                </div>
+            </div>
         </div>
-        <div class="col-sm-4" style="text-align: right;">
-            {% if production.id and is_granted('ROLE_ADMIN') %}
-                <a href="{{ path('app_production_delete', {'id': production.id}) }}" class="btn btn-danger confirmRemoveItem" role="button" data-confirm="{}" data-confirm-message="{{ 'confirm_remove'|trans }}">{{ 'delete'|trans }}</a>
-            {% endif %}
+
+        {# Rechte Spalte: Events Liste #}
+        <div class="col-md-6">
+            <div class="bgc-white p-20 bd">
+                <h6 class="c-grey-900">
+                    {{ 'production.events'|trans }}
+                    {% if production.id %}
+                        <div class="float-end">
+                            <a href="{{ path('app_production_event_new', {production: production.id}) }}" class="btn btn-success">{{ 'create_new'|trans }}</a>
+                        </div>
+                    {% endif %}
+                </h6>
+                <div class="mT-30">
+                    {% if production.events is defined and production.events|length > 0 %}
+                        <table class="mcDataTable table table-striped table-bordered" cellspacing="0" width="100%">
+                            <thead>
+                            <tr>
+                                <th>{{ 'production_event.name'|trans }}</th>
+                                <th>{{ 'production_event.dates'|trans }}</th>
+                                <th>{{ 'action'|trans }}</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for event in production.events %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ path('app_production_event_edit', {id: event.id}) }}">
+                                            {{ event.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if event.presenceStartDate %}
+                                            {{ event.presenceStartDate|date('d.m.Y') }}
+                                            {% if event.presenceEndDate and event.presenceEndDate != event.presenceStartDate %}
+                                                - {{ event.presenceEndDate|date('d.m.Y') }}
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <a href="{{ path('app_production_event_edit', {id: event.id}) }}" title="{{ 'edit'|trans }}">
+                                            <span class="badge bg-info"><i class="ti-pencil-alt"></i></span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-center text-muted m-0">— {{ 'no_events'|trans }} —</p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
-
-    {{ form_rest(form) }}
-    {{ form_end(form) }}
 
 {% endblock %}

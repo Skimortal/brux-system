@@ -28,8 +28,6 @@ function initTomSelect() {
         });
     });
 }
-
-
 function initProductionTypeToggle() {
     const typeSelect = document.querySelector('#production_type');
     const groupFields = document.getElementById('group-fields');
@@ -65,14 +63,13 @@ function initProductionTypeToggle() {
     // Initial call to set correct state
     toggleFields();
 }
-
 function boot() {
     initTomSelect();
     initAdminator();
     initProductionTypeToggle();
 }
-
 function bootAlways() {
+    initTomSelect();
     initProductionTypeToggle();
 }
 

@@ -6,46 +6,79 @@
 {% block logged_in_content %}
     <div class="main-content bgc-grey-100">
         <div class="mainContent">
-            <div class="row gap-20">
-                {# Linke Spalte: Tagesübersicht #}
-                <div class="col-md-3">
-                    <div class="bdrs-3 ov-h bgc-white bd">
-                        <div id="day-header" class="bgc-deep-purple-500 ta-c p-30">
-                            <h1 id="day-number" class="fw-300 mB-5 lh-1 c-white">
-                                <span id="day-number-text">{{ "now"|date("d.m.Y") }}</span><span class="fsz-def" id="day-suffix"></span>
-                            </h1>
-                            <h3 id="day-name" class="c-white">
-                                {% set days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'] %}
-                                {{ days["now"|date("w")] }}
-                            </h3>
-                        </div>
-                        <div class="pos-r">
-                            <button type="button" id="add-appointment-btn" class="mT-nv-50 pos-a r-10 t-2 btn cur-p bdrs-50p p-0 w-3r h-3r btn-warning">
-                                <i class="ti-plus"></i>
-                            </button>
-                            <ul class="m-0 p-0 mT-20" id="day-events-list">
-                                <li class="bdB peers ai-c jc-sb fxw-nw p-20">
-                                    <div class="c-grey-600">
-                                        <span>Keine Termine</span>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
 
-                {# Rechte Spalte: Kalender #}
-                <div class="col-md-9">
-                    <div class="layers bd bgc-white p-20">
-                        <div class="layer w-100 mB-20">
-                            <h6 class="lh-1">Kalender</h6>
-                            <small class="c-grey-600">Einfacher Klick: Tagesansicht anzeigen | Doppelklick: Termin anlegen</small>
-                        </div>
-                        <div class="layer w-100">
-                            <div id="dashboard-calendar"></div>
+            {# Filter Leiste #}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="bgc-white p-20 bd">
+                        <h6 class="c-grey-900">Ansicht Filtern</h6>
+                        <div class="d-flex gap-3 flex-wrap" id="calendar-filters">
+                            <div class="form-check">
+                                <input class="form-check-input filter-checkbox" type="checkbox" value="production" id="filterProduction" checked>
+                                <label class="form-check-label" for="filterProduction">Produktion</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input filter-checkbox" type="checkbox" value="technician" id="filterTechnician" checked>
+                                <label class="form-check-label" for="filterTechnician">Techniker</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input filter-checkbox" type="checkbox" value="cleaning" id="filterCleaning" checked>
+                                <label class="form-check-label" for="filterCleaning">Reinigung</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input filter-checkbox" type="checkbox" value="private" id="filterPrivate" checked>
+                                <label class="form-check-label" for="filterPrivate">Privat / Sonstiges</label>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {# Raum Liste #}
+            <div class="row">
+                {% for room in rooms %}
+                    <div class="col-12 mb-5">
+                        <div class="bgc-white p-20 bd">
+                            <div class="row">
+                                {# Linke Spalte: Infos & Schlüssel #}
+                                <div class="col-md-3 border-end">
+                                    <h4 class="c-grey-900 mB-20">{{ room.name }}</h4>
+
+                                    <div class="layer w-100 mB-20">
+                                        <h6 class="lh-1 c-deep-purple-500">Schlüsselstatus</h6>
+                                        <hr>
+                                        {% if keysByRoom[room.id] is defined and keysByRoom[room.id]|length > 0 %}
+                                            <ul class="list-group list-group-flush">
+                                                {% for keyEntry in keysByRoom[room.id] %}
+                                                    <li class="list-group-item bg-transparent px-0">
+                                                        <i class="ti-key text-warning me-2"></i>
+                                                        <strong>{{ keyEntry.user ? keyEntry.user.email : 'Unbekannt' }}</strong>
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            Seit: {{ keyEntry.takenAt|date('d.m.Y H:i') }}
+                                                            {# Logik für Funktion (Produktion/Reinigung etc) müsste vom User oder Key Eintrag kommen #}
+                                                        </small>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% else %}
+                                            <p class="text-success"><i class="ti-check-box"></i> Alle Schlüssel vorhanden</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                {# Rechte Spalte: Kalender #}
+                                <div class="col-md-9">
+                                    <div class="room-calendar" data-room-id="{{ room.id }}"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-info">Keine Räume für das Dashboard konfiguriert.</div>
+                    </div>
+                {% endfor %}
             </div>
         </div>
     </div>

@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\RoomRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: RoomRepository::class)]
@@ -10,6 +12,17 @@ class Room extends Base
 {
     #[ORM\Column(length: 255)]
     private ?string $name = null;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $showOnDashboard = false;
+
+    #[ORM\OneToMany(mappedBy: 'room', targetEntity: KeyManagement::class)]
+    private Collection $keys;
+
+    public function __construct()
+    {
+        $this->keys = new ArrayCollection();
+    }
 
     public function getName(): ?string
     {
@@ -22,4 +35,47 @@ class Room extends Base
 
         return $this;
     }
+
+    public function isShowOnDashboard(): bool
+    {
+        return $this->showOnDashboard;
+    }
+
+    public function setShowOnDashboard(bool $showOnDashboard): static
+    {
+        $this->showOnDashboard = $showOnDashboard;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, KeyManagement>
+     */
+    public function getKeys(): Collection
+    {
+        return $this->keys;
+    }
+
+    public function addKey(KeyManagement $key): static
+    {
+        if (!$this->keys->contains($key)) {
+            $this->keys->add($key);
+            $key->setRoom($this);
+        }
+
+        return $this;
+    }
+
+    public function removeKey(KeyManagement $key): static
+    {
+        if ($this->keys->removeElement($key)) {
+            // set the owning side to null (unless already changed)
+            if ($key->getRoom() === $this) {
+                $key->setRoom(null);
+            }
+        }
+
+        return $this;
+    }
+
 }

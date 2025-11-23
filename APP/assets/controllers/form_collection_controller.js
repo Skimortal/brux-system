@@ -12,8 +12,6 @@ export default class extends Controller {
             this.indexValue = this.listTarget.querySelectorAll('[data-collection-item]').length;
         }
 
-        console.log("connect");
-
         this._onClick = (e) => {
             const addBtn = e.target.closest('.js-collection-add,[data-action~="click->form-collection#add"]');
             if (addBtn && this.element.contains(addBtn)) {
@@ -43,7 +41,6 @@ export default class extends Controller {
     }
 
     disconnect() {
-        console.log("dis-connect");
         if (this._onClick) {
             this.element.removeEventListener('click', this._onClick);
         }
@@ -79,7 +76,6 @@ export default class extends Controller {
         this._replaceInFragment(frag, '__name__', String(this.indexValue++));
         const row = frag.querySelector('tr[data-collection-item]') || frag.firstElementChild;
         if (!row) return;
-        console.log('add', frag, row, this.listTarget);
         this.listTarget.appendChild(row);
         this.renumber();
     }

@@ -1,4 +1,3 @@
-
 import Chart from 'chart.js/auto';
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -58,6 +57,7 @@ function initDoughnutChart() {
 
 let allEvents = [];
 let currentSelectedDate = new Date();
+let calendarInstances = []; // Array für alle Kalender-Instanzen
 
 // Mapping für Farben zu Icon-Farben (Adminator CSS Klassen)
 const colorToIconClass = {
@@ -85,9 +85,14 @@ function displayDate(date) {
         year: 'numeric'
     });
 
-    document.getElementById('day-number-text').textContent = formattedDate;
-    document.getElementById('day-suffix').textContent = '';
-    document.getElementById('day-name').textContent = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+    const numText = document.getElementById('day-number-text');
+    if(numText) numText.textContent = formattedDate;
+
+    const suffix = document.getElementById('day-suffix');
+    if(suffix) suffix.textContent = '';
+
+    const nameEl = document.getElementById('day-name');
+    if(nameEl) nameEl.textContent = dayName.charAt(0).toUpperCase() + dayName.slice(1);
 }
 
 // Funktion um Events eines bestimmten Tages anzuzeigen
@@ -158,6 +163,7 @@ function displayEventsForDate(date, events) {
                             </div>
                         </div>
                     </a>
+                    ${(event.extendedProps && event.extendedProps.type === 'private') ? `
                     <div class="peers mR-15">
                         <div class="peer">
                             <a href="javascript:void(0);"
@@ -173,7 +179,7 @@ function displayEventsForDate(date, events) {
                                 <i class="ti-trash"></i>
                             </a>
                         </div>
-                    </div>
+                    </div>` : ''}
                 </li>
             `;
         }).join('');
@@ -183,7 +189,8 @@ function displayEventsForDate(date, events) {
             el.addEventListener('click', function(e) {
                 e.preventDefault();
                 const eventId = this.getAttribute('data-event-id');
-                const event = calendar.getEventById(eventId);
+                // Versuche Event in allEvents zu finden
+                const event = allEvents.find(evt => evt.id == eventId);
                 if (event) {
                     openAppointmentModal(null, event);
                 }
@@ -203,28 +210,70 @@ function displayEventsForDate(date, events) {
     }
 }
 
-var calendar;
 var appointmentModal;
-var clickTimeout = null;
 
 function initCalendar() {
-    const calendarEl = document.getElementById('dashboard-calendar');
     const modalEl = document.getElementById('appointmentModal');
+    if (modalEl) {
+        appointmentModal = new Modal(modalEl);
+    }
 
-    if (!calendarEl || !modalEl) return;
+    // Aufräumen alter Instanzen
+    calendarInstances.forEach(cal => cal.destroy());
+    calendarInstances = [];
 
-    appointmentModal = new Modal(modalEl);
+    // Alle Kalender-Container finden
+    const calendarEls = document.querySelectorAll('.room-calendar');
+
+    // Falls keine Raum-Kalender da sind, versuche den alten Dashboard-Kalender als Fallback
+    if (calendarEls.length === 0) {
+        const fallbackEl = document.getElementById('dashboard-calendar');
+        if (fallbackEl) {
+            initSingleCalendar(fallbackEl, window.innerWidth <= 767);
+            return;
+        }
+        // Wenn gar keine Kalender da sind, abbrechen (aber Modal-Events und Sidebar trotzdem laden)
+    }
+
+    // Filter-Listener initialisieren
+    const filterCheckboxes = document.querySelectorAll('.filter-checkbox');
+    filterCheckboxes.forEach(box => {
+        // Clone Node um alte Event Listener zu entfernen
+        const newBox = box.cloneNode(true);
+        box.parentNode.replaceChild(newBox, box);
+        newBox.addEventListener('change', refreshAllCalendars);
+    });
 
     // Mobile-Check
     const isMobile = window.innerWidth <= 767;
 
-    calendar = new Calendar(calendarEl, {
+    // Für jeden Raum einen Kalender initialisieren
+    calendarEls.forEach(calendarEl => {
+        initSingleCalendar(calendarEl, isMobile);
+    });
+
+    // Sidebar initialisieren (Lade allgemeine Termine oder User-Termine)
+    fetch('/appointments/all')
+        .then(response => response.json())
+        .then(data => {
+            allEvents = data;
+            displayDate(currentSelectedDate);
+            displayEventsForDate(currentSelectedDate, data);
+        })
+        .catch(e => console.error(e));
+
+    setupModalListeners();
+}
+
+function initSingleCalendar(calendarEl, isMobile) {
+    const roomId = calendarEl.dataset.roomId || '';
+
+    const calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-        initialView: isMobile ? 'timeGridDay' : 'dayGridMonth',
+        initialView: isMobile ? 'timeGridDay' : 'timeGridWeek', // Standard auf Woche geändert für Raumplanung
         locale: deLocale,
         timeZone: 'Europe/Berlin',
         firstDay: 1,
-        // Mobile-optimierte Header-Toolbar
         headerToolbar: isMobile ? {
             left: 'prev,next',
             center: 'title',
@@ -232,173 +281,110 @@ function initCalendar() {
         } : {
             left: 'prev,next today',
             center: 'title',
-            right: 'timeGridDay,timeGridWeek,dayGridMonth,dayGridYear'
-        },
-        // Footer-Toolbar für View-Wechsel auf Mobile
-        footerToolbar: isMobile ? {
-            center: 'timeGridDay,timeGridWeek,dayGridMonth'
-        } : false,
-        buttonText: {
-            today: 'Heute',
-            month: 'Monat',
-            week: 'Woche',
-            day: 'Tag',
-            timeGridWeek: 'Woche (Zeit)',
-            timeGridDay: 'Tag (Zeit)'
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
         slotMinTime: '06:00:00',
-        slotMaxTime: '24:00:00',
+        slotMaxTime: '22:00:00',
         allDaySlot: true,
+        height: 600,
         eventTimeFormat: {
             hour: '2-digit',
             minute: '2-digit',
             hour12: false,
             meridiem: false
         },
-        // Drag & Drop auf Mobile deaktivieren (optional)
-        editable: !isMobile,
-        selectable: false,
-        selectMirror: false,
-        dayMaxEvents: isMobile ? 2 : true, // Weniger Events auf Mobile anzeigen
-        weekends: true,
-        // Mobile: Höhe anpassen
-        height: isMobile ? 'auto' : undefined,
-        contentHeight: isMobile ? 600 : undefined,
-        // Touch-Interaktion verbessern
-        longPressDelay: isMobile ? 500 : 1000,
+        events: function(info, successCallback, failureCallback) {
+            // Filter sammeln
+            const activeFilters = Array.from(document.querySelectorAll('.filter-checkbox:checked'))
+                .map(cb => cb.value)
+                .join(',');
+
+            const url = `/dashboard/events?roomId=${roomId}&start=${info.startStr}&end=${info.endStr}&filters=${activeFilters}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => successCallback(data))
+                .catch(error => {
+                    console.error('Error loading events:', error);
+                    failureCallback(error);
+                });
+        },
+        dateClick: function(info) {
+            // Wenn man in den Kalender klickt -> Termin erstellen
+            openAppointmentModal(info.dateStr, null, info.date);
+        },
+        eventClick: function(info) {
+            // Nur bearbeiten wenn 'private' (User Termin)
+            if (info.event.extendedProps.type === 'private') {
+                openAppointmentModal(null, info.event);
+            } else {
+                // Nur Info Alert für andere
+                alert(info.event.title + '\n' + (info.event.extendedProps.description || ''));
+            }
+        },
         eventDidMount: function(info) {
-            // Prüfe, ob das Event in der Vergangenheit liegt
             const now = new Date();
             const eventEnd = info.event.end || info.event.start;
-
             if (eventEnd < now) {
-                // Füge Style für vergangene Events hinzu
                 info.el.style.opacity = '0.5';
                 info.el.style.textDecoration = 'line-through';
             }
         },
-        events: function(info, successCallback, failureCallback) {
-            fetch('/appointments/all')
-                .then(response => response.json())
-                .then(data => {
-                    allEvents = data;
-                    successCallback(data);
-                    displayDate(currentSelectedDate);
-                    displayEventsForDate(currentSelectedDate, data);
-                })
-                .catch(error => {
-                    console.error('Error loading appointments:', error);
-                    failureCallback(error);
-                });
-        },
-        // Callback wenn sich die Ansicht ändert (z.B. Tag wechseln)
-        datesSet: function(dateInfo) {
-            // Bei timeGridDay: Das angezeigte Datum verwenden
-            if (dateInfo.view.type === 'timeGridDay') {
-                const viewDate = dateInfo.view.currentStart;
-                displayDate(viewDate);
-                displayEventsForDate(viewDate, allEvents);
-            }
-            // Bei timeGridWeek: Das Start-Datum der Woche verwenden
-            else if (dateInfo.view.type === 'timeGridWeek') {
-                const viewDate = dateInfo.view.currentStart;
-                displayDate(viewDate);
-                displayEventsForDate(viewDate, allEvents);
-            }
-        },
-        dateClick: function(info) {
-            // Auf Mobile: Einfacher Tap öffnet direkt Modal
-            if (isMobile) {
-                if (info.view.type.startsWith('timeGrid')) {
-                    openAppointmentModal(null, null, info.date);
-                } else {
-                    openAppointmentModal(info.dateStr);
-                }
-            } else {
-                // Desktop: Bestehende Doppelklick-Logik
-                if (info.view.type.startsWith('dayGrid')) {
-                    if (clickTimeout !== null) {
-                        clearTimeout(clickTimeout);
-                        clickTimeout = null;
-                        openAppointmentModal(info.dateStr);
-                    } else {
-                        clickTimeout = setTimeout(() => {
-                            clickTimeout = null;
-                            const clickedDate = new Date(info.dateStr);
-                            displayDate(clickedDate);
-                            displayEventsForDate(clickedDate, allEvents);
-                        }, 300);
-                    }
-                } else if (info.view.type.startsWith('timeGrid')) {
-                    if (clickTimeout !== null) {
-                        clearTimeout(clickTimeout);
-                        clickTimeout = null;
-                        openAppointmentModal(null, null, info.date);
-                    } else {
-                        clickTimeout = setTimeout(() => {
-                            clickTimeout = null;
-                            const clickedDate = new Date(info.date);
-                            displayDate(clickedDate);
-                            displayEventsForDate(clickedDate, allEvents);
-                        }, 300);
-                    }
-                }
-            }
-        },
-        eventClick: function(info) {
-            openAppointmentModal(null, info.event);
-        },
-        eventDrop: function(info) {
-            updateAppointment(info.event);
-        },
-        eventResize: function(info) {
-            updateAppointment(info.event);
-        }
+        editable: false // Erstmal deaktivieren, da DragDrop komplexer ist mit Filtern
     });
 
     calendar.render();
+    calendarInstances.push(calendar);
+}
 
-    // Responsive: Bei Fenster-Größenänderung Kalender neu laden
-    let resizeTimeout;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(function() {
-            const wasMobile = calendar.currentData.options.footerToolbar !== false;
-            const isNowMobile = window.innerWidth <= 767;
+function refreshAllCalendars() {
+    calendarInstances.forEach(cal => cal.refetchEvents());
+}
 
-            if (wasMobile !== isNowMobile) {
-                calendar.destroy();
-                initCalendar();
-            }
-        }, 250);
-    });
-
-    // Event Listener für Plus-Button
-    const addBtn = document.getElementById('add-appointment-btn');
-    if (addBtn) {
-        addBtn.addEventListener('click', function() {
-            const dateStr = currentSelectedDate.toISOString().split('T')[0];
-            openAppointmentModal(dateStr);
-        });
+function setupModalListeners() {
+    // Helper um Listener nicht mehrfach zu binden
+    const saveBtn = document.getElementById('saveAppointmentBtn');
+    if (saveBtn) {
+        const newBtn = saveBtn.cloneNode(true);
+        saveBtn.parentNode.replaceChild(newBtn, saveBtn);
+        newBtn.addEventListener('click', saveAppointment);
     }
 
-    // Event Listeners für Modal
-    const saveBtn = document.getElementById('saveAppointmentBtn');
     const deleteBtn = document.getElementById('deleteAppointmentBtn');
+    if (deleteBtn) {
+        const newBtn = deleteBtn.cloneNode(true);
+        deleteBtn.parentNode.replaceChild(newBtn, deleteBtn);
+        newBtn.addEventListener('click', deleteAppointment);
+    }
+
     const allDayCheckbox = document.getElementById('appointmentAllDay');
+    if (allDayCheckbox) {
+        const newBtn = allDayCheckbox.cloneNode(true);
+        allDayCheckbox.parentNode.replaceChild(newBtn, allDayCheckbox);
+        newBtn.addEventListener('change', toggleAllDay);
+    }
 
-    if (saveBtn) saveBtn.addEventListener('click', saveAppointment);
-    if (deleteBtn) deleteBtn.addEventListener('click', deleteAppointment);
-    if (allDayCheckbox) allDayCheckbox.addEventListener('change', toggleAllDay);
-
-    // Event Listener für Farbauswahl
+    // Farbauswahl Listener
     document.querySelectorAll('.color-option').forEach(option => {
-        option.addEventListener('click', function() {
+        const newOpt = option.cloneNode(true);
+        option.parentNode.replaceChild(newOpt, option);
+        newOpt.addEventListener('click', function() {
             document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
             this.classList.add('selected');
             document.getElementById('appointmentColor').value = this.getAttribute('data-color');
         });
     });
+
+    // Plus Button
+    const addBtn = document.getElementById('add-appointment-btn');
+    if (addBtn) {
+        const newAdd = addBtn.cloneNode(true);
+        addBtn.parentNode.replaceChild(newAdd, addBtn);
+        newAdd.addEventListener('click', function() {
+            const dateStr = currentSelectedDate.toISOString().split('T')[0];
+            openAppointmentModal(dateStr);
+        });
+    }
 }
 
 function openAppointmentModal(dateStr = null, event = null, clickedDateTime = null) {
@@ -409,9 +395,16 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         modalTitle.textContent = 'Termin bearbeiten';
         deleteBtn.style.display = 'inline-block';
 
-        document.getElementById('appointmentId').value = event.id;
+        // ID bereinigen (z.B. 'appt_123' -> '123')
+        const rawId = String(event.id);
+        let cleanId = rawId;
+        if(rawId.includes('_')) {
+            cleanId = rawId.split('_')[1];
+        }
+        document.getElementById('appointmentId').value = cleanId;
+
         document.getElementById('appointmentTitle').value = event.title;
-        document.getElementById('appointmentDescription').value = event.extendedProps.description || '';
+        document.getElementById('appointmentDescription').value = event.extendedProps?.description || '';
 
         let endDate = event.end || event.start;
         if (event.allDay) {
@@ -420,94 +413,72 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
             endDate = adjustedEnd;
         }
 
-        const startDate = event.start;
-        const finalEndDate = endDate;
-
-        document.getElementById('appointmentStart').value = formatDateForInput(startDate, event.allDay);
-        document.getElementById('appointmentEnd').value = formatDateForInput(finalEndDate, event.allDay);
+        document.getElementById('appointmentStart').value = formatDateForInput(event.start, event.allDay);
+        document.getElementById('appointmentEnd').value = formatDateForInput(endDate, event.allDay);
         document.getElementById('appointmentAllDay').checked = event.allDay;
 
-        if (event.allDay) {
-            document.getElementById('appointmentStart').type = 'date';
-            document.getElementById('appointmentEnd').type = 'date';
-        } else {
-            document.getElementById('appointmentStart').type = 'datetime-local';
-            document.getElementById('appointmentEnd').type = 'datetime-local';
-        }
+        // Toggle Input Types
+        toggleAllDay({target: {checked: event.allDay}});
 
         const color = event.backgroundColor || '#4285f4';
         document.getElementById('appointmentColor').value = color;
 
-        document.querySelectorAll('.color-option').forEach(option => {
-            if (option.getAttribute('data-color') === color) {
-                option.classList.add('selected');
-            } else {
-                option.classList.remove('selected');
-            }
-        });
+        // Color Auswahl UI updaten
+        document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+        const sel = document.querySelector(`.color-option[data-color="${color}"]`);
+        if(sel) sel.classList.add('selected');
+
     } else {
         modalTitle.textContent = 'Neuer Termin';
         deleteBtn.style.display = 'none';
-
         document.getElementById('appointmentId').value = '';
         document.getElementById('appointmentTitle').value = '';
         document.getElementById('appointmentDescription').value = '';
 
         let startDate, endDate;
-
         if (clickedDateTime) {
-            // Doppelklick in timeGrid - verwende die angeklickte Zeit
             startDate = clickedDateTime;
-            startDate.setHours(startDate.getHours());
-            endDate = new Date(clickedDateTime.getTime());
-            endDate.setHours(endDate.getHours() + 1); // 1 Stunde später als Endzeit
-
-            document.getElementById('appointmentStart').type = 'datetime-local';
-            document.getElementById('appointmentEnd').type = 'datetime-local';
+            // startDate.setHours(startDate.getHours()); // FullCalendar liefert UTC/Local mix
+            endDate = new Date(startDate.getTime());
+            endDate.setHours(endDate.getHours() + 1);
             document.getElementById('appointmentAllDay').checked = false;
         } else {
-            // Normales Erstellen (z.B. über Plus-Button oder dayGrid)
-            startDate = new Date(dateStr);
-            startDate.setHours(9, 0, 0, 0);
-            endDate = new Date(dateStr);
-            endDate.setHours(10, 0, 0, 0);
-
-            document.getElementById('appointmentStart').type = 'datetime-local';
-            document.getElementById('appointmentEnd').type = 'datetime-local';
+            // Fallback: Datum String oder Heute
+            if(dateStr) {
+                startDate = new Date(dateStr);
+            } else {
+                startDate = new Date();
+            }
+            startDate.setHours(9,0,0,0);
+            endDate = new Date(startDate);
+            endDate.setHours(10,0,0,0);
             document.getElementById('appointmentAllDay').checked = false;
         }
 
         document.getElementById('appointmentStart').value = formatDateForInput(startDate);
         document.getElementById('appointmentEnd').value = formatDateForInput(endDate);
-        document.getElementById('appointmentColor').value = '#4285f4';
 
-        document.querySelectorAll('.color-option').forEach(option => {
-            if (option.getAttribute('data-color') === '#4285f4') {
-                option.classList.add('selected');
-            } else {
-                option.classList.remove('selected');
-            }
-        });
+        toggleAllDay({target: {checked: false}});
+
+        // Reset Color
+        document.getElementById('appointmentColor').value = '#4285f4';
+        document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+        const def = document.querySelector(`.color-option[data-color="#4285f4"]`);
+        if(def) def.classList.add('selected');
     }
 
-    appointmentModal.show();
+    if(appointmentModal) appointmentModal.show();
 }
 
 function formatDateForInput(date, isAllDay = false) {
     if (!date) return '';
-
-    // Wenn es ein FullCalendar Date-Objekt ist, konvertiere es
     const d = date instanceof Date ? date : new Date(date);
-
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
 
-    if (isAllDay) {
-        return `${year}-${month}-${day}`;
-    }
-
-    const hours = String(d.getHours()-1).padStart(2, '0');
+    if (isAllDay) return `${year}-${month}-${day}`;
+    const hours = String(d.getHours()).padStart(2, '0');
     const minutes = String(d.getMinutes()).padStart(2, '0');
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
@@ -515,10 +486,12 @@ function formatDateForInput(date, isAllDay = false) {
 function toggleAllDay(e) {
     const startInput = document.getElementById('appointmentStart');
     const endInput = document.getElementById('appointmentEnd');
-
     if (e.target.checked) {
         startInput.type = 'date';
         endInput.type = 'date';
+        // Wenn von DateTime zu Date gewechselt wird, schneide Uhrzeit ab
+        if(startInput.value.includes('T')) startInput.value = startInput.value.split('T')[0];
+        if(endInput.value.includes('T')) endInput.value = endInput.value.split('T')[0];
     } else {
         startInput.type = 'datetime-local';
         endInput.type = 'datetime-local';
@@ -540,105 +513,68 @@ function saveAppointment() {
     }
 
     if (allDay) {
-        start = start.split('T')[0];
-        end = end.split('T')[0];
-
+        // Sicherstellen dass wir ISO format senden
         start = start + 'T00:00:00';
         const endDateObj = new Date(end);
         endDateObj.setDate(endDateObj.getDate() + 1);
         end = endDateObj.toISOString().split('T')[0] + 'T00:00:00';
     }
 
-    const data = {
-        title,
-        description,
-        start,
-        end,
-        allDay,
-        color
-    };
-
+    const data = { title, description, start, end, allDay, color };
     const url = id ? `/appointment/${id}/edit` : '/appointment/create';
     const method = id ? 'PUT' : 'POST';
 
     fetch(url, {
         method: method,
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
         .then(response => response.json())
         .then(result => {
             if (result.success) {
                 appointmentModal.hide();
-                calendar.refetchEvents();
+                refreshAllCalendars(); // Alle Kalender aktualisieren!
+                // Auch Sidebar neu laden
+                fetch('/appointments/all').then(r=>r.json()).then(d => {
+                    allEvents = d;
+                    displayEventsForDate(currentSelectedDate, d);
+                });
             } else {
-                alert('Fehler beim Speichern des Termins.');
+                alert('Fehler beim Speichern.');
             }
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Fehler beim Speichern des Termins.');
+        .catch(error => console.error(error));
+}
+
+function deleteAppointmentById(id) {
+    // ID bereinigen (z.B. 'appt_123' -> '123')
+    const rawId = String(id);
+    let cleanId = rawId;
+    if(rawId.includes('_')) {
+        cleanId = rawId.split('_')[1];
+    }
+
+    fetch(`/appointment/${cleanId}/delete`, { method: 'DELETE' })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                if (appointmentModal._isShown) appointmentModal.hide();
+                refreshAllCalendars();
+                // Auch Sidebar neu laden
+                fetch('/appointments/all').then(r=>r.json()).then(d => {
+                    allEvents = d;
+                    displayEventsForDate(currentSelectedDate, d);
+                });
+            } else {
+                alert('Fehler beim Löschen.');
+            }
         });
 }
 
 function deleteAppointment() {
     const id = document.getElementById('appointmentId').value;
-
-    if (!id || !confirm('Möchten Sie diesen Termin wirklich löschen?')) {
-        return;
-    }
-
+    if (!id || !confirm('Wirklich löschen?')) return;
     deleteAppointmentById(id);
-}
-
-function deleteAppointmentById(id) {
-    fetch(`/appointment/${id}/delete`, {
-        method: 'DELETE'
-    })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                if (appointmentModal._isShown) {
-                    appointmentModal.hide();
-                }
-                calendar.refetchEvents();
-            } else {
-                alert('Fehler beim Löschen des Termins.');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Fehler beim Löschen des Termins.');
-        });
-}
-
-function updateAppointment(event) {
-    const data = {
-        start: event.start.toISOString(),
-        end: event.end ? event.end.toISOString() : event.start.toISOString()
-    };
-
-    fetch(`/appointment/${event.id}/edit`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-        .then(response => response.json())
-        .then(result => {
-            if (!result.success) {
-                alert('Fehler beim Aktualisieren des Termins.');
-                calendar.refetchEvents();
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Fehler beim Aktualisieren des Termins.');
-            calendar.refetchEvents();
-        });
 }
 
 document.addEventListener('DOMContentLoaded', function() {

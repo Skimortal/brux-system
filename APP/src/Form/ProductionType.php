@@ -6,6 +6,7 @@ use App\Entity\Production;
 use App\Enum\ProductionType as ProductionTypeEnum;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -72,6 +73,18 @@ class ProductionType extends AbstractType
             ->add('personEmail', EmailType::class, [
                 'label' => 'production.person_email',
                 'required' => false,
+            ])
+
+            // Technicians collection
+            ->add('technicians', CollectionType::class, [
+                'entry_type' => ProductionTechnicianType::class,
+                'entry_options' => [
+                    'label' => false,
+                ],
+                'allow_add' => true,
+                'allow_delete' => true,
+                'by_reference' => false,
+                'label' => false,
             ])
         ;
     }

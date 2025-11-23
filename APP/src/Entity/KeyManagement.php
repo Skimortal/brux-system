@@ -10,6 +10,10 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: KeyManagementRepository::class)]
 class KeyManagement extends Base
 {
+    #[ORM\ManyToOne(inversedBy: 'keys')]
+    #[ORM\JoinColumn(nullable: true)] // Kann nullable sein, falls es Generalschlüssel gibt
+    private ?Room $room = null;
+
     #[ORM\Column(length: 255)]
     private ?string $keyColor = null;
 
@@ -27,6 +31,18 @@ class KeyManagement extends Base
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $signature = null;
+
+    public function getRoom(): ?Room
+    {
+        return $this->room;
+    }
+
+    public function setRoom(?Room $room): static
+    {
+        $this->room = $room;
+
+        return $this;
+    }
 
     public function getKeyColor(): ?string
     {

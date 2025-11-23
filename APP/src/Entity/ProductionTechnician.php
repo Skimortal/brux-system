@@ -17,6 +17,10 @@ class ProductionTechnician extends Base
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $phone = null;
 
+    #[ORM\ManyToOne(targetEntity: Production::class, inversedBy: 'technicians')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Production $production = null;
+
     public function getName(): ?string
     {
         return $this->name;
@@ -49,6 +53,18 @@ class ProductionTechnician extends Base
     public function setPhone(?string $phone): static
     {
         $this->phone = $phone;
+
+        return $this;
+    }
+
+    public function getProduction(): ?Production
+    {
+        return $this->production;
+    }
+
+    public function setProduction(?Production $production): static
+    {
+        $this->production = $production;
 
         return $this;
     }
