@@ -10,6 +10,7 @@ services:
         working_dir: /var/www/html
         volumes:
             - ${APP_PATH}:/var/www/html:cached
+            - ./conf/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
         depends_on:
             - db
 
@@ -56,5 +57,6 @@ services:
             -vv
         volumes:
             - ${APP_PATH}:/var/www/html:cached
+            - ./conf/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
         depends_on:
             - db

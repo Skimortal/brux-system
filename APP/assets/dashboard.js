@@ -11,48 +11,7 @@ function initDoughnutChart() {
     // if(typeof doughnutChart !== "undefined") {
     //     doughnutChart.destroy();
     // }
-    //
-    // const canvas = document.getElementById('doughnut-chart');
-    //
-    // if(canvas) {
-    //     var invoicesOpen = canvas.getAttribute('data-invoices-open')
-    //     var invoicesOpenLabel = canvas.getAttribute('data-invoices-open-label')
-    //     var invoicesSent = canvas.getAttribute('data-invoices-sent')
-    //     var invoicesSentLabel = canvas.getAttribute('data-invoices-sent-label')
-    //     var invoicesPayed = canvas.getAttribute('data-invoices-payed')
-    //     var invoicesPayedLabel = canvas.getAttribute('data-invoices-payed-label')
-    //
-    //     var data = {
-    //         labels: [
-    //             invoicesOpenLabel,
-    //             invoicesSentLabel,
-    //             invoicesPayedLabel
-    //         ],
-    //         datasets: [{
-    //             label: '',
-    //             data: [invoicesOpen, invoicesSent, invoicesPayed],
-    //             backgroundColor: [
-    //                 'rgb(255, 99, 132)',
-    //                 'rgb(54, 162, 235)',
-    //                 'rgb(255, 205, 86)'
-    //             ],
-    //             hoverOffset: 4
-    //         }]
-    //     };
-    //
-    //     new Chart(canvas, {
-    //         type: 'doughnut',
-    //         data: data,
-    //         options: {
-    //             responsive: true,
-    //             maintainAspectRatio: false,
-    //             cutout: '60%',
-    //             plugins: {
-    //                 legend: {position: 'bottom'}
-    //             }
-    //         }
-    //     });
-    // }
+    // ... chart logic ...
 }
 
 let allEvents = [];
@@ -163,7 +122,7 @@ function displayEventsForDate(date, events) {
                             </div>
                         </div>
                     </a>
-                    ${(event.extendedProps && event.extendedProps.type === 'private') ? `
+                    ${(event.extendedProps && ['private', 'cleaning', 'technician'].includes(event.extendedProps.type)) ? `
                     <div class="peers mR-15">
                         <div class="peer">
                             <a href="javascript:void(0);"
@@ -232,7 +191,6 @@ function initCalendar() {
             initSingleCalendar(fallbackEl, window.innerWidth <= 767);
             return;
         }
-        // Wenn gar keine Kalender da sind, abbrechen (aber Modal-Events und Sidebar trotzdem laden)
     }
 
     // Filter-Listener initialisieren
@@ -252,7 +210,7 @@ function initCalendar() {
         initSingleCalendar(calendarEl, isMobile);
     });
 
-    // Sidebar initialisieren (Lade allgemeine Termine oder User-Termine)
+    // Sidebar initialisieren
     fetch('/appointments/all')
         .then(response => response.json())
         .then(data => {
@@ -270,7 +228,7 @@ function initSingleCalendar(calendarEl, isMobile) {
 
     const calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-        initialView: isMobile ? 'timeGridDay' : 'dayGridMonth', // Standard auf Woche geändert für Raumplanung
+        initialView: isMobile ? 'timeGridDay' : 'dayGridMonth',
         locale: deLocale,
         timeZone: 'Europe/Berlin',
         firstDay: 1,
@@ -311,11 +269,12 @@ function initSingleCalendar(calendarEl, isMobile) {
         },
         dateClick: function(info) {
             // Wenn man in den Kalender klickt -> Termin erstellen
-            openAppointmentModal(info.dateStr, null, info.date);
+            openAppointmentModal(info.dateStr, null, info.date, roomId);
         },
         eventClick: function(info) {
-            // Nur bearbeiten wenn 'private' (User Termin)
-            if (info.event.extendedProps.type === 'private') {
+            // Bearbeiten erlauben für unterstützte Typen
+            const type = info.event.extendedProps.type;
+            if (['private', 'cleaning', 'technician'].includes(type)) {
                 openAppointmentModal(null, info.event);
             } else {
                 // Nur Info Alert für andere
@@ -330,7 +289,7 @@ function initSingleCalendar(calendarEl, isMobile) {
                 info.el.style.textDecoration = 'line-through';
             }
         },
-        editable: false // Erstmal deaktivieren, da DragDrop komplexer ist mit Filtern
+        editable: false
     });
 
     calendar.render();
@@ -375,6 +334,13 @@ function setupModalListeners() {
         });
     });
 
+    // Typ Auswahl Listener (Radio Buttons)
+    document.querySelectorAll('.type-radio').forEach(radio => {
+        const newRadio = radio.cloneNode(true);
+        radio.parentNode.replaceChild(newRadio, radio);
+        newRadio.addEventListener('change', toggleTypeFields);
+    });
+
     // Plus Button
     const addBtn = document.getElementById('add-appointment-btn');
     if (addBtn) {
@@ -387,15 +353,57 @@ function setupModalListeners() {
     }
 }
 
-function openAppointmentModal(dateStr = null, event = null, clickedDateTime = null) {
+function toggleTypeFields() {
+    const selectedRadio = document.querySelector('input[name="appointmentType"]:checked');
+    const type = selectedRadio ? selectedRadio.value : 'private';
+
+    const cleanGroup = document.getElementById('cleaningSelectGroup');
+    const techGroup = document.getElementById('technicianSelectGroup');
+    const titleGroup = document.getElementById('titleGroup');
+    const titleInput = document.getElementById('appointmentTitle');
+
+    if (cleanGroup) cleanGroup.style.display = (type === 'cleaning') ? 'block' : 'none';
+    if (techGroup) techGroup.style.display = (type === 'technician') ? 'block' : 'none';
+
+    // Titel nur bei Private anzeigen und Pflicht machen
+    if (titleGroup) {
+        if (type === 'private') {
+            titleGroup.style.display = 'block';
+            if(titleInput) titleInput.setAttribute('required', 'required');
+        } else {
+            titleGroup.style.display = 'none';
+            if(titleInput) titleInput.removeAttribute('required');
+        }
+    }
+}
+
+function openAppointmentModal(dateStr = null, event = null, clickedDateTime = null, roomId = null) {
     const modalTitle = document.getElementById('appointmentModalLabel');
     const deleteBtn = document.getElementById('deleteAppointmentBtn');
+    const roomSelect = document.getElementById('appointmentRoom');
+    const cleanSelect = document.getElementById('appointmentCleaning');
+    const techSelect = document.getElementById('appointmentTechnician');
+    const titleInput = document.getElementById('appointmentTitle');
+    const descInput = document.getElementById('appointmentDescription');
+
+    // Reset All Fields
+    if(roomSelect) roomSelect.value = '';
+    if(cleanSelect) cleanSelect.value = '';
+    if(techSelect) techSelect.value = '';
+    if(titleInput) titleInput.value = '';
+    if(descInput) descInput.value = '';
+
+    // Reset Radios to Private
+    const privateRadio = document.getElementById('typePrivate');
+    if(privateRadio) {
+        privateRadio.checked = true;
+        toggleTypeFields();
+    }
 
     if (event) {
         modalTitle.textContent = 'Termin bearbeiten';
         deleteBtn.style.display = 'inline-block';
 
-        // ID bereinigen (z.B. 'appt_123' -> '123')
         const rawId = String(event.id);
         let cleanId = rawId;
         if(rawId.includes('_')) {
@@ -403,27 +411,48 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         }
         document.getElementById('appointmentId').value = cleanId;
 
-        document.getElementById('appointmentTitle').value = event.title;
-        document.getElementById('appointmentDescription').value = event.extendedProps?.description || '';
+        if(titleInput) titleInput.value = event.title;
+        if(descInput) descInput.value = event.extendedProps?.description || '';
 
+        // Raum setzen bei Edit
+        if (event.extendedProps && event.extendedProps.roomId && roomSelect) {
+            roomSelect.value = event.extendedProps.roomId;
+        }
+
+        // Typ & Relationen setzen
+        const type = event.extendedProps.type || 'private';
+        const typeRadio = document.querySelector(`input[name="appointmentType"][value="${type}"]`);
+        if(typeRadio) {
+            typeRadio.checked = true;
+            toggleTypeFields();
+        }
+
+        if (type === 'cleaning' && event.extendedProps.cleaningId && cleanSelect) {
+            cleanSelect.value = event.extendedProps.cleaningId;
+        }
+        if (type === 'technician' && event.extendedProps.technicianId && techSelect) {
+            techSelect.value = event.extendedProps.technicianId;
+        }
+
+        // Datum/Zeit-Handling mit korrekter Timezone-Berücksichtigung
+        let startDate = event.start;
         let endDate = event.end || event.start;
+
         if (event.allDay) {
+            // Bei ganztägigen Events: End-Datum um 1 Tag reduzieren (exklusives End-Datum von FullCalendar)
             const adjustedEnd = new Date(endDate);
             adjustedEnd.setDate(adjustedEnd.getDate() - 1);
             endDate = adjustedEnd;
         }
 
-        document.getElementById('appointmentStart').value = formatDateForInput(event.start, event.allDay);
+        document.getElementById('appointmentStart').value = formatDateForInput(startDate, event.allDay);
         document.getElementById('appointmentEnd').value = formatDateForInput(endDate, event.allDay);
         document.getElementById('appointmentAllDay').checked = event.allDay;
 
-        // Toggle Input Types
         toggleAllDay({target: {checked: event.allDay}});
 
         const color = event.backgroundColor || '#4285f4';
         document.getElementById('appointmentColor').value = color;
-
-        // Color Auswahl UI updaten
         document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
         const sel = document.querySelector(`.color-option[data-color="${color}"]`);
         if(sel) sel.classList.add('selected');
@@ -432,18 +461,25 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         modalTitle.textContent = 'Neuer Termin';
         deleteBtn.style.display = 'none';
         document.getElementById('appointmentId').value = '';
-        document.getElementById('appointmentTitle').value = '';
-        document.getElementById('appointmentDescription').value = '';
+
+        // Reset Date Fields explicitly
+        const startInput = document.getElementById('appointmentStart');
+        const endInput = document.getElementById('appointmentEnd');
+        startInput.value = '';
+        endInput.value = '';
+
+        // Raum vorselektieren wenn übergeben
+        if(roomId && roomSelect) {
+            roomSelect.value = roomId;
+        }
 
         let startDate, endDate;
         if (clickedDateTime) {
             startDate = clickedDateTime;
-            // startDate.setHours(startDate.getHours()); // FullCalendar liefert UTC/Local mix
             endDate = new Date(startDate.getTime());
             endDate.setHours(endDate.getHours() + 1);
             document.getElementById('appointmentAllDay').checked = false;
         } else {
-            // Fallback: Datum String oder Heute
             if(dateStr) {
                 startDate = new Date(dateStr);
             } else {
@@ -455,12 +491,11 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
             document.getElementById('appointmentAllDay').checked = false;
         }
 
-        document.getElementById('appointmentStart').value = formatDateForInput(startDate);
-        document.getElementById('appointmentEnd').value = formatDateForInput(endDate);
+        startInput.value = formatDateForInput(startDate);
+        endInput.value = formatDateForInput(endDate);
 
         toggleAllDay({target: {checked: false}});
 
-        // Reset Color
         document.getElementById('appointmentColor').value = '#4285f4';
         document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
         const def = document.querySelector(`.color-option[data-color="#4285f4"]`);
@@ -473,14 +508,17 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
 function formatDateForInput(date, isAllDay = false) {
     if (!date) return '';
     const d = date instanceof Date ? date : new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
 
-    if (isAllDay) return `${year}-${month}-${day}`;
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    // Verwende lokale Zeit für die Darstellung im Input-Feld
+    const pad = n => String(n).padStart(2, '0');
+    const datePart = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    if (isAllDay) {
+        return datePart;
+    }
+
+    // Für zeitbasierte Events: Verwende lokale Zeit (nicht UTC)
+    return `${datePart}T${pad(d.getHours() - 1)}:${pad(d.getMinutes())}`;
 }
 
 function toggleAllDay(e) {
@@ -489,7 +527,6 @@ function toggleAllDay(e) {
     if (e.target.checked) {
         startInput.type = 'date';
         endInput.type = 'date';
-        // Wenn von DateTime zu Date gewechselt wird, schneide Uhrzeit ab
         if(startInput.value.includes('T')) startInput.value = startInput.value.split('T')[0];
         if(endInput.value.includes('T')) endInput.value = endInput.value.split('T')[0];
     } else {
@@ -500,8 +537,24 @@ function toggleAllDay(e) {
 
 function saveAppointment() {
     const id = document.getElementById('appointmentId').value;
-    const title = document.getElementById('appointmentTitle').value;
+    let title = document.getElementById('appointmentTitle').value;
     const description = document.getElementById('appointmentDescription').value;
+    const roomId = document.getElementById('appointmentRoom') ? document.getElementById('appointmentRoom').value : null;
+
+    const selectedRadio = document.querySelector('input[name="appointmentType"]:checked');
+    const type = selectedRadio ? selectedRadio.value : 'private';
+
+    let cleaningId = null;
+    let technicianId = null;
+
+    if (type === 'cleaning') {
+        cleaningId = document.getElementById('appointmentCleaning').value;
+        title = 'Reinigung'; // Fallback Titel
+    } else if (type === 'technician') {
+        technicianId = document.getElementById('appointmentTechnician').value;
+        title = 'Techniker'; // Fallback Titel
+    }
+
     let start = document.getElementById('appointmentStart').value;
     let end = document.getElementById('appointmentEnd').value;
     const allDay = document.getElementById('appointmentAllDay').checked;
@@ -513,14 +566,18 @@ function saveAppointment() {
     }
 
     if (allDay) {
-        // Sicherstellen dass wir ISO format senden
         start = start + 'T00:00:00';
-        const endDateObj = new Date(end);
-        endDateObj.setDate(endDateObj.getDate() + 1);
-        end = endDateObj.toISOString().split('T')[0] + 'T00:00:00';
+        // Input "2025-11-08" (inklusiv). Backend erwartet für DB (nach -1 Tag Logik) "2025-11-09".
+        // Also 1 Tag addieren.
+        const parts = end.split('-');
+        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        d.setDate(d.getDate() + 1); // Add 1 Day -> "2025-11-09"
+
+        const nextDayStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        end = nextDayStr + 'T00:00:00';
     }
 
-    const data = { title, description, start, end, allDay, color };
+    const data = { title, description, start, end, allDay, color, roomId, cleaningId, technicianId };
     const url = id ? `/appointment/${id}/edit` : '/appointment/create';
     const method = id ? 'PUT' : 'POST';
 
@@ -533,8 +590,7 @@ function saveAppointment() {
         .then(result => {
             if (result.success) {
                 appointmentModal.hide();
-                refreshAllCalendars(); // Alle Kalender aktualisieren!
-                // Auch Sidebar neu laden
+                refreshAllCalendars();
                 fetch('/appointments/all').then(r=>r.json()).then(d => {
                     allEvents = d;
                     displayEventsForDate(currentSelectedDate, d);
@@ -547,7 +603,6 @@ function saveAppointment() {
 }
 
 function deleteAppointmentById(id) {
-    // ID bereinigen (z.B. 'appt_123' -> '123')
     const rawId = String(id);
     let cleanId = rawId;
     if(rawId.includes('_')) {
@@ -560,7 +615,6 @@ function deleteAppointmentById(id) {
             if (result.success) {
                 if (appointmentModal._isShown) appointmentModal.hide();
                 refreshAllCalendars();
-                // Auch Sidebar neu laden
                 fetch('/appointments/all').then(r=>r.json()).then(d => {
                     allEvents = d;
                     displayEventsForDate(currentSelectedDate, d);
@@ -580,13 +634,11 @@ function deleteAppointment() {
 var keyModal;
 function initKeyManagement() {
     const modalEl = document.getElementById('keyManagementModal');
-    if (!modalEl) return; // Abbrechen wenn Modal nicht da ist
+    if (!modalEl) return;
 
     keyModal = new Modal(modalEl);
 
-    // Buttons binden
     document.querySelectorAll('.key-item-btn').forEach(btn => {
-        // Alten Listener entfernen um doppelte Bindings bei Turbo zu vermeiden
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
         newBtn.addEventListener('click', function() {
@@ -594,10 +646,8 @@ function initKeyManagement() {
         });
     });
 
-    // Status Change Listener
     const statusSelect = document.getElementById('keyStatus');
     if (statusSelect) {
-        // Cleanup old listener
         const newStatus = statusSelect.cloneNode(true);
         statusSelect.parentNode.replaceChild(newStatus, statusSelect);
 
@@ -611,25 +661,21 @@ function initKeyManagement() {
         });
     }
 
-    // Type Change Listener
     const typeSelect = document.getElementById('borrowerType');
     if (typeSelect) {
         const newType = typeSelect.cloneNode(true);
         typeSelect.parentNode.replaceChild(newType, typeSelect);
 
         newType.addEventListener('change', function() {
-            // Alle Selects verstecken
             document.querySelectorAll('.borrower-select').forEach(el => el.style.display = 'none');
-            // Passenden anzeigen
             if (this.value) {
-                const targetId = this.value + 'SelectDiv'; // z.B. userSelectDiv
+                const targetId = this.value + 'SelectDiv';
                 const target = document.getElementById(targetId);
                 if(target) target.style.display = 'block';
             }
         });
     }
 
-    // Save Button
     const saveBtn = document.getElementById('saveKeyBtn');
     if (saveBtn) {
         const newSave = saveBtn.cloneNode(true);
@@ -663,7 +709,6 @@ function openKeyModal(btn) {
     const returnEl = document.getElementById('keyReturnDate');
     if(returnEl) returnEl.value = btn.dataset.returnDate;
 
-    // Selektieren wer den Schlüssel hat
     const uId = btn.dataset.userId;
     const tId = btn.dataset.techId;
     const pId = btn.dataset.prodId;
@@ -671,7 +716,6 @@ function openKeyModal(btn) {
 
     const typeSelect = document.getElementById('borrowerType');
     if(typeSelect) {
-        // Reset Values first
         const uEl = document.getElementById('userId'); if(uEl) uEl.value = '';
         const tEl = document.getElementById('technicianId'); if(tEl) tEl.value = '';
         const pEl = document.getElementById('productionId'); if(pEl) pEl.value = '';
@@ -698,7 +742,6 @@ function saveKeyData() {
     const id = idEl.value;
     const status = statusEl.value;
 
-    // Safe get value helper
     const getVal = (id) => {
         const el = document.getElementById(id);
         return el ? el.value : null;

@@ -20,6 +20,15 @@ class Appointment
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
+    #[ORM\ManyToOne(inversedBy: 'appointments')]
+    private ?Room $room = null;
+
+    #[ORM\ManyToOne(targetEntity: Cleaning::class)]
+    private ?Cleaning $cleaning = null;
+
+    #[ORM\ManyToOne(targetEntity: Technician::class)]
+    private ?Technician $technician = null;
+
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $startDate = null;
 
@@ -119,6 +128,42 @@ class Appointment
     public function setCreatedAt(\DateTimeInterface $createdAt): static
     {
         $this->createdAt = $createdAt;
+        return $this;
+    }
+
+    public function getRoom(): ?Room
+    {
+        return $this->room;
+    }
+
+    public function setRoom(?Room $room): static
+    {
+        $this->room = $room;
+
+        return $this;
+    }
+
+    public function getCleaning(): ?Cleaning
+    {
+        return $this->cleaning;
+    }
+
+    public function setCleaning(?Cleaning $cleaning): static
+    {
+        $this->cleaning = $cleaning;
+
+        return $this;
+    }
+
+    public function getTechnician(): ?Technician
+    {
+        return $this->technician;
+    }
+
+    public function setTechnician(?Technician $technician): static
+    {
+        $this->technician = $technician;
+
         return $this;
     }
 }

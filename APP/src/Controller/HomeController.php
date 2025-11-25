@@ -12,7 +12,7 @@ use App\Repository\CleaningRepository;
 use App\Repository\KeyManagementRepository;
 use App\Repository\ProductionRepository;
 use App\Repository\RoomRepository;
-use App\Repository\TechnicianRepository; // Annahme: Existiert oder ähnlicher Name
+use App\Repository\TechnicianRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -45,8 +45,7 @@ class HomeController extends AbstractController
         // 1. Nur Räume laden, die angezeigt werden sollen
         $rooms = $roomRepository->findBy(['showOnDashboard' => true]);
 
-        // 2. ALLE Schlüssel laden, gruppiert nach Raum (und solche ohne Raum separat?)
-        // Wir wollen alle Schlüssel anzeigen, um den Status zu sehen
+        // 2. ALLE Schlüssel laden, gruppiert nach Raum
         $allKeys = $keyRepository->findAll();
 
         // 3. Schlüssel nach Raum gruppieren
@@ -55,9 +54,6 @@ class HomeController extends AbstractController
 
         foreach ($allKeys as $key) {
             if ($key->getRoom()) {
-                // Nur anzeigen, wenn der Raum auch auf dem Dashboard ist?
-                // Oder alle Räume anzeigen in der Sidebar?
-                // Anforderung: "Schlüsselübersicht soll raumübergreifend sein"
                 $keysByRoom[$key->getRoom()->getId()][] = $key;
             } else {
                 $keysWithoutRoom[] = $key;
@@ -90,7 +86,7 @@ class HomeController extends AbstractController
         $endStr = $request->query->get('end');
         $roomId = $request->query->get('roomId');
 
-        // Filter als Array (z.B. ?filters=production,private)
+        // Filter als Array
         $filters = explode(',', $request->query->get('filters', ''));
 
         // Validierung der Datumsangaben
@@ -107,76 +103,73 @@ class HomeController extends AbstractController
 
         $events = [];
 
-        // --- 1. Private Termine (User) ---
-        // Filter: 'private'
-        if (in_array('private', $filters)) {
-            // Hinweis: Hier laden wir globale Termine. Falls Termine räumlich gebunden sein sollen,
-            // müsste man $appointmentRepo->findByRoom(...) nutzen.
-            $appointments = $appointmentRepo->findAllForCalendar($start, $end);
+        // Wir laden ALLE Appointments im Zeitraum
+        $appointments = $appointmentRepo->findAllForCalendar($start, $end);
 
-            foreach ($appointments as $app) {
-                $events[] = (new CalendarEventDto(
-                    'appt_' . $app->getId(),
-                    $app->getTitle(),
-                    $app->getStartDate()->format('c'),
-                    $app->getEndDate()->format('c'),
-                    'private',
-                    $app->getColor() ?? '#9e9e9e',
-                    $app->isAllDay(),
-                    $app->getDescription()
-                ))->toArray();
+        foreach ($appointments as $app) {
+            $appRoom = $app->getRoom();
+
+            // 1. Raum-Filterung:
+            // Wenn wir in einem Raum-Kalender sind ($roomId gesetzt):
+            if ($roomId) {
+                // Wenn Termin einen Raum hat, aber es nicht der aktuelle ist -> überspringen
+                // Termine ohne Raum (Global) werden angezeigt.
+                if ($appRoom !== null && $appRoom->getId() != $roomId) {
+                    continue;
+                }
             }
+
+            // 2. Typ-Bestimmung & Kategorien-Filterung
+            $type = 'private'; // Standard
+            $color = $app->getColor() ?? '#9e9e9e';
+
+            if ($app->getCleaning()) {
+                $type = 'cleaning';
+                // Nur anzeigen, wenn Filter 'cleaning' aktiv ist
+                if (!in_array('cleaning', $filters)) continue;
+                // Optional: Farbe überschreiben oder User-Farbe nutzen
+            } elseif ($app->getTechnician()) {
+                $type = 'technician';
+                // Nur anzeigen, wenn Filter 'technician' aktiv ist
+                if (!in_array('technician', $filters)) continue;
+            } else {
+                // Standard (Privat/Sonstiges)
+                if (!in_array('private', $filters)) continue;
+            }
+
+            // End-Datum für FullCalendar anpassen
+            $startDate = clone $app->getStartDate();
+            $endDate = clone $app->getEndDate();
+            if ($app->isAllDay()) {
+                // FullCalendar erwartet exklusives End-Datum bei ganztägigen Events
+                // D.h. End-Datum muss 1 Tag nach dem letzten anzuzeigenden Tag sein
+                $endDate->modify('+1 day');
+            }
+
+            $eventData = (new CalendarEventDto(
+                'appt_' . $app->getId(),
+                $app->getTitle(),
+                $startDate->format('c'),
+                $endDate->format('c'),
+                $type, // Typ übergeben
+                $color,
+                $app->isAllDay(),
+                $app->getDescription()
+            ))->toArray();
+
+            // Metadaten für das Frontend-Modal
+            $eventData['extendedProps']['roomId'] = $appRoom ? $appRoom->getId() : null;
+            $eventData['extendedProps']['cleaningId'] = $app->getCleaning() ? $app->getCleaning()->getId() : null;
+            $eventData['extendedProps']['technicianId'] = $app->getTechnician() ? $app->getTechnician()->getId() : null;
+            $eventData['extendedProps']['type'] = $type;
+
+            $events[] = $eventData;
         }
 
-        // --- Raum-spezifische Events ---
-        if ($roomId) {
-            $room = $roomRepo->find($roomId);
-
-            if ($room) {
-                // --- 2. Reinigung ---
-                // Filter: 'cleaning'
-                if (in_array('cleaning', $filters)) {
-                    // TODO: Implementieren Sie hier die Logik für Ihre Cleaning Entity
-                    // Beispiel:
-                    // $cleanings = $cleaningRepo->findByRoomAndDate($room, $start, $end);
-                    // foreach ($cleanings as $c) {
-                    //     $events[] = (new CalendarEventDto(
-                    //         'clean_' . $c->getId(),
-                    //         'Reinigung', // oder $c->getName()
-                    //         $c->getStart()->format('c'),
-                    //         $c->getEnd()->format('c'),
-                    //         'cleaning',
-                    //         '#0dcaf0' // Cyan
-                    //     ))->toArray();
-                    // }
-                }
-
-                // --- 3. Produktion ---
-                // Filter: 'production'
-                if (in_array('production', $filters)) {
-                    // TODO: Implementieren Sie hier die Logik für Ihre Production Entity
-                    // Beispiel:
-                    // $productions = $productionRepo->findByRoomAndDate($room, $start, $end);
-                    // foreach ($productions as $p) {
-                    //     $events[] = (new CalendarEventDto(
-                    //         'prod_' . $p->getId(),
-                    //         $p->getName(),
-                    //         $p->getStart()->format('c'),
-                    //         $p->getEnd()->format('c'),
-                    //         'production',
-                    //         '#198754', // Green
-                    //         false,
-                    //         $p->getDescription()
-                    //     ))->toArray();
-                    // }
-                }
-
-                // --- 4. Techniker ---
-                // Filter: 'technician'
-                if (in_array('technician', $filters)) {
-                    // TODO: Implementieren Sie hier die Logik für Technician/ProductionTechnician
-                }
-            }
+        // --- Produktion Events (Falls separat) ---
+        if ($roomId && in_array('production', $filters)) {
+            // Hier ggf. Production Entity Logic, falls sie nicht über Appointment läuft.
+            // Aktuell lassen wir das aus, wie gewünscht.
         }
 
         return $this->json($events);
@@ -187,7 +180,6 @@ class HomeController extends AbstractController
         KeyManagement $key,
         Request $request,
         EntityManagerInterface $em,
-        // Repositories injizieren um Entities zu finden
         \App\Repository\UserRepository $userRepo,
         \App\Repository\TechnicianRepository $techRepo,
         \App\Repository\ProductionRepository $prodRepo,
@@ -197,7 +189,6 @@ class HomeController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         if (isset($data['status'])) {
-            // Enum Logik beachten
             $key->setStatus(KeyStatus::from($data['status']));
         }
 
@@ -225,13 +216,35 @@ class HomeController extends AbstractController
     }
 
     #[Route('/appointment/create', name: 'app_appointment_create', methods: ['POST'])]
-    public function createAppointment(Request $request, EntityManagerInterface $em): JsonResponse
+    public function createAppointment(
+        Request $request,
+        EntityManagerInterface $em,
+        RoomRepository $roomRepository,
+        CleaningRepository $cleanRepo,
+        TechnicianRepository $techRepo
+    ): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
         $appointment = new Appointment();
         $appointment->setTitle($data['title'] ?? 'Neuer Termin');
         $appointment->setDescription($data['description'] ?? null);
+
+        // Raum setzen
+        if (!empty($data['roomId'])) {
+            $room = $roomRepository->find($data['roomId']);
+            if ($room) {
+                $appointment->setRoom($room);
+            }
+        }
+
+        // Typ Relationen setzen
+        if (!empty($data['cleaningId'])) {
+            $appointment->setCleaning($cleanRepo->find($data['cleaningId']));
+        }
+        if (!empty($data['technicianId'])) {
+            $appointment->setTechnician($techRepo->find($data['technicianId']));
+        }
 
         try {
             $startDate = new \DateTime($data['start']);
@@ -242,12 +255,6 @@ class HomeController extends AbstractController
 
         $allDay = $data['allDay'] ?? false;
 
-        // Für ganztägige Events: Subtrahiere einen Tag vom End-Datum für die Speicherung
-        if ($allDay) {
-            $endDate->modify('-1 day');
-            $endDate->setTime(23, 59, 59);
-        }
-
         $appointment->setStartDate($startDate);
         $appointment->setEndDate($endDate);
         $appointment->setAllDay($allDay);
@@ -256,7 +263,6 @@ class HomeController extends AbstractController
         $em->persist($appointment);
         $em->flush();
 
-        // Für die Rückgabe: Bei ganztägigen Events wieder einen Tag hinzufügen
         $responseEndDate = clone $appointment->getEndDate();
         if ($allDay) {
             $responseEndDate->modify('+1 day')->setTime(0, 0, 0);
@@ -270,11 +276,19 @@ class HomeController extends AbstractController
             'end' => $responseEndDate->format('c'),
             'allDay' => $appointment->isAllDay(),
             'color' => $appointment->getColor(),
+            'roomId' => $appointment->getRoom() ? $appointment->getRoom()->getId() : null,
         ]);
     }
 
     #[Route('/appointment/{id}/edit', name: 'app_appointment_edit', methods: ['PUT'])]
-    public function editAppointment(Appointment $appointment, Request $request, EntityManagerInterface $em): JsonResponse
+    public function editAppointment(
+        Appointment $appointment,
+        Request $request,
+        EntityManagerInterface $em,
+        RoomRepository $roomRepository,
+        CleaningRepository $cleanRepo,
+        TechnicianRepository $techRepo
+    ): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
 
@@ -284,6 +298,25 @@ class HomeController extends AbstractController
         if (isset($data['description'])) {
             $appointment->setDescription($data['description']);
         }
+
+        // Raum Update
+        if (array_key_exists('roomId', $data)) {
+            if (!empty($data['roomId'])) {
+                $room = $roomRepository->find($data['roomId']);
+                $appointment->setRoom($room);
+            } else {
+                $appointment->setRoom(null);
+            }
+        }
+
+        // Typ Update (Relationen neu setzen oder löschen)
+        if (array_key_exists('cleaningId', $data)) {
+            $appointment->setCleaning(!empty($data['cleaningId']) ? $cleanRepo->find($data['cleaningId']) : null);
+        }
+        if (array_key_exists('technicianId', $data)) {
+            $appointment->setTechnician(!empty($data['technicianId']) ? $techRepo->find($data['technicianId']) : null);
+        }
+
         if (isset($data['start'])) {
             $appointment->setStartDate(new \DateTime($data['start']));
         }
@@ -291,7 +324,6 @@ class HomeController extends AbstractController
             $endDate = new \DateTime($data['end']);
             $allDay = $data['allDay'] ?? $appointment->isAllDay();
 
-            // Für ganztägige Events: Subtrahiere einen Tag vom End-Datum
             if ($allDay) {
                 $endDate->modify('-1 day');
                 $endDate->setTime(23, 59, 59);
@@ -303,15 +335,12 @@ class HomeController extends AbstractController
             $oldAllDay = $appointment->isAllDay();
             $newAllDay = $data['allDay'];
 
-            // Wenn sich der allDay-Status ändert, passe das End-Datum an
             if ($oldAllDay !== $newAllDay) {
                 $endDate = $appointment->getEndDate();
                 if ($newAllDay) {
-                    // Von zeitbasiert zu ganztägig: Subtrahiere einen Tag
                     $endDate->modify('-1 day');
                     $endDate->setTime(23, 59, 59);
                 } else {
-                    // Von ganztägig zu zeitbasiert: Füge einen Tag hinzu
                     $endDate->modify('+1 day');
                     $endDate->setTime(10, 0, 0);
                 }
@@ -341,15 +370,20 @@ class HomeController extends AbstractController
     #[Route('/appointments/all', name: 'app_appointments_all', methods: ['GET'])]
     public function getAllAppointments(AppointmentRepository $appointmentRepository): JsonResponse
     {
+        // Sidebar zeigt alle Termine (könnte man auch anpassen, hier erstmal alle)
         $appointments = $appointmentRepository->findAllForCalendar();
 
         $events = array_map(function (Appointment $appointment) {
             $endDate = clone $appointment->getEndDate();
 
-            // Für ganztägige Events: Füge einen Tag zum End-Datum hinzu für FullCalendar
             if ($appointment->isAllDay()) {
                 $endDate->modify('+1 day')->setTime(0, 0, 0);
             }
+
+            // Typ bestimmen für Sidebar
+            $type = 'private';
+            if ($appointment->getCleaning()) $type = 'cleaning';
+            elseif ($appointment->getTechnician()) $type = 'technician';
 
             return [
                 'id' => $appointment->getId(),
@@ -359,9 +393,11 @@ class HomeController extends AbstractController
                 'allDay' => $appointment->isAllDay(),
                 'color' => $appointment->getColor(),
                 'description' => $appointment->getDescription(),
-                // extendedProps für Filterung im Frontend
                 'extendedProps' => [
-                    'type' => 'private'
+                    'type' => $type,
+                    'roomId' => $appointment->getRoom() ? $appointment->getRoom()->getId() : null,
+                    'cleaningId' => $appointment->getCleaning() ? $appointment->getCleaning()->getId() : null,
+                    'technicianId' => $appointment->getTechnician() ? $appointment->getTechnician()->getId() : null,
                 ]
             ];
         }, $appointments);
