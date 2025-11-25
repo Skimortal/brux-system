@@ -2,8 +2,14 @@
 
 namespace App\Form;
 
+use App\Entity\Cleaning;
 use App\Entity\KeyManagement;
+use App\Entity\Production;
+use App\Entity\Room;
+use App\Entity\Technician;
+use App\Entity\User;
 use App\Enum\KeyStatus;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
@@ -36,9 +42,36 @@ class KeyManagementType extends AbstractType
                 ],
                 'required' => true,
             ])
-            ->add('borrowerName', TextType::class, [
-                'label' => 'key_management.borrower_name',
+            // Entleiher Optionen
+            ->add('user', EntityType::class, [
+                'class' => User::class,
+                'choice_label' => 'email', // oder name
+                'label' => 'Benutzer',
                 'required' => false,
+                'placeholder' => 'Kein Benutzer',
+            ])
+            ->add('technician', EntityType::class, [
+                'class' => Technician::class,
+                'choice_label' => 'name',
+                'label' => 'Techniker',
+                'required' => false,
+                'placeholder' => 'Kein Techniker',
+            ])
+            ->add('production', EntityType::class, [
+                'class' => Production::class,
+                'choice_label' => function (Production $production) {
+                    return $production->getDisplayName();
+                },
+                'label' => 'Produktion',
+                'required' => false,
+                'placeholder' => 'Keine Produktion',
+            ])
+            ->add('cleaning', EntityType::class, [
+                'class' => Cleaning::class,
+                'choice_label' => 'id', // Anpassen je nach Cleaning Entity
+                'label' => 'Reinigung',
+                'required' => false,
+                'placeholder' => 'Keine Reinigung',
             ])
             ->add('borrowDate', DateType::class, [
                 'label' => 'key_management.borrow_date',
@@ -49,11 +82,6 @@ class KeyManagementType extends AbstractType
                 'label' => 'key_management.return_date',
                 'widget' => 'single_text',
                 'required' => false,
-            ])
-            ->add('signature', TextType::class, [
-                'label' => 'key_management.signature',
-                'required' => false,
-                'help' => 'key_management.signature_help',
             ])
         ;
     }

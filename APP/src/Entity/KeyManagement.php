@@ -11,7 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 class KeyManagement extends Base
 {
     #[ORM\ManyToOne(inversedBy: 'keys')]
-    #[ORM\JoinColumn(nullable: true)] // Kann nullable sein, falls es Generalschlüssel gibt
+    #[ORM\JoinColumn(nullable: true)]
     private ?Room $room = null;
 
     #[ORM\Column(length: 255)]
@@ -20,17 +20,25 @@ class KeyManagement extends Base
     #[ORM\Column(type: Types::STRING, length: 50, enumType: KeyStatus::class)]
     private ?KeyStatus $status = KeyStatus::AVAILABLE;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $borrowerName = null;
-
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $borrowDate = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $returnDate = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $signature = null;
+    // Neue Relationen
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    private ?User $user = null;
+
+    #[ORM\ManyToOne(targetEntity: Technician::class)]
+    private ?Technician $technician = null;
+
+    #[ORM\ManyToOne(targetEntity: Production::class)]
+    private ?Production $production = null;
+
+    // Falls Cleaning eine Entity ist:
+    #[ORM\ManyToOne(targetEntity: Cleaning::class)]
+    private ?Cleaning $cleaning = null;
 
     public function getRoom(): ?Room
     {
@@ -68,18 +76,6 @@ class KeyManagement extends Base
         return $this;
     }
 
-    public function getBorrowerName(): ?string
-    {
-        return $this->borrowerName;
-    }
-
-    public function setBorrowerName(?string $borrowerName): static
-    {
-        $this->borrowerName = $borrowerName;
-
-        return $this;
-    }
-
     public function getBorrowDate(): ?\DateTimeInterface
     {
         return $this->borrowDate;
@@ -104,15 +100,58 @@ class KeyManagement extends Base
         return $this;
     }
 
-    public function getSignature(): ?string
+    public function getUser(): ?User
     {
-        return $this->signature;
+        return $this->user;
     }
 
-    public function setSignature(?string $signature): static
+    public function setUser(?User $user): static
     {
-        $this->signature = $signature;
-
+        $this->user = $user;
         return $this;
     }
+
+    public function getTechnician(): ?Technician
+    {
+        return $this->technician;
+    }
+
+    public function setTechnician(?Technician $technician): static
+    {
+        $this->technician = $technician;
+        return $this;
+    }
+
+    public function getProduction(): ?Production
+    {
+        return $this->production;
+    }
+
+    public function setProduction(?Production $production): static
+    {
+        $this->production = $production;
+        return $this;
+    }
+
+    public function getCleaning(): ?Cleaning
+    {
+        return $this->cleaning;
+    }
+
+    public function setCleaning(?Cleaning $cleaning): static
+    {
+        $this->cleaning = $cleaning;
+        return $this;
+    }
+
+    // Helper Methode um den aktuellen Besitzer anzuzeigen
+    public function getCurrentHolderName(): string
+    {
+        if ($this->user) return $this->user->getEmail(); // Oder ->getName() falls vorhanden
+        if ($this->technician) return $this->technician->getName();
+        if ($this->production) return $this->production->getDisplayName();
+        if ($this->cleaning) return 'Reinigung'; // Oder $this->cleaning->getName()
+        return 'Unbekannt';
+    }
+
 }

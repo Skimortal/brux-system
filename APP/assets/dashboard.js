@@ -270,7 +270,7 @@ function initSingleCalendar(calendarEl, isMobile) {
 
     const calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-        initialView: isMobile ? 'timeGridDay' : 'timeGridWeek', // Standard auf Woche geändert für Raumplanung
+        initialView: isMobile ? 'timeGridDay' : 'dayGridMonth', // Standard auf Woche geändert für Raumplanung
         locale: deLocale,
         timeZone: 'Europe/Berlin',
         firstDay: 1,
@@ -577,12 +577,165 @@ function deleteAppointment() {
     deleteAppointmentById(id);
 }
 
+var keyModal;
+function initKeyManagement() {
+    const modalEl = document.getElementById('keyManagementModal');
+    if (!modalEl) return; // Abbrechen wenn Modal nicht da ist
+
+    keyModal = new Modal(modalEl);
+
+    // Buttons binden
+    document.querySelectorAll('.key-item-btn').forEach(btn => {
+        // Alten Listener entfernen um doppelte Bindings bei Turbo zu vermeiden
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        newBtn.addEventListener('click', function() {
+            openKeyModal(this);
+        });
+    });
+
+    // Status Change Listener
+    const statusSelect = document.getElementById('keyStatus');
+    if (statusSelect) {
+        // Cleanup old listener
+        const newStatus = statusSelect.cloneNode(true);
+        statusSelect.parentNode.replaceChild(newStatus, statusSelect);
+
+        newStatus.addEventListener('change', function() {
+            const details = document.getElementById('borrowDetails');
+            if (this.value === 'borrowed') {
+                if(details) details.style.display = 'block';
+            } else {
+                if(details) details.style.display = 'none';
+            }
+        });
+    }
+
+    // Type Change Listener
+    const typeSelect = document.getElementById('borrowerType');
+    if (typeSelect) {
+        const newType = typeSelect.cloneNode(true);
+        typeSelect.parentNode.replaceChild(newType, typeSelect);
+
+        newType.addEventListener('change', function() {
+            // Alle Selects verstecken
+            document.querySelectorAll('.borrower-select').forEach(el => el.style.display = 'none');
+            // Passenden anzeigen
+            if (this.value) {
+                const targetId = this.value + 'SelectDiv'; // z.B. userSelectDiv
+                const target = document.getElementById(targetId);
+                if(target) target.style.display = 'block';
+            }
+        });
+    }
+
+    // Save Button
+    const saveBtn = document.getElementById('saveKeyBtn');
+    if (saveBtn) {
+        const newSave = saveBtn.cloneNode(true);
+        saveBtn.parentNode.replaceChild(newSave, saveBtn);
+        newSave.addEventListener('click', saveKeyData);
+    }
+}
+
+function openKeyModal(btn) {
+    if (!btn) return;
+
+    const id = btn.dataset.keyId;
+    const color = btn.dataset.keyColor;
+    const status = btn.dataset.keyStatus;
+
+    const keyIdEl = document.getElementById('keyId');
+    if(keyIdEl) keyIdEl.value = id;
+
+    const titleEl = document.getElementById('modalKeyColorTitle');
+    if(titleEl) titleEl.textContent = color;
+
+    const statusEl = document.getElementById('keyStatus');
+    if(statusEl) {
+        statusEl.value = status;
+        statusEl.dispatchEvent(new Event('change'));
+    }
+
+    const borrowEl = document.getElementById('keyBorrowDate');
+    if(borrowEl) borrowEl.value = btn.dataset.borrowDate;
+
+    const returnEl = document.getElementById('keyReturnDate');
+    if(returnEl) returnEl.value = btn.dataset.returnDate;
+
+    // Selektieren wer den Schlüssel hat
+    const uId = btn.dataset.userId;
+    const tId = btn.dataset.techId;
+    const pId = btn.dataset.prodId;
+    const cId = btn.dataset.cleanId;
+
+    const typeSelect = document.getElementById('borrowerType');
+    if(typeSelect) {
+        // Reset Values first
+        const uEl = document.getElementById('userId'); if(uEl) uEl.value = '';
+        const tEl = document.getElementById('technicianId'); if(tEl) tEl.value = '';
+        const pEl = document.getElementById('productionId'); if(pEl) pEl.value = '';
+        const cEl = document.getElementById('cleaningId'); if(cEl) cEl.value = '';
+
+        if (uId && uEl) { typeSelect.value = 'user'; uEl.value = uId; }
+        else if (tId && tEl) { typeSelect.value = 'technician'; tEl.value = tId; }
+        else if (pId && pEl) { typeSelect.value = 'production'; pEl.value = pId; }
+        else if (cId && cEl) { typeSelect.value = 'cleaning'; cEl.value = cId; }
+        else { typeSelect.value = ''; }
+
+        typeSelect.dispatchEvent(new Event('change'));
+    }
+
+    if(keyModal) keyModal.show();
+}
+
+function saveKeyData() {
+    const idEl = document.getElementById('keyId');
+    const statusEl = document.getElementById('keyStatus');
+
+    if(!idEl || !statusEl) return;
+
+    const id = idEl.value;
+    const status = statusEl.value;
+
+    // Safe get value helper
+    const getVal = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value : null;
+    };
+
+    const data = {
+        status: status,
+        userId: getVal('userId'),
+        technicianId: getVal('technicianId'),
+        productionId: getVal('productionId'),
+        cleaningId: getVal('cleaningId'),
+        borrowDate: getVal('keyBorrowDate'),
+        returnDate: getVal('keyReturnDate')
+    };
+
+    fetch(`/dashboard/key/${id}/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(res => {
+        if(res.ok) {
+            keyModal.hide();
+            window.location.reload();
+        } else {
+            alert('Fehler beim Speichern');
+        }
+    }).catch(e => console.error(e));
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     initDoughnutChart();
     initCalendar();
+    initKeyManagement();
 });
 
 document.addEventListener('turbo:render', function() {
     initDoughnutChart();
     initCalendar();
+    initKeyManagement();
 });

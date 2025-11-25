@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\DTO\CalendarEventDto;
 use App\Entity\Appointment;
+use App\Entity\KeyManagement;
 use App\Entity\Room;
 use App\Enum\KeyStatus;
 use App\Repository\AppointmentRepository;
@@ -34,35 +35,44 @@ class HomeController extends AbstractController
     #[Route('/dashboard', name: 'app_dashboard')]
     public function dashboard(
         RoomRepository $roomRepository,
-        KeyManagementRepository $keyRepository
+        KeyManagementRepository $keyRepository,
+        \App\Repository\UserRepository $userRepo,
+        \App\Repository\TechnicianRepository $techRepo,
+        \App\Repository\ProductionRepository $prodRepo,
+        \App\Repository\CleaningRepository $cleanRepo
     ): Response
     {
         // 1. Nur Räume laden, die angezeigt werden sollen
         $rooms = $roomRepository->findBy(['showOnDashboard' => true]);
 
-        // 2. Alle aktiven Schlüssel laden
-        // Logik: Rückgabedatum ist leer UND Status ist nicht "Verfügbar"
-        $allActiveKeys = $keyRepository->createQueryBuilder('k')
-            ->where('k.returnDate IS NULL')
-            ->andWhere('k.status != :status')
-            ->setParameter('status', KeyStatus::AVAILABLE)
-            ->leftJoin('k.room', 'r')
-            ->addSelect('r')
-            ->getQuery()
-            ->getResult();
+        // 2. ALLE Schlüssel laden, gruppiert nach Raum (und solche ohne Raum separat?)
+        // Wir wollen alle Schlüssel anzeigen, um den Status zu sehen
+        $allKeys = $keyRepository->findAll();
 
-        // 3. Schlüssel nach Raum gruppieren für einfachere Anzeige im Twig
+        // 3. Schlüssel nach Raum gruppieren
         $keysByRoom = [];
-        foreach ($allActiveKeys as $key) {
+        $keysWithoutRoom = [];
+
+        foreach ($allKeys as $key) {
             if ($key->getRoom()) {
+                // Nur anzeigen, wenn der Raum auch auf dem Dashboard ist?
+                // Oder alle Räume anzeigen in der Sidebar?
+                // Anforderung: "Schlüsselübersicht soll raumübergreifend sein"
                 $keysByRoom[$key->getRoom()->getId()][] = $key;
+            } else {
+                $keysWithoutRoom[] = $key;
             }
         }
 
         return $this->render('home/dashboard.html.twig', [
             'user' => $this->getUser(),
             'rooms' => $rooms,
-            'keysByRoom' => $keysByRoom
+            'keysByRoom' => $keysByRoom,
+            'keysWithoutRoom' => $keysWithoutRoom,
+            'allUsers' => $userRepo->findAll(),
+            'allTechnicians' => $techRepo->findAll(),
+            'allProductions' => $prodRepo->findAll(),
+            'allCleanings' => $cleanRepo->findAll(),
         ]);
     }
 
@@ -72,7 +82,7 @@ class HomeController extends AbstractController
         AppointmentRepository $appointmentRepo,
         CleaningRepository $cleaningRepo,
         ProductionRepository $productionRepo,
-        // TechnicianRepository $techRepo, // Hier einkommentieren, wenn Repository existiert
+        TechnicianRepository $techRepo,
         RoomRepository $roomRepo
     ): JsonResponse
     {
@@ -170,6 +180,48 @@ class HomeController extends AbstractController
         }
 
         return $this->json($events);
+    }
+
+    #[Route('/dashboard/key/{id}/update', name: 'app_dashboard_key_update', methods: ['POST'])]
+    public function updateKey(
+        KeyManagement $key,
+        Request $request,
+        EntityManagerInterface $em,
+        // Repositories injizieren um Entities zu finden
+        \App\Repository\UserRepository $userRepo,
+        \App\Repository\TechnicianRepository $techRepo,
+        \App\Repository\ProductionRepository $prodRepo,
+        \App\Repository\CleaningRepository $cleanRepo
+    ): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (isset($data['status'])) {
+            // Enum Logik beachten
+            $key->setStatus(KeyStatus::from($data['status']));
+        }
+
+        // Reset relations
+        $key->setUser(null);
+        $key->setTechnician(null);
+        $key->setProduction(null);
+        $key->setCleaning(null);
+
+        if (!empty($data['userId'])) $key->setUser($userRepo->find($data['userId']));
+        if (!empty($data['technicianId'])) $key->setTechnician($techRepo->find($data['technicianId']));
+        if (!empty($data['productionId'])) $key->setProduction($prodRepo->find($data['productionId']));
+        if (!empty($data['cleaningId'])) $key->setCleaning($cleanRepo->find($data['cleaningId']));
+
+        if (isset($data['borrowDate'])) {
+            $key->setBorrowDate(!empty($data['borrowDate']) ? new \DateTime($data['borrowDate']) : null);
+        }
+        if (isset($data['returnDate'])) {
+            $key->setReturnDate(!empty($data['returnDate']) ? new \DateTime($data['returnDate']) : null);
+        }
+
+        $em->flush();
+
+        return $this->json(['success' => true]);
     }
 
     #[Route('/appointment/create', name: 'app_appointment_create', methods: ['POST'])]

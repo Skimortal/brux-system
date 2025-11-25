@@ -1,84 +1,217 @@
-
 {% extends 'base_logged_in.html.twig' %}
 
 {% block title %}Dashboard{% endblock %}
 
 {% block logged_in_content %}
-    <div class="main-content bgc-grey-100">
-        <div class="mainContent">
+<div class="main-content bgc-grey-100">
+    <div class="mainContent">
+        <div class="row gap-20">
 
-            {# Filter Leiste #}
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="bgc-white p-20 bd">
-                        <h6 class="c-grey-900">Ansicht Filtern</h6>
-                        <div class="d-flex gap-3 flex-wrap" id="calendar-filters">
-                            <div class="form-check">
-                                <input class="form-check-input filter-checkbox" type="checkbox" value="production" id="filterProduction" checked>
-                                <label class="form-check-label" for="filterProduction">Produktion</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input filter-checkbox" type="checkbox" value="technician" id="filterTechnician" checked>
-                                <label class="form-check-label" for="filterTechnician">Techniker</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input filter-checkbox" type="checkbox" value="cleaning" id="filterCleaning" checked>
-                                <label class="form-check-label" for="filterCleaning">Reinigung</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input filter-checkbox" type="checkbox" value="private" id="filterPrivate" checked>
-                                <label class="form-check-label" for="filterPrivate">Privat / Sonstiges</label>
-                            </div>
+            {# --- Linke Spalte: NUR Schlüsselübersicht --- #}
+            <div class="col-md-3">
+                <div class="bdrs-3 ov-h bgc-white bd">
+                    <div class="bgc-deep-purple-500 ta-c p-15">
+                        <h4 class="c-white m-0">Schlüsselübersicht</h4>
+                    </div>
+                    <div class="p-0">
+                        {# Scrollbarer Bereich falls viele Schlüssel #}
+                        <div class="layer w-100" style="max-height: 80vh; overflow-y: auto;">
+                            {% for roomId, keys in keysByRoom %}
+                                {# Raumnamen ermitteln #}
+                                {% set roomName = keys[0].room ? keys[0].room.name : 'Unbekannt' %}
+
+                                <div class="p-15 border-bottom">
+                                    <h6 class="c-grey-900 mB-10">{{ roomName }}</h6>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for key in keys %}
+                                            {% set statusColor = 'success' %}
+                                            {% if key.status.value == 'borrowed' %}
+                                                {% set statusColor = 'warning' %}
+                                            {% elseif key.status.value == 'lost' %}
+                                                {% set statusColor = 'danger' %}
+                                            {% endif %}
+
+                                            <button type="button"
+                                                    class="btn btn-outline-{{ statusColor }} btn-sm d-flex align-items-center gap-2 key-item-btn"
+                                                    data-key-id="{{ key.id }}"
+                                                    data-key-color="{{ key.keyColor }}"
+                                                    data-key-status="{{ key.status.value }}"
+                                                    data-borrow-date="{{ key.borrowDate ? key.borrowDate|date('Y-m-d') : '' }}"
+                                                    data-return-date="{{ key.returnDate ? key.returnDate|date('Y-m-d') : '' }}"
+                                                {# Hier IDs der Relationen übergeben #}
+                                                    data-user-id="{{ key.user ? key.user.id : '' }}"
+                                                    data-tech-id="{{ key.technician ? key.technician.id : '' }}"
+                                                    data-prod-id="{{ key.production ? key.production.id : '' }}"
+                                                    data-clean-id="{{ key.cleaning ? key.cleaning.id : '' }}"
+                                                    title="Farbe: {{ key.keyColor }}">
+                                                <i class="ti-key"></i>
+                                                <span>{{ key.keyColor }}</span>
+                                            </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+
+                            {% if keysWithoutRoom is not empty %}
+                                <div class="p-15 border-bottom">
+                                    <h6 class="c-grey-900 mB-10">Ohne Raumzuordnung</h6>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        {% for key in keysWithoutRoom %}
+                                            {# ... Button Logic wie oben ... #}
+                                            <button type="button"
+                                                    class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2 key-item-btn"
+                                                {# Daten attribute ... #}
+                                            >
+                                                <i class="ti-key"></i>
+                                                <span>{{ key.keyColor }}</span>
+                                            </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
 
-            {# Raum Liste #}
-            <div class="row">
-                {% for room in rooms %}
-                    <div class="col-12 mb-5">
-                        <div class="bgc-white p-20 bd">
-                            <div class="row">
-                                {# Linke Spalte: Infos & Schlüssel #}
-                                <div class="col-md-3 border-end">
-                                    <h4 class="c-grey-900 mB-20">{{ room.name }}</h4>
-
-                                    <div class="layer w-100 mB-20">
-                                        <h6 class="lh-1 c-deep-purple-500">Schlüsselstatus</h6>
-                                        <hr>
-                                        {% if keysByRoom[room.id] is defined and keysByRoom[room.id]|length > 0 %}
-                                            <ul class="list-group list-group-flush">
-                                                {% for keyEntry in keysByRoom[room.id] %}
-                                                    <li class="list-group-item bg-transparent px-0">
-                                                        <i class="ti-key text-warning me-2"></i>
-                                                        <strong>{{ keyEntry.user ? keyEntry.user.email : 'Unbekannt' }}</strong>
-                                                        <br>
-                                                        <small class="text-muted">
-                                                            Seit: {{ keyEntry.takenAt|date('d.m.Y H:i') }}
-                                                            {# Logik für Funktion (Produktion/Reinigung etc) müsste vom User oder Key Eintrag kommen #}
-                                                        </small>
-                                                    </li>
-                                                {% endfor %}
-                                            </ul>
-                                        {% else %}
-                                            <p class="text-success"><i class="ti-check-box"></i> Alle Schlüssel vorhanden</p>
-                                        {% endif %}
-                                    </div>
-                                </div>
-
-                                {# Rechte Spalte: Kalender #}
-                                <div class="col-md-9">
-                                    <div class="room-calendar" data-room-id="{{ room.id }}"></div>
-                                </div>
+            {# --- Rechte Spalte: Filter & Kalender Grid --- #}
+            <div class="col-md-9">
+                {# ... Filter & Kalender (unverändert) ... #}
+                <div class="bgc-white p-20 bd mB-20">
+                    {# ... Filter HTML ... #}
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <h6 class="c-grey-900 m-0">Kalender Filter</h6>
+                        <div class="d-flex gap-3 flex-wrap" id="calendar-filters">
+                            <div class="form-check">
+                                <input class="form-check-input filter-checkbox" type="checkbox" value="production"
+                                       id="filterProduction" checked>
+                                <label class="form-check-label" for="filterProduction">Produktion</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input filter-checkbox" type="checkbox" value="technician"
+                                       id="filterTechnician" checked>
+                                <label class="form-check-label" for="filterTechnician">Techniker</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input filter-checkbox" type="checkbox" value="cleaning"
+                                       id="filterCleaning" checked>
+                                <label class="form-check-label" for="filterCleaning">Reinigung</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input filter-checkbox" type="checkbox" value="private"
+                                       id="filterPrivate" checked>
+                                <label class="form-check-label" for="filterPrivate">Privat / Sonstiges</label>
                             </div>
                         </div>
                     </div>
-                {% else %}
-                    <div class="col-12">
-                        <div class="alert alert-info">Keine Räume für das Dashboard konfiguriert.</div>
-                    </div>
-                {% endfor %}
+                </div>
+                <div class="row">
+                    {% for room in rooms %}
+                        <div class="col-12 col-xl-6 mb-4">
+                            <div class="bgc-white p-15 bd h-100">
+                                <h5 class="c-grey-900 border-bottom pb-2 mB-15 text-center">{{ room.name }}</h5>
+                                <div class="room-calendar" data-room-id="{{ room.id }}"></div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Key Management Modal #}
+    <div class="modal fade" id="keyManagementModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Schlüssel verwalten <span id="modalKeyColorTitle" class="badge bg-secondary"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="keyManagementForm">
+                        <input type="hidden" id="keyId">
+
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="keyStatus">
+                                <option value="available">Verfügbar</option>
+                                <option value="borrowed">Verliehen</option>
+                                <option value="lost">Verloren</option>
+                            </select>
+                        </div>
+
+                        <div id="borrowDetails" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">Verliehen an (Typ)</label>
+                                <select class="form-select" id="borrowerType">
+                                    <option value="">Bitte wählen...</option>
+                                    <option value="user">Benutzer</option>
+                                    <option value="technician">Techniker</option>
+                                    <option value="production">Produktion</option>
+                                    <option value="cleaning">Reinigung</option>
+                                </select>
+                            </div>
+
+                            {# Benutzer Select #}
+                            <div class="mb-3 borrower-select" id="userSelectDiv" style="display:none;">
+                                <label class="form-label">Benutzer</label>
+                                <select class="form-select" id="userId">
+                                    <option value="">Wählen...</option>
+                                    {% for u in allUsers %}
+                                        <option value="{{ u.id }}">{{ u.email }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            {# Techniker Select #}
+                            <div class="mb-3 borrower-select" id="technicianSelectDiv" style="display:none;">
+                                <label class="form-label">Techniker</label>
+                                <select class="form-select" id="technicianId">
+                                    <option value="">Wählen...</option>
+                                    {% for t in allTechnicians %}
+                                        <option value="{{ t.id }}">{{ t.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            {# Produktion Select #}
+                            <div class="mb-3 borrower-select" id="productionSelectDiv" style="display:none;">
+                                <label class="form-label">Produktion</label>
+                                <select class="form-select" id="productionId">
+                                    <option value="">Wählen...</option>
+                                    {% for p in allProductions %}
+                                        <option value="{{ p.id }}">{{ p.displayName }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            {# Reinigung Select #}
+                            <div class="mb-3 borrower-select" id="cleaningSelectDiv" style="display:none;">
+                                <label class="form-label">Reinigung</label>
+                                <select class="form-select" id="cleaningId">
+                                    <option value="">Wählen...</option>
+                                    {% for c in allCleanings %}
+                                        {# Annahme: Cleaning hat Name oder ID #}
+                                        <option value="{{ c.id }}">{{ c.id }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Ausgabedatum</label>
+                                <input type="date" class="form-control" id="keyBorrowDate">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Rückgabedatum (geplant)</label>
+                                <input type="date" class="form-control" id="keyReturnDate">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="button" class="btn btn-primary" id="saveKeyBtn">Speichern</button>
+                </div>
             </div>
         </div>
     </div>
@@ -144,4 +277,5 @@
             </div>
         </div>
     </div>
+</div>
 {% endblock %}

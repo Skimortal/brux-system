@@ -29,7 +29,6 @@
                         <tr>
                             <th>{{ 'key_management.key_color'|trans }}</th>
                             <th>{{ 'key_management.status'|trans }}</th>
-                            <th>{{ 'key_management.borrower_name'|trans }}</th>
                             <th>{{ 'key_management.borrow_date'|trans }}</th>
                             <th>{{ 'key_management.return_date'|trans }}</th>
                             <th>{{ 'action'|trans }}</th>
@@ -39,7 +38,6 @@
                         <tr>
                             <th>{{ 'key_management.key_color'|trans }}</th>
                             <th>{{ 'key_management.status'|trans }}</th>
-                            <th>{{ 'key_management.borrower_name'|trans }}</th>
                             <th>{{ 'key_management.borrow_date'|trans }}</th>
                             <th>{{ 'key_management.return_date'|trans }}</th>
                             <th>{{ 'action'|trans }}</th>
@@ -54,7 +52,6 @@
                                         {{ key.status.getLabel()|trans }}
                                     </span>
                                     </a></td>
-                                <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">{{ key.borrowerName }}</a></td>
                                 <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">{{ key.borrowDate ? key.borrowDate|date('d.m.Y') : '-' }}</a></td>
                                 <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">{{ key.returnDate ? key.returnDate|date('d.m.Y') : '-' }}</a></td>
                                 <td class="text-nowrap">
