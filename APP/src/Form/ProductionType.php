@@ -3,13 +3,11 @@
 namespace App\Form;
 
 use App\Entity\Production;
-use App\Enum\ProductionType as ProductionTypeEnum;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
-use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\UrlType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -18,64 +16,32 @@ class ProductionType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('type', ChoiceType::class, [
-                'label' => 'production.type',
-                'choices' => [
-                    'production.type.individual' => ProductionTypeEnum::INDIVIDUAL,
-                    'production.type.group' => ProductionTypeEnum::GROUP,
-                ],
-                'choice_value' => function (?ProductionTypeEnum $entity) {
-                    return $entity?->value;
-                },
+            ->add('externalId', TextType::class, [
+                'label' => 'production.external_id',
+                'required' => false,
+            ])
+            ->add('title', TextType::class, [
+                'label' => 'production.title',
                 'required' => true,
-                'attr' => ['class' => 'form-control'],
             ])
-
-            // Group fields
-            ->add('groupName', TextType::class, [
-                'label' => 'production.group_name',
+            ->add('permalink', UrlType::class, [
+                'label' => 'production.permalink',
                 'required' => false,
             ])
-            ->add('mainContactName', TextType::class, [
-                'label' => 'production.main_contact_name',
+            ->add('postThumbnailUrl', UrlType::class, [
+                'label' => 'production.post_thumbnail_url',
                 'required' => false,
             ])
-            ->add('address', TextareaType::class, [
-                'label' => 'production.address',
+            ->add('contentHtml', TextareaType::class, [
+                'label' => 'production.content_html',
                 'required' => false,
+                'attr' => ['rows' => 10],
             ])
-            ->add('phone', TextType::class, [
-                'label' => 'production.phone',
+            ->add('excerptHtml', TextareaType::class, [
+                'label' => 'production.excerpt_html',
                 'required' => false,
+                'attr' => ['rows' => 5],
             ])
-            ->add('email', EmailType::class, [
-                'label' => 'production.email',
-                'required' => false,
-            ])
-            ->add('mainContactFunction', TextType::class, [
-                'label' => 'production.main_contact_function',
-                'required' => false,
-            ])
-
-            // Individual person fields
-            ->add('personName', TextType::class, [
-                'label' => 'production.person_name',
-                'required' => false,
-            ])
-            ->add('personAddress', TextareaType::class, [
-                'label' => 'production.person_address',
-                'required' => false,
-            ])
-            ->add('personPhone', TextType::class, [
-                'label' => 'production.person_phone',
-                'required' => false,
-            ])
-            ->add('personEmail', EmailType::class, [
-                'label' => 'production.person_email',
-                'required' => false,
-            ])
-
-            // Technicians collection
             ->add('technicians', CollectionType::class, [
                 'entry_type' => ProductionTechnicianType::class,
                 'entry_options' => [

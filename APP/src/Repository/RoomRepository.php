@@ -15,4 +15,9 @@ class RoomRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Room::class);
     }
+
+    public function findByExternalId(string $externalId): ?Room
+    {
+        return $this->findOneBy(['externalId' => $externalId]);
+    }
 }

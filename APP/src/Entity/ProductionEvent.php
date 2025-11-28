@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use App\Enum\EventReservationStatus;
+use App\Enum\EventStatus;
 use App\Repository\ProductionEventRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -11,340 +13,200 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: ProductionEventRepository::class)]
 class ProductionEvent extends Base
 {
-    #[ORM\Column(length: 255)]
-    private ?string $name = null;
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $eventIndex = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $presenceStartDate = null;
+    private ?\DateTimeInterface $date = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $presenceEndDate = null;
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $timeFrom = null;
 
-    #[ORM\Column(type: Types::JSON, nullable: true)]
-    private ?array $performanceDates = [];
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $timeTo = null;
 
-    #[ORM\Column(type: Types::JSON, nullable: true)]
-    private ?array $rehearsalDates = [];
+    #[ORM\ManyToOne(targetEntity: Room::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Room $room = null;
 
-    #[ORM\Column(type: Types::JSON, nullable: true)]
-    private ?array $setupDates = [];
+    #[ORM\Column(type: Types::STRING, length: 50, enumType: EventStatus::class, nullable: true)]
+    private ?EventStatus $status = null;
 
-    #[ORM\Column(type: Types::JSON, nullable: true)]
-    private ?array $teardownDates = [];
+    #[ORM\Column(type: Types::STRING, length: 50, enumType: EventReservationStatus::class, nullable: true)]
+    private ?EventReservationStatus $reservationStatus = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $generalRehearsalDate = null;
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $quota = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $photoSessionDate = null;
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $incomingTotal = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $keyHandoverDate = null;
-
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $keyReturnDate = null;
-
-    #[ORM\Column(type: Types::JSON, nullable: true)]
-    private ?array $mainRehearsals = [];
-
-    #[ORM\Column(type: Types::JSON, nullable: true)]
-    private ?array $photos = [];
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $freeSeats = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $trailer = null;
+    private ?string $reservationNote = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $projectDescription = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $reservations = [];
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $infoTexts = null;
-
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $desiredTicketPrices = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $duration = null;
-
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $creditsAndBios = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $technicalRider = null;
-
-    /**
-     * @var Collection<int, ProductionTechnician>
-     */
-    #[ORM\ManyToMany(targetEntity: ProductionTechnician::class)]
-    private Collection $externalTechnicians;
-
-    #[ORM\ManyToOne(targetEntity: Production::class)]
+    #[ORM\ManyToOne(targetEntity: Production::class, inversedBy: 'events')]
+    #[ORM\JoinColumn(nullable: false)]
     private ?Production $production = null;
+
+    #[ORM\ManyToMany(targetEntity: EventCategory::class)]
+    #[ORM\JoinTable(name: 'production_event_category')]
+    private Collection $categories;
+
+    #[ORM\OneToMany(targetEntity: EventPrice::class, mappedBy: 'event', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $priceList;
 
     public function __construct()
     {
-        $this->externalTechnicians = new ArrayCollection();
+        $this->categories = new ArrayCollection();
+        $this->priceList = new ArrayCollection();
     }
 
-    public function getName(): ?string
+    public function getEventIndex(): ?int
     {
-        return $this->name;
+        return $this->eventIndex;
     }
 
-    public function setName(string $name): static
+    public function setEventIndex(?int $eventIndex): static
     {
-        $this->name = $name;
+        $this->eventIndex = $eventIndex;
 
         return $this;
     }
 
-    public function getPresenceStartDate(): ?\DateTimeInterface
+    public function getDate(): ?\DateTimeInterface
     {
-        return $this->presenceStartDate;
+        return $this->date;
     }
 
-    public function setPresenceStartDate(?\DateTimeInterface $presenceStartDate): static
+    public function setDate(?\DateTimeInterface $date): static
     {
-        $this->presenceStartDate = $presenceStartDate;
+        $this->date = $date;
 
         return $this;
     }
 
-    public function getPresenceEndDate(): ?\DateTimeInterface
+    public function getTimeFrom(): ?string
     {
-        return $this->presenceEndDate;
+        return $this->timeFrom;
     }
 
-    public function setPresenceEndDate(?\DateTimeInterface $presenceEndDate): static
+    public function setTimeFrom(?string $timeFrom): static
     {
-        $this->presenceEndDate = $presenceEndDate;
+        $this->timeFrom = $timeFrom;
 
         return $this;
     }
 
-    public function getPerformanceDates(): ?array
+    public function getTimeTo(): ?string
     {
-        return $this->performanceDates;
+        return $this->timeTo;
     }
 
-    public function setPerformanceDates(?array $performanceDates): static
+    public function setTimeTo(?string $timeTo): static
     {
-        $this->performanceDates = $performanceDates;
+        $this->timeTo = $timeTo;
 
         return $this;
     }
 
-    public function getRehearsalDates(): ?array
+    public function getRoom(): ?Room
     {
-        return $this->rehearsalDates;
+        return $this->room;
     }
 
-    public function setRehearsalDates(?array $rehearsalDates): static
+    public function setRoom(?Room $room): static
     {
-        $this->rehearsalDates = $rehearsalDates;
+        $this->room = $room;
 
         return $this;
     }
 
-    public function getSetupDates(): ?array
+    public function getStatus(): ?EventStatus
     {
-        return $this->setupDates;
+        return $this->status;
     }
 
-    public function setSetupDates(?array $setupDates): static
+    public function setStatus(?EventStatus $status): static
     {
-        $this->setupDates = $setupDates;
+        $this->status = $status;
 
         return $this;
     }
 
-    public function getTeardownDates(): ?array
+    public function getReservationStatus(): ?EventReservationStatus
     {
-        return $this->teardownDates;
+        return $this->reservationStatus;
     }
 
-    public function setTeardownDates(?array $teardownDates): static
+    public function setReservationStatus(?EventReservationStatus $reservationStatus): static
     {
-        $this->teardownDates = $teardownDates;
+        $this->reservationStatus = $reservationStatus;
 
         return $this;
     }
 
-    public function getGeneralRehearsalDate(): ?\DateTimeInterface
+    public function getQuota(): ?int
     {
-        return $this->generalRehearsalDate;
+        return $this->quota;
     }
 
-    public function setGeneralRehearsalDate(?\DateTimeInterface $generalRehearsalDate): static
+    public function setQuota(?int $quota): static
     {
-        $this->generalRehearsalDate = $generalRehearsalDate;
+        $this->quota = $quota;
 
         return $this;
     }
 
-    public function getPhotoSessionDate(): ?\DateTimeInterface
+    public function getIncomingTotal(): ?int
     {
-        return $this->photoSessionDate;
+        return $this->incomingTotal;
     }
 
-    public function setPhotoSessionDate(?\DateTimeInterface $photoSessionDate): static
+    public function setIncomingTotal(?int $incomingTotal): static
     {
-        $this->photoSessionDate = $photoSessionDate;
+        $this->incomingTotal = $incomingTotal;
 
         return $this;
     }
 
-    public function getKeyHandoverDate(): ?\DateTimeInterface
+    public function getFreeSeats(): ?int
     {
-        return $this->keyHandoverDate;
+        return $this->freeSeats;
     }
 
-    public function setKeyHandoverDate(?\DateTimeInterface $keyHandoverDate): static
+    public function setFreeSeats(?int $freeSeats): static
     {
-        $this->keyHandoverDate = $keyHandoverDate;
+        $this->freeSeats = $freeSeats;
 
         return $this;
     }
 
-    public function getKeyReturnDate(): ?\DateTimeInterface
+    public function getReservationNote(): ?string
     {
-        return $this->keyReturnDate;
+        return $this->reservationNote;
     }
 
-    public function setKeyReturnDate(?\DateTimeInterface $keyReturnDate): static
+    public function setReservationNote(?string $reservationNote): static
     {
-        $this->keyReturnDate = $keyReturnDate;
+        $this->reservationNote = $reservationNote;
 
         return $this;
     }
 
-    public function getMainRehearsals(): ?array
+    public function getReservations(): ?array
     {
-        return $this->mainRehearsals;
+        return $this->reservations;
     }
 
-    public function setMainRehearsals(?array $mainRehearsals): static
+    public function setReservations(?array $reservations): static
     {
-        $this->mainRehearsals = $mainRehearsals;
-
-        return $this;
-    }
-
-    public function getPhotos(): ?array
-    {
-        return $this->photos;
-    }
-
-    public function setPhotos(?array $photos): static
-    {
-        $this->photos = $photos;
-
-        return $this;
-    }
-
-    public function getTrailer(): ?string
-    {
-        return $this->trailer;
-    }
-
-    public function setTrailer(?string $trailer): static
-    {
-        $this->trailer = $trailer;
-
-        return $this;
-    }
-
-    public function getProjectDescription(): ?string
-    {
-        return $this->projectDescription;
-    }
-
-    public function setProjectDescription(?string $projectDescription): static
-    {
-        $this->projectDescription = $projectDescription;
-
-        return $this;
-    }
-
-    public function getInfoTexts(): ?string
-    {
-        return $this->infoTexts;
-    }
-
-    public function setInfoTexts(?string $infoTexts): static
-    {
-        $this->infoTexts = $infoTexts;
-
-        return $this;
-    }
-
-    public function getDesiredTicketPrices(): ?string
-    {
-        return $this->desiredTicketPrices;
-    }
-
-    public function setDesiredTicketPrices(?string $desiredTicketPrices): static
-    {
-        $this->desiredTicketPrices = $desiredTicketPrices;
-
-        return $this;
-    }
-
-    public function getDuration(): ?string
-    {
-        return $this->duration;
-    }
-
-    public function setDuration(?string $duration): static
-    {
-        $this->duration = $duration;
-
-        return $this;
-    }
-
-    public function getCreditsAndBios(): ?string
-    {
-        return $this->creditsAndBios;
-    }
-
-    public function setCreditsAndBios(?string $creditsAndBios): static
-    {
-        $this->creditsAndBios = $creditsAndBios;
-
-        return $this;
-    }
-
-    public function getTechnicalRider(): ?string
-    {
-        return $this->technicalRider;
-    }
-
-    public function setTechnicalRider(?string $technicalRider): static
-    {
-        $this->technicalRider = $technicalRider;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, ProductionTechnician>
-     */
-    public function getExternalTechnicians(): Collection
-    {
-        return $this->externalTechnicians;
-    }
-
-    public function addExternalTechnician(ProductionTechnician $externalTechnician): static
-    {
-        if (!$this->externalTechnicians->contains($externalTechnician)) {
-            $this->externalTechnicians->add($externalTechnician);
-        }
-
-        return $this;
-    }
-
-    public function removeExternalTechnician(ProductionTechnician $externalTechnician): static
-    {
-        $this->externalTechnicians->removeElement($externalTechnician);
+        $this->reservations = $reservations;
 
         return $this;
     }
@@ -357,6 +219,59 @@ class ProductionEvent extends Base
     public function setProduction(?Production $production): static
     {
         $this->production = $production;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, EventCategory>
+     */
+    public function getCategories(): Collection
+    {
+        return $this->categories;
+    }
+
+    public function addCategory(EventCategory $category): static
+    {
+        if (!$this->categories->contains($category)) {
+            $this->categories->add($category);
+        }
+
+        return $this;
+    }
+
+    public function removeCategory(EventCategory $category): static
+    {
+        $this->categories->removeElement($category);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, EventPrice>
+     */
+    public function getPriceList(): Collection
+    {
+        return $this->priceList;
+    }
+
+    public function addPriceList(EventPrice $priceList): static
+    {
+        if (!$this->priceList->contains($priceList)) {
+            $this->priceList->add($priceList);
+            $priceList->setEvent($this);
+        }
+
+        return $this;
+    }
+
+    public function removePriceList(EventPrice $priceList): static
+    {
+        if ($this->priceList->removeElement($priceList)) {
+            if ($priceList->getEvent() === $this) {
+                $priceList->setEvent(null);
+            }
+        }
 
         return $this;
     }

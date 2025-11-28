@@ -1,4 +1,3 @@
-
 {% extends 'base_logged_in.html.twig' %}
 
 {% block title %}{{ 'production_event.list'|trans }}{% endblock %}
@@ -28,32 +27,35 @@
                     <table class="mcDataTable table table-striped table-bordered" cellspacing="0" width="100%">
                         <thead>
                         <tr>
-                            <th>{{ 'production_event.name'|trans }}</th>
                             <th>{{ 'production_event.production'|trans }}</th>
-                            <th>{{ 'production_event.presence_period'|trans }}</th>
+                            <th>{{ 'production_event.date'|trans }}</th>
+                            <th>{{ 'production_event.time'|trans }}</th>
+                            <th>{{ 'production_event.room'|trans }}</th>
+                            <th>{{ 'production_event.status'|trans }}</th>
                             <th>{{ 'action'|trans }}</th>
                         </tr>
                         </thead>
                         <tfoot>
                         <tr>
-                            <th>{{ 'production_event.name'|trans }}</th>
                             <th>{{ 'production_event.production'|trans }}</th>
-                            <th>{{ 'production_event.presence_period'|trans }}</th>
+                            <th>{{ 'production_event.date'|trans }}</th>
+                            <th>{{ 'production_event.time'|trans }}</th>
+                            <th>{{ 'production_event.room'|trans }}</th>
+                            <th>{{ 'production_event.status'|trans }}</th>
                             <th>{{ 'action'|trans }}</th>
                         </tr>
                         </tfoot>
                         <tbody>
                         {% for production_event in production_events %}
                             <tr>
-                                <td><a href="{{ path('app_production_event_edit', { id: production_event.id }) }}">{{ production_event.name }}</a></td>
                                 <td><a href="{{ path('app_production_event_edit', { id: production_event.id }) }}">{{ production_event.production ? production_event.production.displayName : '-' }}</a></td>
+                                <td><a href="{{ path('app_production_event_edit', { id: production_event.id }) }}">{{ production_event.date ? production_event.date|date('d.m.Y') : '-' }}</a></td>
                                 <td><a href="{{ path('app_production_event_edit', { id: production_event.id }) }}">
-                                        {% if production_event.presenceStartDate and production_event.presenceEndDate %}
-                                            {{ production_event.presenceStartDate|date('d.m.Y') }} - {{ production_event.presenceEndDate|date('d.m.Y') }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
+                                        {{ production_event.timeFrom ?? '-' }}
+                                        {% if production_event.timeTo %} - {{ production_event.timeTo }}{% endif %}
                                     </a></td>
+                                <td><a href="{{ path('app_production_event_edit', { id: production_event.id }) }}">{{ production_event.room ? production_event.room.name : '-' }}</a></td>
+                                <td><a href="{{ path('app_production_event_edit', { id: production_event.id }) }}">{{ production_event.status ? production_event.status.getLabel()|trans : '-' }}</a></td>
                                 <td class="text-nowrap">
                                     <a href="{{ path('app_production_event_edit', {id: production_event.id}) }}" title="{{ 'edit'|trans }}">
                                         <span class="badge bg-info"><i class="ti-pencil-alt"></i></span>

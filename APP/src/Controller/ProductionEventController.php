@@ -31,7 +31,6 @@ class ProductionEventController extends AbstractController
     {
         $productionEvent = new ProductionEvent();
 
-        // Prüfen, ob eine Production-ID übergeben wurde
         $productionId = $request->query->get('production');
         if ($productionId) {
             $production = $entityManager->getRepository(Production::class)->find($productionId);
@@ -48,9 +47,8 @@ class ProductionEventController extends AbstractController
                 $entityManager->persist($productionEvent);
                 $entityManager->flush();
 
-                $this->addFlash('success', $t->trans('data_saved_success'));
+                $this->addFlash('success', $t->trans('production_event.created_successfully'));
 
-                // Wenn von einer Production gekommen, dorthin zurückleiten
                 if ($productionEvent->getProduction()) {
                     return $this->redirectToRoute('app_production_edit', ['id' => $productionEvent->getProduction()->getId()]);
                 }
@@ -78,12 +76,11 @@ class ProductionEventController extends AbstractController
                 $entityManager->persist($productionEvent);
                 $entityManager->flush();
 
-                $this->addFlash('success', $t->trans('data_saved_success'));
+                $this->addFlash('success', $t->trans('production_event.updated_successfully'));
 
-                // Optional: Zurück zur Production-Detailseite leiten, wenn eine Production zugewiesen ist
-                 if ($productionEvent->getProduction()) {
+                if ($productionEvent->getProduction()) {
                     return $this->redirectToRoute('app_production_edit', ['id' => $productionEvent->getProduction()->getId()]);
-                 }
+                }
 
                 return $this->redirectToRoute('app_production_event_edit', ['id' => $productionEvent->getId()]);
             } catch (\Throwable $e) {
@@ -104,7 +101,7 @@ class ProductionEventController extends AbstractController
         try {
             $entityManager->remove($productionEvent);
             $entityManager->flush();
-            $this->addFlash('warning', $t->trans('data_deleted_success'));
+            $this->addFlash('warning', $t->trans('production_event.deleted_successfully'));
             return $this->redirectToRoute('app_production_event_index', [], Response::HTTP_SEE_OTHER);
         } catch (\Throwable $e) {
             $this->addFlash('danger', $t->trans('data_save_error').": ".$e->getMessage());

@@ -37,7 +37,7 @@ class ProductionController extends AbstractController
                 $entityManager->persist($production);
                 $entityManager->flush();
 
-                $this->addFlash('success', $t->trans('data_saved_success'));
+                $this->addFlash('success', $t->trans('production.created_successfully'));
                 return $this->redirectToRoute('app_production_index', [], Response::HTTP_SEE_OTHER);
             } catch (\Throwable $e) {
                 $this->addFlash('danger', $t->trans('data_save_error'));
@@ -61,7 +61,7 @@ class ProductionController extends AbstractController
                 $entityManager->persist($production);
                 $entityManager->flush();
 
-                $this->addFlash('success', $t->trans('data_saved_success'));
+                $this->addFlash('success', $t->trans('production.updated_successfully'));
                 return $this->redirectToRoute('app_production_edit', ['id' => $production->getId()]);
             } catch (\Throwable $e) {
                 $this->addFlash('danger', $t->trans('data_save_error'));
@@ -81,7 +81,7 @@ class ProductionController extends AbstractController
         try {
             $entityManager->remove($production);
             $entityManager->flush();
-            $this->addFlash('warning', $t->trans('data_deleted_success'));
+            $this->addFlash('warning', $t->trans('production.deleted_successfully'));
             return $this->redirectToRoute('app_production_index', [], Response::HTTP_SEE_OTHER);
         } catch (\Throwable $e) {
             $this->addFlash('danger', $t->trans('data_save_error').": ".$e->getMessage());

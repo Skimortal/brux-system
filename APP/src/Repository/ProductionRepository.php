@@ -15,4 +15,9 @@ class ProductionRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Production::class);
     }
+
+    public function findByExternalId(int $externalId): ?Production
+    {
+        return $this->findOneBy(['externalId' => $externalId]);
+    }
 }

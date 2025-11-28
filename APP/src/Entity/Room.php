@@ -13,6 +13,9 @@ class Room extends Base
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
+    #[ORM\Column(length: 255, nullable: true, unique: true)]
+    private ?string $externalId = null;
+
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $showOnDashboard = false;
 
@@ -32,6 +35,18 @@ class Room extends Base
     public function setName(string $name): static
     {
         $this->name = $name;
+
+        return $this;
+    }
+
+    public function getExternalId(): ?string
+    {
+        return $this->externalId;
+    }
+
+    public function setExternalId(?string $externalId): static
+    {
+        $this->externalId = $externalId;
 
         return $this;
     }
@@ -69,7 +84,6 @@ class Room extends Base
     public function removeKey(KeyManagement $key): static
     {
         if ($this->keys->removeElement($key)) {
-            // set the owning side to null (unless already changed)
             if ($key->getRoom() === $this) {
                 $key->setRoom(null);
             }
@@ -78,4 +92,8 @@ class Room extends Base
         return $this;
     }
 
+    public function __toString(): string
+    {
+        return $this->name ?? '';
+    }
 }

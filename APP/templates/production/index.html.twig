@@ -1,4 +1,3 @@
-
 {% extends 'base_logged_in.html.twig' %}
 
 {% block title %}{{ 'production.list'|trans }}{% endblock %}
@@ -28,29 +27,26 @@
                     <table class="mcDataTable table table-striped table-bordered" cellspacing="0" width="100%">
                         <thead>
                         <tr>
-                            <th>{{ 'production.type'|trans }}</th>
-                            <th>{{ 'production.name'|trans }}</th>
-                            <th>{{ 'production.email'|trans }}</th>
-                            <th>{{ 'production.phone'|trans }}</th>
+                            <th>{{ 'production.external_id'|trans }}</th>
+                            <th>{{ 'production.title'|trans }}</th>
+                            <th>{{ 'production.events_count'|trans }}</th>
                             <th>{{ 'action'|trans }}</th>
                         </tr>
                         </thead>
                         <tfoot>
                         <tr>
-                            <th>{{ 'production.type'|trans }}</th>
-                            <th>{{ 'production.name'|trans }}</th>
-                            <th>{{ 'production.email'|trans }}</th>
-                            <th>{{ 'production.phone'|trans }}</th>
+                            <th>{{ 'production.external_id'|trans }}</th>
+                            <th>{{ 'production.title'|trans }}</th>
+                            <th>{{ 'production.events_count'|trans }}</th>
                             <th>{{ 'action'|trans }}</th>
                         </tr>
                         </tfoot>
                         <tbody>
                         {% for production in productions %}
                             <tr>
-                                <td><a href="{{ path('app_production_edit', { id: production.id }) }}">{{ production.type.getLabel()|trans }}</a></td>
-                                <td><a href="{{ path('app_production_edit', { id: production.id }) }}">{{ production.displayName }}</a></td>
-                                <td><a href="{{ path('app_production_edit', { id: production.id }) }}">{{ production.type.value == 'group' ? production.email : production.personEmail }}</a></td>
-                                <td><a href="{{ path('app_production_edit', { id: production.id }) }}">{{ production.type.value == 'group' ? production.phone : production.personPhone }}</a></td>
+                                <td><a href="{{ path('app_production_edit', { id: production.id }) }}">{{ production.externalId ?? '-' }}</a></td>
+                                <td><a href="{{ path('app_production_edit', { id: production.id }) }}">{{ production.title }}</a></td>
+                                <td><a href="{{ path('app_production_edit', { id: production.id }) }}">{{ production.events|length }}</a></td>
                                 <td class="text-nowrap">
                                     <a href="{{ path('app_production_edit', {id: production.id}) }}" title="{{ 'edit'|trans }}">
                                         <span class="badge bg-info"><i class="ti-pencil-alt"></i></span>

@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-use App\Enum\ProductionType;
 use App\Repository\ProductionRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -12,196 +11,108 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: ProductionRepository::class)]
 class Production extends Base
 {
-    #[ORM\Column(type: Types::STRING, length: 50, enumType: ProductionType::class)]
-    private ?ProductionType $type = null;
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $externalId = null;
 
-    // Group fields
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $groupName = null;
+    #[ORM\Column(length: 255)]
+    private ?string $title = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $mainContactName = null;
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $permalink = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $address = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $phone = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $email = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $mainContactFunction = null;
-
-    #[ORM\Column(type: Types::JSON, nullable: true)]
-    private ?array $groupMembers = [];
-
-    // Individual person fields
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $personName = null;
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $postThumbnailUrl = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $personAddress = null;
+    private ?string $contentHtml = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $personPhone = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $personEmail = null;
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $excerptHtml = null;
 
     #[ORM\OneToMany(targetEntity: ProductionTechnician::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $technicians;
 
-    #[ORM\OneToMany(targetEntity: ProductionEvent::class, mappedBy: 'production')]
+    #[ORM\OneToMany(targetEntity: ProductionEvent::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $events;
+
+    #[ORM\OneToMany(targetEntity: ProductionPrice::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $priceList;
 
     public function __construct()
     {
         $this->technicians = new ArrayCollection();
         $this->events = new ArrayCollection();
+        $this->priceList = new ArrayCollection();
     }
 
-    public function getType(): ?ProductionType
+    public function getExternalId(): ?int
     {
-        return $this->type;
+        return $this->externalId;
     }
 
-    public function setType(ProductionType $type): static
+    public function setExternalId(?int $externalId): static
     {
-        $this->type = $type;
+        $this->externalId = $externalId;
 
         return $this;
     }
 
-    public function getGroupName(): ?string
+    public function getTitle(): ?string
     {
-        return $this->groupName;
+        return $this->title;
     }
 
-    public function setGroupName(?string $groupName): static
+    public function setTitle(string $title): static
     {
-        $this->groupName = $groupName;
+        $this->title = $title;
 
         return $this;
     }
 
-    public function getMainContactName(): ?string
+    public function getPermalink(): ?string
     {
-        return $this->mainContactName;
+        return $this->permalink;
     }
 
-    public function setMainContactName(?string $mainContactName): static
+    public function setPermalink(?string $permalink): static
     {
-        $this->mainContactName = $mainContactName;
+        $this->permalink = $permalink;
 
         return $this;
     }
 
-    public function getAddress(): ?string
+    public function getPostThumbnailUrl(): ?string
     {
-        return $this->address;
+        return $this->postThumbnailUrl;
     }
 
-    public function setAddress(?string $address): static
+    public function setPostThumbnailUrl(?string $postThumbnailUrl): static
     {
-        $this->address = $address;
+        $this->postThumbnailUrl = $postThumbnailUrl;
 
         return $this;
     }
 
-    public function getPhone(): ?string
+    public function getContentHtml(): ?string
     {
-        return $this->phone;
+        return $this->contentHtml;
     }
 
-    public function setPhone(?string $phone): static
+    public function setContentHtml(?string $contentHtml): static
     {
-        $this->phone = $phone;
+        $this->contentHtml = $contentHtml;
 
         return $this;
     }
 
-    public function getEmail(): ?string
+    public function getExcerptHtml(): ?string
     {
-        return $this->email;
+        return $this->excerptHtml;
     }
 
-    public function setEmail(?string $email): static
+    public function setExcerptHtml(?string $excerptHtml): static
     {
-        $this->email = $email;
-
-        return $this;
-    }
-
-    public function getMainContactFunction(): ?string
-    {
-        return $this->mainContactFunction;
-    }
-
-    public function setMainContactFunction(?string $mainContactFunction): static
-    {
-        $this->mainContactFunction = $mainContactFunction;
-
-        return $this;
-    }
-
-    public function getGroupMembers(): ?array
-    {
-        return $this->groupMembers;
-    }
-
-    public function setGroupMembers(?array $groupMembers): static
-    {
-        $this->groupMembers = $groupMembers;
-
-        return $this;
-    }
-
-    public function getPersonName(): ?string
-    {
-        return $this->personName;
-    }
-
-    public function setPersonName(?string $personName): static
-    {
-        $this->personName = $personName;
-
-        return $this;
-    }
-
-    public function getPersonAddress(): ?string
-    {
-        return $this->personAddress;
-    }
-
-    public function setPersonAddress(?string $personAddress): static
-    {
-        $this->personAddress = $personAddress;
-
-        return $this;
-    }
-
-    public function getPersonPhone(): ?string
-    {
-        return $this->personPhone;
-    }
-
-    public function setPersonPhone(?string $personPhone): static
-    {
-        $this->personPhone = $personPhone;
-
-        return $this;
-    }
-
-    public function getPersonEmail(): ?string
-    {
-        return $this->personEmail;
-    }
-
-    public function setPersonEmail(?string $personEmail): static
-    {
-        $this->personEmail = $personEmail;
+        $this->excerptHtml = $excerptHtml;
 
         return $this;
     }
@@ -227,7 +138,6 @@ class Production extends Base
     public function removeTechnician(ProductionTechnician $technician): static
     {
         if ($this->technicians->removeElement($technician)) {
-            // set the owning side to null (unless already changed)
             if ($technician->getProduction() === $this) {
                 $technician->setProduction(null);
             }
@@ -257,7 +167,6 @@ class Production extends Base
     public function removeEvent(ProductionEvent $event): static
     {
         if ($this->events->removeElement($event)) {
-            // set the owning side to null (unless already changed)
             if ($event->getProduction() === $this) {
                 $event->setProduction(null);
             }
@@ -266,11 +175,37 @@ class Production extends Base
         return $this;
     }
 
+    /**
+     * @return Collection<int, ProductionPrice>
+     */
+    public function getPriceList(): Collection
+    {
+        return $this->priceList;
+    }
+
+    public function addPriceList(ProductionPrice $priceList): static
+    {
+        if (!$this->priceList->contains($priceList)) {
+            $this->priceList->add($priceList);
+            $priceList->setProduction($this);
+        }
+
+        return $this;
+    }
+
+    public function removePriceList(ProductionPrice $priceList): static
+    {
+        if ($this->priceList->removeElement($priceList)) {
+            if ($priceList->getProduction() === $this) {
+                $priceList->setProduction(null);
+            }
+        }
+
+        return $this;
+    }
+
     public function getDisplayName(): string
     {
-        if ($this->type === ProductionType::GROUP) {
-            return $this->groupName ?? '';
-        }
-        return $this->personName ?? '';
+        return $this->title ?? '';
     }
 }

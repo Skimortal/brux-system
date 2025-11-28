@@ -16,22 +16,44 @@
         {% endfor %}
     {% endfor %}
 
-    {{ form_start(form, { attr: { 'data-turbo': 'false' } }) }}
-    {{ form_widget(form) }}
+    <div class="bgc-white p-20 bd">
+        {{ form_start(form, { attr: { 'data-turbo': 'false' } }) }}
 
-    <div class="mb-3 row">
-        <div class="col-sm-8">
-            <a href="{{ path('app_production_event_index') }}" class="btn btn-secondary">{{ 'back_to_list'|trans }}</a>
-            <button type="submit" class="btn btn-primary">{{ 'save'|trans }}</button>
+        <div class="row">
+            <div class="col-md-6">
+                {{ form_row(form.production) }}
+                {{ form_row(form.eventIndex) }}
+                {{ form_row(form.date) }}
+                {{ form_row(form.timeFrom) }}
+                {{ form_row(form.timeTo) }}
+            </div>
+            <div class="col-md-6">
+                {{ form_row(form.room) }}
+                {{ form_row(form.status) }}
+                {{ form_row(form.reservationStatus) }}
+                {{ form_row(form.quota) }}
+                {{ form_row(form.incomingTotal) }}
+                {{ form_row(form.freeSeats) }}
+            </div>
         </div>
-        <div class="col-sm-4" style="text-align: right;">
-            {% if production_event.id and is_granted('ROLE_ADMIN') %}
-                <a href="{{ path('app_production_event_delete', {'id': production_event.id}) }}" class="btn btn-danger confirmRemoveItem" role="button" data-confirm="{}" data-confirm-message="{{ 'confirm_remove'|trans }}">{{ 'delete'|trans }}</a>
-            {% endif %}
+
+        {{ form_row(form.reservationNote) }}
+        {{ form_row(form.categories) }}
+
+        <div class="mb-3 row mt-4">
+            <div class="col-sm-8">
+                <a href="{{ path('app_production_event_index') }}" class="btn btn-secondary">{{ 'back_to_list'|trans }}</a>
+                <button type="submit" class="btn btn-primary">{{ 'save'|trans }}</button>
+            </div>
+            <div class="col-sm-4" style="text-align: right;">
+                {% if production_event.id and is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('app_production_event_delete', {'id': production_event.id}) }}" class="btn btn-danger confirmRemoveItem" role="button" data-confirm="{}" data-confirm-message="{{ 'confirm_remove'|trans }}">{{ 'delete'|trans }}</a>
+                {% endif %}
+            </div>
         </div>
+
+        {{ form_rest(form) }}
+        {{ form_end(form) }}
     </div>
-
-    {{ form_rest(form) }}
-    {{ form_end(form) }}
 
 {% endblock %}

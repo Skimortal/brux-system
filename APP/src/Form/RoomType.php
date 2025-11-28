@@ -18,8 +18,12 @@ class RoomType extends AbstractType
                 'label' => 'room.name',
                 'required' => true,
             ])
+            ->add('externalId', TextType::class, [
+                'label' => 'room.external_id',
+                'required' => false,
+            ])
             ->add('showOnDashboard', CheckboxType::class, [
-                'label' => 'Auf Dashboard anzeigen',
+                'label' => 'room.show_on_dashboard',
                 'required' => false,
             ])
         ;
