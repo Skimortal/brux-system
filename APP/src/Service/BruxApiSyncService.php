@@ -93,9 +93,9 @@ class BruxApiSyncService
             $stats['productions_updated']++;
         }
 
-        // Update production fields
+        // Update production fields - mit HTML-Entity-Dekodierung
         $production->setExternalId($externalId);
-        $production->setTitle($data['title'] ?? '');
+        $production->setTitle($this->decodeHtmlEntities($data['title'] ?? ''));
         $production->setPermalink($data['permalink'] ?? null);
         $production->setPostThumbnailUrl($data['post_thumbnail_url'] ?? null);
         $production->setContentHtml($data['content_html'] ?? null);
@@ -121,13 +121,13 @@ class BruxApiSyncService
             $this->entityManager->remove($oldPrice);
         }
 
-        // Add new prices
+        // Add new prices - mit HTML-Entity-Dekodierung
         foreach ($pricesData as $priceData) {
             $price = new ProductionPrice();
             $price->setProduction($production);
             $price->setPriceIndex($priceData['index'] ?? null);
-            $price->setPriceLabel($priceData['price_label'] ?? null);
-            $price->setCategoryLabel($priceData['category_label'] ?? null);
+            $price->setPriceLabel($this->decodeHtmlEntities($priceData['price_label'] ?? null));
+            $price->setCategoryLabel($this->decodeHtmlEntities($priceData['category_label'] ?? null));
             $price->setParentReserved($priceData['parent_reserved'] ?? null);
 
             $this->entityManager->persist($price);
@@ -253,7 +253,8 @@ class BruxApiSyncService
                 $stats['categories_created']++;
             }
 
-            $category->setName($categoryData['name'] ?? '');
+            // Mit HTML-Entity-Dekodierung
+            $category->setName($this->decodeHtmlEntities($categoryData['name'] ?? ''));
             $category->setSlug($categoryData['slug'] ?? null);
 
             $this->entityManager->persist($category);
@@ -268,18 +269,27 @@ class BruxApiSyncService
             $this->entityManager->remove($oldPrice);
         }
 
-        // Add new prices
+        // Add new prices - mit HTML-Entity-Dekodierung
         foreach ($pricesData as $priceData) {
             $price = new EventPrice();
             $price->setEvent($event);
             $price->setPriceIndex($priceData['price_index'] ?? null);
-            $price->setPriceLabel($priceData['price_label'] ?? null);
-            $price->setCategoryLabel($priceData['category_label'] ?? null);
+            $price->setPriceLabel($this->decodeHtmlEntities($priceData['price_label'] ?? null));
+            $price->setCategoryLabel($this->decodeHtmlEntities($priceData['category_label'] ?? null));
             $price->setReservedSeats($priceData['reserved_seats'] ?? null);
             $price->setIncomingReservations($priceData['incoming_reservations'] ?? null);
 
             $this->entityManager->persist($price);
         }
+    }
+
+    private function decodeHtmlEntities(?string $text): ?string
+    {
+        if ($text === null || $text === '') {
+            return $text;
+        }
+
+        return html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 
     public function getLastSyncTime(): ?\DateTimeInterface

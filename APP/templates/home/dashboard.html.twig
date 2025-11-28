@@ -91,40 +91,70 @@
                 <div class="col-md-9">
                     <div class="bgc-white p-20 bd mB-20">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                            <h6 class="c-grey-900 m-0">Kalender Filter</h6>
-                            <div class="d-flex gap-3 flex-wrap" id="calendar-filters">
-                                <div class="form-check">
-                                    <input class="form-check-input filter-checkbox" type="checkbox" value="production"
-                                           id="filterProduction" checked>
-                                    <label class="form-check-label" for="filterProduction">Produktion</label>
+                            <h6 class="c-grey-900 m-0"></h6>
+                            <div class="d-flex gap-3 flex-wrap align-items-center">
+                                <button type="button" class="btn btn-warning" id="syncApiBtn">
+                                    <i class="ti-reload"></i> Veranstaltungen aus WP laden
+                                </button>
+
+                                {# NEU: View Switcher #}
+                                <div class="btn-group" role="group">
+                                    <input type="radio" class="btn-check" name="calendarView" id="viewGlobal" value="global" checked autocomplete="off">
+                                    <label class="btn btn-outline-primary btn-sm" for="viewGlobal">
+                                        <i class="ti-calendar"></i> Gesamtansicht
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="calendarView" id="viewRooms" value="rooms" autocomplete="off">
+                                    <label class="btn btn-outline-primary btn-sm" for="viewRooms">
+                                        <i class="ti-layout-grid2"></i> Raumansicht
+                                    </label>
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input filter-checkbox" type="checkbox" value="technician"
-                                           id="filterTechnician" checked>
-                                    <label class="form-check-label" for="filterTechnician">Techniker</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input filter-checkbox" type="checkbox" value="cleaning"
-                                           id="filterCleaning" checked>
-                                    <label class="form-check-label" for="filterCleaning">Reinigung</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input filter-checkbox" type="checkbox" value="private"
-                                           id="filterPrivate" checked>
-                                    <label class="form-check-label" for="filterPrivate">Privat / Sonstiges</label>
+
+                                <div class="d-flex gap-3 flex-wrap" id="calendar-filters">
+                                    <div class="form-check">
+                                        <input class="form-check-input filter-checkbox" type="checkbox" value="production"
+                                               id="filterProduction" checked>
+                                        <label class="form-check-label" for="filterProduction">Produktion</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input filter-checkbox" type="checkbox" value="technician"
+                                               id="filterTechnician" checked>
+                                        <label class="form-check-label" for="filterTechnician">Techniker</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input filter-checkbox" type="checkbox" value="cleaning"
+                                               id="filterCleaning" checked>
+                                        <label class="form-check-label" for="filterCleaning">Reinigung</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input filter-checkbox" type="checkbox" value="private"
+                                               id="filterPrivate" checked>
+                                        <label class="form-check-label" for="filterPrivate">Privat / Sonstiges</label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="row">
-                        {% for room in rooms %}
-                            <div class="col-12 col-xl-6 mb-4">
-                                <div class="bgc-white p-15 bd h-100">
-                                    <h5 class="c-grey-900 border-bottom pb-2 mB-15 text-center">{{ room.name }}</h5>
-                                    <div class="room-calendar" data-room-id="{{ room.id }}"></div>
+
+                    {# NEU: Globaler Kalender Container #}
+                    <div id="globalCalendarContainer">
+                        <div class="bgc-white p-15 bd">
+                            <div id="global-calendar"></div>
+                        </div>
+                    </div>
+
+                    {# Raum-Kalender Container (initial versteckt) #}
+                    <div id="roomCalendarsContainer" style="display: none;">
+                        <div class="row">
+                            {% for room in rooms %}
+                                <div class="col-12 col-xl-6 mb-4">
+                                    <div class="bgc-white p-15 bd h-100">
+                                        <h5 class="c-grey-900 border-bottom pb-2 mB-15 text-center">{{ room.name }}</h5>
+                                        <div class="room-calendar" data-room-id="{{ room.id }}"></div>
+                                    </div>
                                 </div>
-                            </div>
-                        {% endfor %}
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>

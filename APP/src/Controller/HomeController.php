@@ -14,6 +14,7 @@ use App\Repository\ProductionEventRepository;
 use App\Repository\ProductionRepository;
 use App\Repository\RoomRepository;
 use App\Repository\TechnicianRepository;
+use App\Service\BruxApiSyncService;
 use App\Service\CalendarColorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -66,6 +67,7 @@ class HomeController extends AbstractController
         return $this->render('home/dashboard.html.twig', [
             'user' => $this->getUser(),
             'rooms' => $rooms,
+            'allRooms' => $roomRepository->findAll(), // NEU: Alle Räume für Dropdown
             'keysByRoom' => $keysByRoom,
             'keysWithoutRoom' => $keysWithoutRoom,
             'allUsers' => $userRepo->findAll(),
@@ -351,6 +353,31 @@ class HomeController extends AbstractController
         $em->flush();
 
         return $this->json(['success' => true]);
+    }
+
+    #[Route('/dashboard/sync-api', name: 'app_dashboard_sync_api', methods: ['POST'])]
+    public function syncBruxApi(BruxApiSyncService $syncService): JsonResponse
+    {
+        try {
+            $stats = $syncService->syncFromApi();
+
+            return $this->json([
+                'success' => true,
+                'stats' => $stats,
+                'message' => sprintf(
+                    'Synchronisation erfolgreich! Produktionen: %d erstellt, %d aktualisiert. Events: %d erstellt, %d aktualisiert.',
+                    $stats['productions_created'],
+                    $stats['productions_updated'],
+                    $stats['events_created'],
+                    $stats['events_updated']
+                )
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Fehler bei der Synchronisation: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     #[Route('/appointment/create', name: 'app_appointment_create', methods: ['POST'])]

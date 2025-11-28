@@ -16,7 +16,9 @@ function initDoughnutChart() {
 
 let allEvents = [];
 let currentSelectedDate = new Date();
-let calendarInstances = []; // Array für alle Kalender-Instanzen
+let calendarInstances = []; // Array für Raum-Kalender
+let globalCalendar = null; // Globaler Kalender
+let currentView = 'global'; // Aktuelle Ansicht
 
 // Mapping für Farben zu Icon-Farben (Adminator CSS Klassen)
 const colorToIconClass = {
@@ -186,35 +188,44 @@ function initCalendar() {
     // Aufräumen alter Instanzen
     calendarInstances.forEach(cal => cal.destroy());
     calendarInstances = [];
-
-    // Alle Kalender-Container finden
-    const calendarEls = document.querySelectorAll('.room-calendar');
-
-    // Falls keine Raum-Kalender da sind, versuche den alten Dashboard-Kalender als Fallback
-    if (calendarEls.length === 0) {
-        const fallbackEl = document.getElementById('dashboard-calendar');
-        if (fallbackEl) {
-            initSingleCalendar(fallbackEl, window.innerWidth <= 767);
-            return;
-        }
+    if (globalCalendar) {
+        globalCalendar.destroy();
+        globalCalendar = null;
     }
 
     // Filter-Listener initialisieren
     const filterCheckboxes = document.querySelectorAll('.filter-checkbox');
     filterCheckboxes.forEach(box => {
-        // Clone Node um alte Event Listener zu entfernen
         const newBox = box.cloneNode(true);
         box.parentNode.replaceChild(newBox, box);
-        newBox.addEventListener('change', refreshAllCalendars);
+        newBox.addEventListener('change', refreshCurrentView);
     });
+
+    // View Switcher Listener
+    const viewRadios = document.querySelectorAll('input[name="calendarView"]');
+    viewRadios.forEach(radio => {
+        const newRadio = radio.cloneNode(true);
+        radio.parentNode.replaceChild(newRadio, radio);
+        newRadio.addEventListener('change', function() {
+            currentView = this.value;
+            switchCalendarView(this.value);
+        });
+    });
+
+    // NEU: Sync Button Listener
+    const syncBtn = document.getElementById('syncApiBtn');
+    if (syncBtn) {
+        const newSyncBtn = syncBtn.cloneNode(true);
+        syncBtn.parentNode.replaceChild(newSyncBtn, syncBtn);
+        newSyncBtn.addEventListener('click', triggerApiSync);
+    }
 
     // Mobile-Check
     const isMobile = window.innerWidth <= 767;
 
-    // Für jeden Raum einen Kalender initialisieren
-    calendarEls.forEach(calendarEl => {
-        initSingleCalendar(calendarEl, isMobile);
-    });
+    // Beide Kalender initialisieren
+    initGlobalCalendar(isMobile);
+    initRoomCalendars(isMobile);
 
     // Sidebar initialisieren
     fetch('/appointments/all')
@@ -227,6 +238,293 @@ function initCalendar() {
         .catch(e => console.error(e));
 
     setupModalListeners();
+}
+
+// NEU: API Sync triggern
+function triggerApiSync() {
+    const btn = document.getElementById('syncApiBtn');
+    if (!btn) return;
+
+    // Button deaktivieren und Loading-State anzeigen
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti-reload spin"></i> Synchronisiere...';
+
+    // Add spinning animation via CSS (optional)
+    const style = document.createElement('style');
+    style.textContent = `
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    `;
+    if (!document.querySelector('style[data-sync-spinner]')) {
+        style.setAttribute('data-sync-spinner', 'true');
+        document.head.appendChild(style);
+    }
+
+    fetch('/dashboard/sync-api', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+        .then(response => response.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+
+            if (data.success) {
+                // Erfolg anzeigen
+                showToast('success', data.message);
+
+                // Kalender neu laden
+                refreshCurrentView();
+
+                // Sidebar neu laden
+                fetch('/appointments/all')
+                    .then(r => r.json())
+                    .then(events => {
+                        allEvents = events;
+                        displayEventsForDate(currentSelectedDate, events);
+                    });
+            } else {
+                showToast('error', data.message || 'Fehler bei der Synchronisation');
+            }
+        })
+        .catch(error => {
+            btn.disabled = false;
+            btn.innerHTML = originalContent;
+            console.error('Sync error:', error);
+            showToast('error', 'Netzwerkfehler bei der Synchronisation');
+        });
+}
+
+function showToast(type, message) {
+    // Verwende Bootstrap Alert
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+    document.body.appendChild(alertDiv);
+
+    // Auto-remove nach 5 Sekunden
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+function initGlobalCalendar(isMobile) {
+    const calendarEl = document.getElementById('global-calendar');
+    if (!calendarEl) return;
+
+    globalCalendar = new Calendar(calendarEl, {
+        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+        initialView: isMobile ? 'timeGridDay' : 'dayGridMonth',
+        locale: deLocale,
+        timeZone: 'Europe/Berlin',
+        firstDay: 1,
+        headerToolbar: isMobile ? {
+            left: 'prev,next',
+            center: 'title',
+            right: 'today'
+        } : {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        slotMinTime: '06:00:00',
+        slotMaxTime: '22:00:00',
+        allDaySlot: true,
+        height: 700,
+        eventTimeFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+            meridiem: false
+        },
+        eventDisplay: 'block',
+        events: function(info, successCallback, failureCallback) {
+            const activeFilters = Array.from(document.querySelectorAll('.filter-checkbox:checked'))
+                .map(cb => cb.value)
+                .join(',');
+
+            // Kein roomId Filter - alle Räume anzeigen
+            const url = `/dashboard/events?roomId=&start=${info.startStr}&end=${info.endStr}&filters=${activeFilters}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => successCallback(data))
+                .catch(error => {
+                    console.error('Error loading events:', error);
+                    failureCallback(error);
+                });
+        },
+        dateClick: function(info) {
+            openAppointmentModal(info.dateStr, null, info.date, null);
+        },
+        eventClick: function(info) {
+            const type = info.event.extendedProps.type;
+
+            if (type === 'production_event') {
+                const productionEventId = info.event.extendedProps.productionEventId;
+                if (productionEventId) {
+                    openProductionEventModal(productionEventId);
+                }
+            } else if (['private', 'cleaning', 'technician', 'production'].includes(type)) {
+                openAppointmentModal(null, info.event);
+            } else {
+                alert(info.event.title + '\n' + (info.event.extendedProps.description || ''));
+            }
+        },
+        eventDidMount: function(info) {
+            const now = new Date();
+            const eventEnd = info.event.end || info.event.start;
+            if (eventEnd < now) {
+                info.el.style.opacity = '0.5';
+                info.el.style.textDecoration = 'line-through';
+            }
+        },
+        editable: false
+    });
+
+    globalCalendar.render();
+}
+
+function initRoomCalendars(isMobile) {
+    const calendarEls = document.querySelectorAll('.room-calendar');
+
+    calendarEls.forEach(calendarEl => {
+        const calendar = createRoomCalendar(calendarEl, isMobile);
+        calendarInstances.push(calendar);
+    });
+}
+
+// NEU: Aktualisiert die aktuelle Ansicht
+function refreshCurrentView() {
+    if (currentView === 'global') {
+        if (globalCalendar) {
+            globalCalendar.refetchEvents();
+        }
+    } else {
+        calendarInstances.forEach(cal => cal.refetchEvents());
+    }
+}
+
+// ÄNDERN: Alte Funktion wird umbenannt
+function refreshAllCalendars() {
+    refreshCurrentView();
+}
+
+function createRoomCalendar(calendarEl, isMobile) {
+    const roomId = calendarEl.dataset.roomId || '';
+
+    const calendar = new Calendar(calendarEl, {
+        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+        initialView: isMobile ? 'timeGridDay' : 'dayGridMonth',
+        locale: deLocale,
+        timeZone: 'Europe/Berlin',
+        firstDay: 1,
+        headerToolbar: isMobile ? {
+            left: 'prev,next',
+            center: 'title',
+            right: 'today'
+        } : {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        slotMinTime: '06:00:00',
+        slotMaxTime: '22:00:00',
+        allDaySlot: true,
+        height: 600,
+        eventTimeFormat: {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+            meridiem: false
+        },
+        eventDisplay: 'block',
+        events: function(info, successCallback, failureCallback) {
+            const activeFilters = Array.from(document.querySelectorAll('.filter-checkbox:checked'))
+                .map(cb => cb.value)
+                .join(',');
+
+            const url = `/dashboard/events?roomId=${roomId}&start=${info.startStr}&end=${info.endStr}&filters=${activeFilters}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => successCallback(data))
+                .catch(error => {
+                    console.error('Error loading events:', error);
+                    failureCallback(error);
+                });
+        },
+        dateClick: function(info) {
+            openAppointmentModal(info.dateStr, null, info.date, roomId);
+        },
+        eventClick: function(info) {
+            const type = info.event.extendedProps.type;
+
+            if (type === 'production_event') {
+                const productionEventId = info.event.extendedProps.productionEventId;
+                if (productionEventId) {
+                    openProductionEventModal(productionEventId);
+                }
+            } else if (['private', 'cleaning', 'technician', 'production'].includes(type)) {
+                openAppointmentModal(null, info.event);
+            } else {
+                alert(info.event.title + '\n' + (info.event.extendedProps.description || ''));
+            }
+        },
+        eventDidMount: function(info) {
+            const now = new Date();
+            const eventEnd = info.event.end || info.event.start;
+            if (eventEnd < now) {
+                info.el.style.opacity = '0.5';
+                info.el.style.textDecoration = 'line-through';
+            }
+        },
+        editable: false
+    });
+
+    calendar.render();
+    return calendar;
+}
+
+// NEU: Zwischen Ansichten wechseln
+function switchCalendarView(view) {
+    const globalContainer = document.getElementById('globalCalendarContainer');
+    const roomsContainer = document.getElementById('roomCalendarsContainer');
+
+    if (view === 'global') {
+        // Zeige globalen Kalender
+        if (globalContainer) globalContainer.style.display = 'block';
+        if (roomsContainer) roomsContainer.style.display = 'none';
+
+        // Refresh global calendar
+        if (globalCalendar) {
+            globalCalendar.updateSize();
+            globalCalendar.refetchEvents();
+        }
+    } else {
+        // Zeige Raum-Kalender
+        if (globalContainer) globalContainer.style.display = 'none';
+        if (roomsContainer) roomsContainer.style.display = 'block';
+
+        // Refresh room calendars
+        calendarInstances.forEach(cal => {
+            cal.updateSize();
+            cal.refetchEvents();
+        });
+    }
 }
 
 function initSingleCalendar(calendarEl, isMobile) {
@@ -542,10 +840,6 @@ function openProductionEventModal(eventId) {
                 </div>
             `;
         });
-}
-
-function refreshAllCalendars() {
-    calendarInstances.forEach(cal => cal.refetchEvents());
 }
 
 function setupModalListeners() {
