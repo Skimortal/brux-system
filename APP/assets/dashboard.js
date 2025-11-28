@@ -798,7 +798,7 @@ function openProductionEventModal(eventId) {
                     <div class="mb-4">
                         <h6 class="text-muted mb-2">Reservierung</h6>
                         ${isUrl ?
-                    `<a href="${event.reservationNote}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    `<a href="${event.reservationNote}" target="_blank" class="btn btn-sm btn-primary">
                                 <i class="ti-new-window me-1"></i>Zur Reservierung
                             </a>` :
                     `<p class="mb-0">${event.reservationNote}</p>`
@@ -823,7 +823,7 @@ function openProductionEventModal(eventId) {
             if (production && production.permalink) {
                 html += `
                     <div class="mt-3">
-                        <a href="${production.permalink}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                        <a href="${production.permalink}" target="_blank" class="btn btn-sm btn-secondary">
                             <i class="ti-link me-1"></i>Zur Website
                         </a>
                     </div>
