@@ -325,3 +325,147 @@ table.table.dataTable>:not(caption)>*>*,
     }
 }
 
+/* Production Event Modal Styles */
+#productionEventModal .production-content {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+#productionEventModal .production-content h2,
+#productionEventModal .production-content h3,
+#productionEventModal .production-content h4 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+#productionEventModal .production-content p {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+#productionEventModal .production-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+#productionEventModal .production-content blockquote {
+    border-left: 4px solid #007bff;
+    padding-left: 15px;
+    margin: 15px 0;
+    font-style: italic;
+    color: #6c757d;
+}
+
+#productionEventModal .modal-body {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+/* Größere Modals */
+.modal-xl {
+    max-width: 1200px;
+}
+
+.modal-lg {
+    max-width: 900px;
+}
+
+/* Production Event Modal Styles */
+#productionEventModal .production-content {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+#productionEventModal .production-content h2,
+#productionEventModal .production-content h3,
+#productionEventModal .production-content h4 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #333;
+}
+
+#productionEventModal .production-content p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+#productionEventModal .production-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+    margin: 15px 0;
+}
+
+#productionEventModal .production-content blockquote {
+    border-left: 4px solid #007bff;
+    padding-left: 15px;
+    margin: 15px 0;
+    font-style: italic;
+    color: #6c757d;
+}
+
+#productionEventModal .modal-body {
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+}
+
+/* Key Management Modal Styles */
+#keyManagementModal .modal-body {
+    padding: 25px;
+}
+
+#keyManagementModal .form-label {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+/* Appointment Modal Styles */
+#appointmentModal .modal-body {
+    padding: 25px;
+}
+
+#appointmentModal .color-option {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+#appointmentModal .color-option:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#appointmentModal .color-option.selected {
+    border: 3px solid #000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Responsive Anpassungen */
+@media (max-width: 1200px) {
+    .modal-xl {
+        max-width: 95%;
+    }
+}
+
+@media (max-width: 768px) {
+    .modal-xl,
+    .modal-lg {
+        max-width: 100%;
+        margin: 10px;
+    }
+
+    #productionEventModal .production-content {
+        max-height: 300px;
+    }
+}

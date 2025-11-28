@@ -261,4 +261,4 @@ sync.events_updated: 'Events aktualisiert'
 sync.categories_created: 'Kategorien erstellt'
 sync.last_sync: 'Letzte Synchronisation'
 
-room.show_on_dashboard: Auf Dashboard als Kalender anzeigen
+room.show_on_dashboard: 'Auf Dashboard als Kalender anzeigen'

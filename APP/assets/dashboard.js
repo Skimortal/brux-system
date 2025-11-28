@@ -170,11 +170,17 @@ function displayEventsForDate(date, events) {
 }
 
 var appointmentModal;
+var productionEventModal;
 
 function initCalendar() {
     const modalEl = document.getElementById('appointmentModal');
     if (modalEl) {
         appointmentModal = new Modal(modalEl);
+    }
+
+    const prodEventModalEl = document.getElementById('productionEventModal');
+    if (prodEventModalEl) {
+        productionEventModal = new Modal(prodEventModalEl);
     }
 
     // Aufräumen alter Instanzen
@@ -252,7 +258,6 @@ function initSingleCalendar(calendarEl, isMobile) {
             meridiem: false
         },
         events: function(info, successCallback, failureCallback) {
-            // Filter sammeln
             const activeFilters = Array.from(document.querySelectorAll('.filter-checkbox:checked'))
                 .map(cb => cb.value)
                 .join(',');
@@ -268,16 +273,21 @@ function initSingleCalendar(calendarEl, isMobile) {
                 });
         },
         dateClick: function(info) {
-            // Wenn man in den Kalender klickt -> Termin erstellen
             openAppointmentModal(info.dateStr, null, info.date, roomId);
         },
         eventClick: function(info) {
-            // Bearbeiten erlauben für unterstützte Typen
             const type = info.event.extendedProps.type;
-            if (['private', 'cleaning', 'technician'].includes(type)) {
+
+            if (type === 'production') {
+                // ProductionEvent Modal öffnen
+                const productionEventId = info.event.extendedProps.productionEventId;
+                if (productionEventId) {
+                    openProductionEventModal(productionEventId);
+                }
+            } else if (['private', 'cleaning', 'technician'].includes(type)) {
+                // Bestehende Appointment Modal
                 openAppointmentModal(null, info.event);
             } else {
-                // Nur Info Alert für andere
                 alert(info.event.title + '\n' + (info.event.extendedProps.description || ''));
             }
         },
@@ -294,6 +304,243 @@ function initSingleCalendar(calendarEl, isMobile) {
 
     calendar.render();
     calendarInstances.push(calendar);
+}
+
+function openProductionEventModal(eventId) {
+    const modalBody = document.getElementById('productionEventModalBody');
+    const modalTitle = document.getElementById('productionEventModalTitle');
+    const editBtn = document.getElementById('editProductionEventBtn');
+
+    if (!productionEventModal) return;
+
+    // Loading State
+    modalBody.innerHTML = `
+        <div class="text-center p-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Laden...</span>
+            </div>
+        </div>
+    `;
+
+    productionEventModal.show();
+
+    // Daten laden
+    fetch(`/dashboard/production-event/${eventId}/details`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                modalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                return;
+            }
+
+            const event = data.event;
+            const production = data.production;
+
+            modalTitle.textContent = production ? production.title : 'Veranstaltung';
+
+            // Edit Button konfigurieren
+            if (editBtn) {
+                editBtn.href = `/production-event/${event.id}/edit`;
+                editBtn.style.display = 'inline-block';
+            }
+
+            // Modal Content aufbauen
+            let html = '';
+
+            // Produktionsbild falls vorhanden
+            if (production && production.postThumbnailUrl) {
+                html += `
+                    <div class="text-center mb-4">
+                        <img src="${production.postThumbnailUrl}"
+                             alt="${production.title}"
+                             class="img-fluid rounded"
+                             style="max-height: 300px; object-fit: cover;">
+                    </div>
+                `;
+            }
+
+            // Event Details
+            html += `<div class="row mb-4">`;
+
+            // Linke Spalte: Event Info
+            html += `<div class="col-md-6">`;
+            html += `<h6 class="text-muted mb-3">Veranstaltungsinformationen</h6>`;
+
+            if (event.date) {
+                html += `
+                    <div class="mb-2">
+                        <strong><i class="ti-calendar me-2"></i>Datum:</strong>
+                        ${event.date}
+                    </div>
+                `;
+            }
+
+            if (event.timeFrom) {
+                html += `
+                    <div class="mb-2">
+                        <strong><i class="ti-time me-2"></i>Uhrzeit:</strong>
+                        ${event.timeFrom}${event.timeTo ? ' - ' + event.timeTo : ''} Uhr
+                    </div>
+                `;
+            }
+
+            if (event.room) {
+                html += `
+                    <div class="mb-2">
+                        <strong><i class="ti-location-pin me-2"></i>Raum:</strong>
+                        ${event.room}
+                    </div>
+                `;
+            }
+
+            if (event.status) {
+                const statusBadge = event.status.includes('Aktiv') ? 'success' : 'secondary';
+                html += `
+                    <div class="mb-2">
+                        <strong>Status:</strong>
+                        <span class="badge bg-${statusBadge}">${event.status}</span>
+                    </div>
+                `;
+            }
+
+            html += `</div>`; // Ende linke Spalte
+
+            // Rechte Spalte: Plätze & Preise
+            html += `<div class="col-md-6">`;
+            html += `<h6 class="text-muted mb-3">Plätze & Reservierungen</h6>`;
+
+            if (event.quota !== null) {
+                html += `
+                    <div class="mb-2">
+                        <strong><i class="ti-package me-2"></i>Kontingent:</strong>
+                        ${event.quota} Plätze
+                    </div>
+                `;
+            }
+
+            if (event.incomingTotal !== null) {
+                html += `
+                    <div class="mb-2">
+                        <strong><i class="ti-check me-2"></i>Reserviert:</strong>
+                        ${event.incomingTotal}
+                    </div>
+                `;
+            }
+
+            if (event.freeSeats !== null) {
+                const freeSeatsBadge = event.freeSeats > 10 ? 'success' : (event.freeSeats > 0 ? 'warning' : 'danger');
+                html += `
+                    <div class="mb-2">
+                        <strong><i class="ti-ticket me-2"></i>Frei:</strong>
+                        <span class="badge bg-${freeSeatsBadge}">${event.freeSeats}</span>
+                    </div>
+                `;
+            }
+
+            html += `</div>`; // Ende rechte Spalte
+            html += `</div>`; // Ende row
+
+            // Preise anzeigen
+            if (event.prices && event.prices.length > 0) {
+                html += `
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Preise</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Kategorie</th>
+                                        <th>Preis</th>
+                                        <th>Reservierungen</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+
+                event.prices.forEach(price => {
+                    html += `
+                        <tr>
+                            <td>${price.categoryLabel || '-'}</td>
+                            <td><strong>${price.priceLabel || '0'}€</strong></td>
+                            <td>${price.incomingReservations || 0}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Kategorien (z.B. "Ausverkauft")
+            if (event.categories && event.categories.length > 0) {
+                html += `
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Hinweise</h6>
+                        <div>
+                `;
+                event.categories.forEach(cat => {
+                    const badgeColor = cat.slug === 'ausverkauft-event' ? 'danger' : 'info';
+                    html += `<span class="badge bg-${badgeColor} me-2">${cat.name}</span>`;
+                });
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Reservierungshinweis
+            if (event.reservationNote) {
+                const isUrl = event.reservationNote.startsWith('http');
+                html += `
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Reservierung</h6>
+                        ${isUrl ?
+                    `<a href="${event.reservationNote}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="ti-new-window me-1"></i>Zur Reservierung
+                            </a>` :
+                    `<p class="mb-0">${event.reservationNote}</p>`
+                }
+                    </div>
+                `;
+            }
+
+            // Produktionsbeschreibung
+            if (production && production.contentHtml) {
+                html += `
+                    <div class="mt-4 pt-4 border-top">
+                        <h6 class="text-muted mb-3">Über die Produktion</h6>
+                        <div class="production-content">
+                            ${production.contentHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Link zur Website
+            if (production && production.permalink) {
+                html += `
+                    <div class="mt-3">
+                        <a href="${production.permalink}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                            <i class="ti-link me-1"></i>Zur Website
+                        </a>
+                    </div>
+                `;
+            }
+
+            modalBody.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading event details:', error);
+            modalBody.innerHTML = `
+                <div class="alert alert-danger">
+                    Fehler beim Laden der Event-Details.
+                </div>
+            `;
+        });
 }
 
 function refreshAllCalendars() {

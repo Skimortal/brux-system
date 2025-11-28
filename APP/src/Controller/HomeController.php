@@ -10,6 +10,7 @@ use App\Enum\KeyStatus;
 use App\Repository\AppointmentRepository;
 use App\Repository\CleaningRepository;
 use App\Repository\KeyManagementRepository;
+use App\Repository\ProductionEventRepository;
 use App\Repository\ProductionRepository;
 use App\Repository\RoomRepository;
 use App\Repository\TechnicianRepository;
@@ -19,6 +20,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class HomeController extends AbstractController
 {
@@ -78,6 +80,7 @@ class HomeController extends AbstractController
         AppointmentRepository $appointmentRepo,
         CleaningRepository $cleaningRepo,
         ProductionRepository $productionRepo,
+        ProductionEventRepository $productionEventRepo,
         TechnicianRepository $techRepo,
         RoomRepository $roomRepo
     ): JsonResponse
@@ -103,37 +106,34 @@ class HomeController extends AbstractController
 
         $events = [];
 
-        // Wir laden ALLE Appointments im Zeitraum
+        // 1. Appointments laden
         $appointments = $appointmentRepo->findAllForCalendar($start, $end);
 
         foreach ($appointments as $app) {
             $appRoom = $app->getRoom();
 
-            // 1. Raum-Filterung:
-            // Wenn wir in einem Raum-Kalender sind ($roomId gesetzt):
+            // Raum-Filterung:
+            // - Wenn roomId gesetzt ist UND Appointment hat einen Raum:
+            //   Nur anzeigen wenn es der gleiche Raum ist
+            // - Wenn Appointment KEINEN Raum hat: Auf ALLEN Kalendern anzeigen
             if ($roomId) {
-                // Wenn Termin einen Raum hat, aber es nicht der aktuelle ist -> überspringen
-                // Termine ohne Raum (Global) werden angezeigt.
                 if ($appRoom !== null && $appRoom->getId() != $roomId) {
-                    continue;
+                    continue; // Anderer Raum -> überspringen
                 }
+                // Falls appRoom === null -> anzeigen (global)
             }
 
-            // 2. Typ-Bestimmung & Kategorien-Filterung
-            $type = 'private'; // Standard
+            // Typ-Bestimmung & Kategorien-Filterung
+            $type = 'private';
             $color = $app->getColor() ?? '#9e9e9e';
 
             if ($app->getCleaning()) {
                 $type = 'cleaning';
-                // Nur anzeigen, wenn Filter 'cleaning' aktiv ist
                 if (!in_array('cleaning', $filters)) continue;
-                // Optional: Farbe überschreiben oder User-Farbe nutzen
             } elseif ($app->getTechnician()) {
                 $type = 'technician';
-                // Nur anzeigen, wenn Filter 'technician' aktiv ist
                 if (!in_array('technician', $filters)) continue;
             } else {
-                // Standard (Privat/Sonstiges)
                 if (!in_array('private', $filters)) continue;
             }
 
@@ -141,8 +141,6 @@ class HomeController extends AbstractController
             $startDate = clone $app->getStartDate();
             $endDate = clone $app->getEndDate();
             if ($app->isAllDay()) {
-                // FullCalendar erwartet exklusives End-Datum bei ganztägigen Events
-                // D.h. End-Datum muss 1 Tag nach dem letzten anzuzeigenden Tag sein
                 $endDate->modify('+1 day');
             }
 
@@ -151,13 +149,12 @@ class HomeController extends AbstractController
                 $app->getTitle(),
                 $startDate->format('c'),
                 $endDate->format('c'),
-                $type, // Typ übergeben
+                $type,
                 $color,
                 $app->isAllDay(),
                 $app->getDescription()
             ))->toArray();
 
-            // Metadaten für das Frontend-Modal
             $eventData['extendedProps']['roomId'] = $appRoom ? $appRoom->getId() : null;
             $eventData['extendedProps']['cleaningId'] = $app->getCleaning() ? $app->getCleaning()->getId() : null;
             $eventData['extendedProps']['technicianId'] = $app->getTechnician() ? $app->getTechnician()->getId() : null;
@@ -166,13 +163,131 @@ class HomeController extends AbstractController
             $events[] = $eventData;
         }
 
-        // --- Produktion Events (Falls separat) ---
-        if ($roomId && in_array('production', $filters)) {
-            // Hier ggf. Production Entity Logic, falls sie nicht über Appointment läuft.
-            // Aktuell lassen wir das aus, wie gewünscht.
+        // 2. Production Events laden (wenn production Filter aktiv)
+        if (in_array('production', $filters)) {
+            $productionEvents = $productionEventRepo->createQueryBuilder('pe')
+                ->where('pe.date BETWEEN :start AND :end')
+                ->andWhere('pe.date IS NOT NULL')
+                ->setParameter('start', $start)
+                ->setParameter('end', $end)
+                ->getQuery()
+                ->getResult();
+
+            foreach ($productionEvents as $pe) {
+                $peRoom = $pe->getRoom();
+
+                // Raum-Filterung: Gleiche Logik wie bei Appointments
+                if ($roomId) {
+                    if ($peRoom !== null && $peRoom->getId() != $roomId) {
+                        continue;
+                    }
+                }
+
+                // Event bauen
+                $title = $pe->getProduction() ? $pe->getProduction()->getTitle() : 'Produktion';
+
+                // Zeit kombinieren
+                $eventStart = clone $pe->getDate();
+                if ($pe->getTimeFrom()) {
+                    $timeParts = explode(':', $pe->getTimeFrom());
+                    $eventStart->setTime((int)$timeParts[0], (int)($timeParts[1] ?? 0));
+                }
+
+                $eventEnd = clone $eventStart;
+                if ($pe->getTimeTo()) {
+                    $timeParts = explode(':', $pe->getTimeTo());
+                    $eventEnd->setTime((int)$timeParts[0], (int)($timeParts[1] ?? 0));
+                } else {
+                    // Default: 2 Stunden später
+                    $eventEnd->modify('+2 hours');
+                }
+
+                $isAllDay = empty($pe->getTimeFrom()) && empty($pe->getTimeTo());
+
+                if ($isAllDay) {
+                    $eventEnd->modify('+1 day');
+                }
+
+                $eventData = [
+                    'id' => 'prod_event_' . $pe->getId(),
+                    'title' => $title,
+                    'start' => $eventStart->format('c'),
+                    'end' => $eventEnd->format('c'),
+                    'allDay' => $isAllDay,
+                    'color' => '#f4b400', // Orange/Gelb für Productions
+                    'backgroundColor' => '#f4b400',
+                    'borderColor' => '#f4b400',
+                    'extendedProps' => [
+                        'type' => 'production',
+                        'productionId' => $pe->getProduction() ? $pe->getProduction()->getId() : null,
+                        'productionEventId' => $pe->getId(),
+                        'roomId' => $peRoom ? $peRoom->getId() : null,
+                        'description' => sprintf(
+                            'Raum: %s | Status: %s',
+                            $peRoom ? $peRoom->getName() : 'Kein Raum',
+                            $pe->getStatus() ? $pe->getStatus()->getLabel() : '-'
+                        ),
+                    ]
+                ];
+
+                $events[] = $eventData;
+            }
         }
 
         return $this->json($events);
+    }
+
+    #[Route('/dashboard/production-event/{id}/details', name: 'app_dashboard_production_event_details', methods: ['GET'])]
+    public function getProductionEventDetails(
+        int $id,
+        ProductionEventRepository $productionEventRepo,
+        TranslatorInterface $translator
+    ): JsonResponse
+    {
+        $event = $productionEventRepo->find($id);
+
+        if (!$event) {
+            return $this->json(['error' => 'Event not found'], 404);
+        }
+
+        $production = $event->getProduction();
+
+        $data = [
+            'event' => [
+                'id' => $event->getId(),
+                'eventIndex' => $event->getEventIndex(),
+                'date' => $event->getDate() ? $event->getDate()->format('d.m.Y') : null,
+                'timeFrom' => $event->getTimeFrom(),
+                'timeTo' => $event->getTimeTo(),
+                'room' => $event->getRoom() ? $event->getRoom()->getName() : null,
+                'status' => $event->getStatus() ? $translator->trans($event->getStatus()->getLabel()) : null,
+                'reservationStatus' => $event->getReservationStatus() ? $translator->trans($event->getReservationStatus()->getLabel()) : null,
+                'quota' => $event->getQuota(),
+                'incomingTotal' => $event->getIncomingTotal(),
+                'freeSeats' => $event->getFreeSeats(),
+                'reservationNote' => $event->getReservationNote(),
+                'categories' => array_map(fn($cat) => [
+                    'name' => $cat->getName(),
+                    'slug' => $cat->getSlug()
+                ], $event->getCategories()->toArray()),
+                'prices' => array_map(fn($price) => [
+                    'categoryLabel' => $price->getCategoryLabel(),
+                    'priceLabel' => $price->getPriceLabel(),
+                    'reservedSeats' => $price->getReservedSeats(),
+                    'incomingReservations' => $price->getIncomingReservations()
+                ], $event->getPriceList()->toArray()),
+            ],
+            'production' => $production ? [
+                'id' => $production->getId(),
+                'title' => $production->getTitle(),
+                'permalink' => $production->getPermalink(),
+                'postThumbnailUrl' => $production->getPostThumbnailUrl(),
+                'contentHtml' => $production->getContentHtml(),
+                'excerptHtml' => $production->getExcerptHtml(),
+            ] : null
+        ];
+
+        return $this->json($data);
     }
 
     #[Route('/dashboard/key/{id}/update', name: 'app_dashboard_key_update', methods: ['POST'])]
@@ -230,7 +345,7 @@ class HomeController extends AbstractController
         $appointment->setTitle($data['title'] ?? 'Neuer Termin');
         $appointment->setDescription($data['description'] ?? null);
 
-        // Raum setzen
+        // Raum setzen (kann null sein für globale Events)
         if (!empty($data['roomId'])) {
             $room = $roomRepository->find($data['roomId']);
             if ($room) {
@@ -299,7 +414,7 @@ class HomeController extends AbstractController
             $appointment->setDescription($data['description']);
         }
 
-        // Raum Update
+        // Raum Update (kann auch auf null gesetzt werden)
         if (array_key_exists('roomId', $data)) {
             if (!empty($data['roomId'])) {
                 $room = $roomRepository->find($data['roomId']);
@@ -309,7 +424,7 @@ class HomeController extends AbstractController
             }
         }
 
-        // Typ Update (Relationen neu setzen oder löschen)
+        // Typ Update
         if (array_key_exists('cleaningId', $data)) {
             $appointment->setCleaning(!empty($data['cleaningId']) ? $cleanRepo->find($data['cleaningId']) : null);
         }
@@ -370,7 +485,6 @@ class HomeController extends AbstractController
     #[Route('/appointments/all', name: 'app_appointments_all', methods: ['GET'])]
     public function getAllAppointments(AppointmentRepository $appointmentRepository): JsonResponse
     {
-        // Sidebar zeigt alle Termine (könnte man auch anpassen, hier erstmal alle)
         $appointments = $appointmentRepository->findAllForCalendar();
 
         $events = array_map(function (Appointment $appointment) {
@@ -380,7 +494,6 @@ class HomeController extends AbstractController
                 $endDate->modify('+1 day')->setTime(0, 0, 0);
             }
 
-            // Typ bestimmen für Sidebar
             $type = 'private';
             if ($appointment->getCleaning()) $type = 'cleaning';
             elseif ($appointment->getTechnician()) $type = 'technician';
