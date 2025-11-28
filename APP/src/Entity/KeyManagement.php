@@ -15,7 +15,7 @@ class KeyManagement extends Base
     private ?Room $room = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $keyColor = null;
+    private ?string $name = null;
 
     #[ORM\Column(type: Types::STRING, length: 50, enumType: KeyStatus::class)]
     private ?KeyStatus $status = KeyStatus::AVAILABLE;
@@ -26,7 +26,6 @@ class KeyManagement extends Base
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $returnDate = null;
 
-    // Neue Relationen
     #[ORM\ManyToOne(targetEntity: User::class)]
     private ?User $user = null;
 
@@ -36,7 +35,6 @@ class KeyManagement extends Base
     #[ORM\ManyToOne(targetEntity: Production::class)]
     private ?Production $production = null;
 
-    // Falls Cleaning eine Entity ist:
     #[ORM\ManyToOne(targetEntity: Cleaning::class)]
     private ?Cleaning $cleaning = null;
 
@@ -52,14 +50,14 @@ class KeyManagement extends Base
         return $this;
     }
 
-    public function getKeyColor(): ?string
+    public function getName(): ?string
     {
-        return $this->keyColor;
+        return $this->name;
     }
 
-    public function setKeyColor(string $keyColor): static
+    public function setName(string $name): static
     {
-        $this->keyColor = $keyColor;
+        $this->name = $name;
 
         return $this;
     }
@@ -144,14 +142,12 @@ class KeyManagement extends Base
         return $this;
     }
 
-    // Helper Methode um den aktuellen Besitzer anzuzeigen
     public function getCurrentHolderName(): string
     {
-        if ($this->user) return $this->user->getEmail(); // Oder ->getName() falls vorhanden
+        if ($this->user) return $this->user->getEmail();
         if ($this->technician) return $this->technician->getName();
         if ($this->production) return $this->production->getDisplayName();
-        if ($this->cleaning) return 'Reinigung'; // Oder $this->cleaning->getName()
+        if ($this->cleaning) return 'Reinigung';
         return 'Unbekannt';
     }
-
 }

@@ -27,7 +27,7 @@
                     <table class="mcDataTable table table-striped table-bordered" cellspacing="0" width="100%">
                         <thead>
                         <tr>
-                            <th>{{ 'key_management.key_color'|trans }}</th>
+                            <th>{{ 'key_management.name'|trans }}</th>
                             <th>{{ 'key_management.status'|trans }}</th>
                             <th>{{ 'key_management.borrow_date'|trans }}</th>
                             <th>{{ 'key_management.return_date'|trans }}</th>
@@ -36,7 +36,7 @@
                         </thead>
                         <tfoot>
                         <tr>
-                            <th>{{ 'key_management.key_color'|trans }}</th>
+                            <th>{{ 'key_management.name'|trans }}</th>
                             <th>{{ 'key_management.status'|trans }}</th>
                             <th>{{ 'key_management.borrow_date'|trans }}</th>
                             <th>{{ 'key_management.return_date'|trans }}</th>
@@ -46,7 +46,7 @@
                         <tbody>
                         {% for key in keys %}
                             <tr>
-                                <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">{{ key.keyColor }}</a></td>
+                                <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">{{ key.name }}</a></td>
                                 <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">
                                     <span class="badge bg-{{ key.status.value == 'available' ? 'success' : (key.status.value == 'borrowed' ? 'warning' : 'danger') }}">
                                         {{ key.status.getLabel()|trans }}

@@ -688,14 +688,14 @@ function openKeyModal(btn) {
     if (!btn) return;
 
     const id = btn.dataset.keyId;
-    const color = btn.dataset.keyColor;
+    const name = btn.dataset.keyName;
     const status = btn.dataset.keyStatus;
 
     const keyIdEl = document.getElementById('keyId');
     if(keyIdEl) keyIdEl.value = id;
 
-    const titleEl = document.getElementById('modalKeyColorTitle');
-    if(titleEl) titleEl.textContent = color;
+    const titleEl = document.getElementById('modalKeyNameTitle');
+    if(titleEl) titleEl.textContent = name;
 
     const statusEl = document.getElementById('keyStatus');
     if(statusEl) {

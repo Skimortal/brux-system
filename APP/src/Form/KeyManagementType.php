@@ -29,8 +29,8 @@ class KeyManagementType extends AbstractType
                 'placeholder' => 'Bitte wählen (Optional)',
                 'required' => false,
             ])
-            ->add('keyColor', TextType::class, [
-                'label' => 'key_management.key_color',
+            ->add('name', TextType::class, [
+                'label' => 'key_management.name',
                 'required' => true,
             ])
             ->add('status', ChoiceType::class, [
@@ -42,10 +42,9 @@ class KeyManagementType extends AbstractType
                 ],
                 'required' => true,
             ])
-            // Entleiher Optionen
             ->add('user', EntityType::class, [
                 'class' => User::class,
-                'choice_label' => 'email', // oder name
+                'choice_label' => 'email',
                 'label' => 'Benutzer',
                 'required' => false,
                 'placeholder' => 'Kein Benutzer',
@@ -68,7 +67,7 @@ class KeyManagementType extends AbstractType
             ])
             ->add('cleaning', EntityType::class, [
                 'class' => Cleaning::class,
-                'choice_label' => 'id', // Anpassen je nach Cleaning Entity
+                'choice_label' => 'id',
                 'label' => 'Reinigung',
                 'required' => false,
                 'placeholder' => 'Keine Reinigung',
