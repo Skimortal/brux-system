@@ -29,6 +29,8 @@ class Appointment
     #[ORM\ManyToOne(targetEntity: Technician::class)]
     private ?Technician $technician = null;
 
+    #[ORM\ManyToOne(targetEntity: Production::class)]
+    private ?Production $production = null;
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $startDate = null;
 
@@ -163,6 +165,17 @@ class Appointment
     public function setTechnician(?Technician $technician): static
     {
         $this->technician = $technician;
+
+        return $this;
+    }
+    public function getProduction(): ?Production
+    {
+        return $this->production;
+    }
+
+    public function setProduction(?Production $production): static
+    {
+        $this->production = $production;
 
         return $this;
     }

@@ -83,4 +83,9 @@ class Technician extends Base
 
         return $this;
     }
+
+    public function __toString(): string
+    {
+        return $this->name ?? '';
+    }
 }

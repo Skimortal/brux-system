@@ -14,6 +14,7 @@ use App\Repository\ProductionEventRepository;
 use App\Repository\ProductionRepository;
 use App\Repository\RoomRepository;
 use App\Repository\TechnicianRepository;
+use App\Service\CalendarColorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -82,7 +83,8 @@ class HomeController extends AbstractController
         ProductionRepository $productionRepo,
         ProductionEventRepository $productionEventRepo,
         TechnicianRepository $techRepo,
-        RoomRepository $roomRepo
+        RoomRepository $roomRepo,
+        CalendarColorService $colorService
     ): JsonResponse
     {
         $startStr = $request->query->get('start');
@@ -112,27 +114,44 @@ class HomeController extends AbstractController
         foreach ($appointments as $app) {
             $appRoom = $app->getRoom();
 
-            // Raum-Filterung:
-            // - Wenn roomId gesetzt ist UND Appointment hat einen Raum:
-            //   Nur anzeigen wenn es der gleiche Raum ist
-            // - Wenn Appointment KEINEN Raum hat: Auf ALLEN Kalendern anzeigen
+            // Raum-Filterung
             if ($roomId) {
                 if ($appRoom !== null && $appRoom->getId() != $roomId) {
-                    continue; // Anderer Raum -> überspringen
+                    continue;
                 }
-                // Falls appRoom === null -> anzeigen (global)
             }
 
             // Typ-Bestimmung & Kategorien-Filterung
             $type = 'private';
-            $color = $app->getColor() ?? '#9e9e9e';
+            $color = $colorService->getAppointmentColor(
+                $app->getCleaning(),
+                $app->getTechnician(),
+                $app->getProduction()
+            );
 
-            if ($app->getCleaning()) {
+            // Titel zusammensetzen mit Relation
+            $displayTitle = $app->getTitle();
+
+            if ($app->getProduction()) {
+                $type = 'production';
+                // Verwende Nuance für Produktions-Appointments
+                $color = $colorService->getProductionAppointmentNuance($app->getProduction()->getId());
+                if (!in_array('production', $filters)) continue;
+
+                // Titel: "Mein Titel (Produktionsname)"
+                $displayTitle .= ' (' . $app->getProduction()->__toString() . ')';
+            } elseif ($app->getCleaning()) {
                 $type = 'cleaning';
                 if (!in_array('cleaning', $filters)) continue;
+
+                // Titel: "Mein Titel (Reinigungsname)"
+                $displayTitle .= ' (' . $app->getCleaning()->__toString() . ')';
             } elseif ($app->getTechnician()) {
                 $type = 'technician';
                 if (!in_array('technician', $filters)) continue;
+
+                // Titel: "Mein Titel (Technikername)"
+                $displayTitle .= ' (' . $app->getTechnician()->__toString() . ')';
             } else {
                 if (!in_array('private', $filters)) continue;
             }
@@ -146,7 +165,7 @@ class HomeController extends AbstractController
 
             $eventData = (new CalendarEventDto(
                 'appt_' . $app->getId(),
-                $app->getTitle(),
+                $displayTitle,  // Erweiterten Titel verwenden
                 $startDate->format('c'),
                 $endDate->format('c'),
                 $type,
@@ -158,12 +177,14 @@ class HomeController extends AbstractController
             $eventData['extendedProps']['roomId'] = $appRoom ? $appRoom->getId() : null;
             $eventData['extendedProps']['cleaningId'] = $app->getCleaning() ? $app->getCleaning()->getId() : null;
             $eventData['extendedProps']['technicianId'] = $app->getTechnician() ? $app->getTechnician()->getId() : null;
+            $eventData['extendedProps']['productionId'] = $app->getProduction() ? $app->getProduction()->getId() : null;
             $eventData['extendedProps']['type'] = $type;
+            $eventData['extendedProps']['originalTitle'] = $app->getTitle(); // ORIGINAL Titel ohne toString
 
             $events[] = $eventData;
         }
 
-        // 2. Production Events laden (wenn production Filter aktiv)
+        // 2. Production Events laden
         if (in_array('production', $filters)) {
             $productionEvents = $productionEventRepo->createQueryBuilder('pe')
                 ->where('pe.date BETWEEN :start AND :end')
@@ -176,15 +197,18 @@ class HomeController extends AbstractController
             foreach ($productionEvents as $pe) {
                 $peRoom = $pe->getRoom();
 
-                // Raum-Filterung: Gleiche Logik wie bei Appointments
                 if ($roomId) {
                     if ($peRoom !== null && $peRoom->getId() != $roomId) {
                         continue;
                     }
                 }
 
-                // Event bauen
                 $title = $pe->getProduction() ? $pe->getProduction()->getTitle() : 'Produktion';
+
+                // Farbe basierend auf Production-ID
+                $color = $pe->getProduction()
+                    ? $colorService->getProductionEventColor($pe->getProduction()->getId())
+                    : '#E91E63';
 
                 // Zeit kombinieren
                 $eventStart = clone $pe->getDate();
@@ -198,7 +222,6 @@ class HomeController extends AbstractController
                     $timeParts = explode(':', $pe->getTimeTo());
                     $eventEnd->setTime((int)$timeParts[0], (int)($timeParts[1] ?? 0));
                 } else {
-                    // Default: 2 Stunden später
                     $eventEnd->modify('+2 hours');
                 }
 
@@ -214,11 +237,11 @@ class HomeController extends AbstractController
                     'start' => $eventStart->format('c'),
                     'end' => $eventEnd->format('c'),
                     'allDay' => $isAllDay,
-                    'color' => '#f4b400', // Orange/Gelb für Productions
-                    'backgroundColor' => '#f4b400',
-                    'borderColor' => '#f4b400',
+                    'color' => $color,
+                    'backgroundColor' => $color,
+                    'borderColor' => $color,
                     'extendedProps' => [
-                        'type' => 'production',
+                        'type' => 'production_event',
                         'productionId' => $pe->getProduction() ? $pe->getProduction()->getId() : null,
                         'productionEventId' => $pe->getId(),
                         'roomId' => $peRoom ? $peRoom->getId() : null,
@@ -336,7 +359,9 @@ class HomeController extends AbstractController
         EntityManagerInterface $em,
         RoomRepository $roomRepository,
         CleaningRepository $cleanRepo,
-        TechnicianRepository $techRepo
+        TechnicianRepository $techRepo,
+        ProductionRepository $productionRepo,
+        CalendarColorService $colorService
     ): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -345,7 +370,7 @@ class HomeController extends AbstractController
         $appointment->setTitle($data['title'] ?? 'Neuer Termin');
         $appointment->setDescription($data['description'] ?? null);
 
-        // Raum setzen (kann null sein für globale Events)
+        // Raum setzen
         if (!empty($data['roomId'])) {
             $room = $roomRepository->find($data['roomId']);
             if ($room) {
@@ -360,6 +385,9 @@ class HomeController extends AbstractController
         if (!empty($data['technicianId'])) {
             $appointment->setTechnician($techRepo->find($data['technicianId']));
         }
+        if (!empty($data['productionId'])) {
+            $appointment->setProduction($productionRepo->find($data['productionId']));
+        }
 
         try {
             $startDate = new \DateTime($data['start']);
@@ -373,7 +401,18 @@ class HomeController extends AbstractController
         $appointment->setStartDate($startDate);
         $appointment->setEndDate($endDate);
         $appointment->setAllDay($allDay);
-        $appointment->setColor($data['color'] ?? '#4285f4');
+
+        // Farbe automatisch setzen basierend auf Typ
+        $color = $colorService->getAppointmentColor(
+            $appointment->getCleaning(),
+            $appointment->getTechnician(),
+            $appointment->getProduction()
+        );
+        // Bei Production: Nuance verwenden
+        if ($appointment->getProduction()) {
+            $color = $colorService->getProductionAppointmentNuance($appointment->getProduction()->getId());
+        }
+        $appointment->setColor($color);
 
         $em->persist($appointment);
         $em->flush();
@@ -402,7 +441,9 @@ class HomeController extends AbstractController
         EntityManagerInterface $em,
         RoomRepository $roomRepository,
         CleaningRepository $cleanRepo,
-        TechnicianRepository $techRepo
+        TechnicianRepository $techRepo,
+        ProductionRepository $productionRepo,
+        CalendarColorService $colorService
     ): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -414,7 +455,7 @@ class HomeController extends AbstractController
             $appointment->setDescription($data['description']);
         }
 
-        // Raum Update (kann auch auf null gesetzt werden)
+        // Raum Update
         if (array_key_exists('roomId', $data)) {
             if (!empty($data['roomId'])) {
                 $room = $roomRepository->find($data['roomId']);
@@ -430,6 +471,9 @@ class HomeController extends AbstractController
         }
         if (array_key_exists('technicianId', $data)) {
             $appointment->setTechnician(!empty($data['technicianId']) ? $techRepo->find($data['technicianId']) : null);
+        }
+        if (array_key_exists('productionId', $data)) {
+            $appointment->setProduction(!empty($data['productionId']) ? $productionRepo->find($data['productionId']) : null);
         }
 
         if (isset($data['start'])) {
@@ -464,9 +508,17 @@ class HomeController extends AbstractController
 
             $appointment->setAllDay($newAllDay);
         }
-        if (isset($data['color'])) {
-            $appointment->setColor($data['color']);
+
+        // Farbe automatisch neu setzen
+        $color = $colorService->getAppointmentColor(
+            $appointment->getCleaning(),
+            $appointment->getTechnician(),
+            $appointment->getProduction()
+        );
+        if ($appointment->getProduction()) {
+            $color = $colorService->getProductionAppointmentNuance($appointment->getProduction()->getId());
         }
+        $appointment->setColor($color);
 
         $em->flush();
 
@@ -495,12 +547,22 @@ class HomeController extends AbstractController
             }
 
             $type = 'private';
-            if ($appointment->getCleaning()) $type = 'cleaning';
-            elseif ($appointment->getTechnician()) $type = 'technician';
+            $displayTitle = $appointment->getTitle();
+
+            if ($appointment->getProduction()) {
+                $type = 'production';
+                $displayTitle .= ' (' . $appointment->getProduction()->__toString() . ')';
+            } elseif ($appointment->getCleaning()) {
+                $type = 'cleaning';
+                $displayTitle .= ' (' . $appointment->getCleaning()->__toString() . ')';
+            } elseif ($appointment->getTechnician()) {
+                $type = 'technician';
+                $displayTitle .= ' (' . $appointment->getTechnician()->__toString() . ')';
+            }
 
             return [
                 'id' => $appointment->getId(),
-                'title' => $appointment->getTitle(),
+                'title' => $displayTitle,
                 'start' => $appointment->getStartDate()->format('Y-m-d\TH:i:s'),
                 'end' => $endDate->format('Y-m-d\TH:i:s'),
                 'allDay' => $appointment->isAllDay(),
@@ -511,6 +573,8 @@ class HomeController extends AbstractController
                     'roomId' => $appointment->getRoom() ? $appointment->getRoom()->getId() : null,
                     'cleaningId' => $appointment->getCleaning() ? $appointment->getCleaning()->getId() : null,
                     'technicianId' => $appointment->getTechnician() ? $appointment->getTechnician()->getId() : null,
+                    'productionId' => $appointment->getProduction() ? $appointment->getProduction()->getId() : null,
+                    'originalTitle' => $appointment->getTitle(), // ORIGINAL Titel ohne toString
                 ]
             ];
         }, $appointments);

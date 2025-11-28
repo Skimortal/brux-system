@@ -257,6 +257,7 @@ function initSingleCalendar(calendarEl, isMobile) {
             hour12: false,
             meridiem: false
         },
+        eventDisplay: 'block', // WICHTIG: Erzwingt Block-Darstellung statt Dot-Darstellung
         events: function(info, successCallback, failureCallback) {
             const activeFilters = Array.from(document.querySelectorAll('.filter-checkbox:checked'))
                 .map(cb => cb.value)
@@ -278,14 +279,14 @@ function initSingleCalendar(calendarEl, isMobile) {
         eventClick: function(info) {
             const type = info.event.extendedProps.type;
 
-            if (type === 'production') {
-                // ProductionEvent Modal öffnen
+            if (type === 'production_event') {
+                // ProductionEvent Modal öffnen (nicht editierbar über Dashboard)
                 const productionEventId = info.event.extendedProps.productionEventId;
                 if (productionEventId) {
                     openProductionEventModal(productionEventId);
                 }
-            } else if (['private', 'cleaning', 'technician'].includes(type)) {
-                // Bestehende Appointment Modal
+            } else if (['private', 'cleaning', 'technician', 'production'].includes(type)) {
+                // Appointment Modal
                 openAppointmentModal(null, info.event);
             } else {
                 alert(info.event.title + '\n' + (info.event.extendedProps.description || ''));
@@ -571,15 +572,15 @@ function setupModalListeners() {
     }
 
     // Farbauswahl Listener
-    document.querySelectorAll('.color-option').forEach(option => {
-        const newOpt = option.cloneNode(true);
-        option.parentNode.replaceChild(newOpt, option);
-        newOpt.addEventListener('click', function() {
-            document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
-            this.classList.add('selected');
-            document.getElementById('appointmentColor').value = this.getAttribute('data-color');
-        });
-    });
+    // document.querySelectorAll('.color-option').forEach(option => {
+    //     const newOpt = option.cloneNode(true);
+    //     option.parentNode.replaceChild(newOpt, option);
+    //     newOpt.addEventListener('click', function() {
+    //         document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+    //         this.classList.add('selected');
+    //         document.getElementById('appointmentColor').value = this.getAttribute('data-color');
+    //     });
+    // });
 
     // Typ Auswahl Listener (Radio Buttons)
     document.querySelectorAll('.type-radio').forEach(radio => {
@@ -606,21 +607,18 @@ function toggleTypeFields() {
 
     const cleanGroup = document.getElementById('cleaningSelectGroup');
     const techGroup = document.getElementById('technicianSelectGroup');
+    const prodGroup = document.getElementById('productionSelectGroup');
     const titleGroup = document.getElementById('titleGroup');
     const titleInput = document.getElementById('appointmentTitle');
 
     if (cleanGroup) cleanGroup.style.display = (type === 'cleaning') ? 'block' : 'none';
     if (techGroup) techGroup.style.display = (type === 'technician') ? 'block' : 'none';
+    if (prodGroup) prodGroup.style.display = (type === 'production') ? 'block' : 'none';
 
-    // Titel nur bei Private anzeigen und Pflicht machen
+    // Titel immer anzeigen (auch bei Production)
     if (titleGroup) {
-        if (type === 'private') {
-            titleGroup.style.display = 'block';
-            if(titleInput) titleInput.setAttribute('required', 'required');
-        } else {
-            titleGroup.style.display = 'none';
-            if(titleInput) titleInput.removeAttribute('required');
-        }
+        titleGroup.style.display = 'block';
+        if(titleInput) titleInput.setAttribute('required', 'required');
     }
 }
 
@@ -630,6 +628,7 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
     const roomSelect = document.getElementById('appointmentRoom');
     const cleanSelect = document.getElementById('appointmentCleaning');
     const techSelect = document.getElementById('appointmentTechnician');
+    const prodSelect = document.getElementById('appointmentProduction');
     const titleInput = document.getElementById('appointmentTitle');
     const descInput = document.getElementById('appointmentDescription');
 
@@ -637,6 +636,7 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
     if(roomSelect) roomSelect.value = '';
     if(cleanSelect) cleanSelect.value = '';
     if(techSelect) techSelect.value = '';
+    if(prodSelect) prodSelect.value = '';
     if(titleInput) titleInput.value = '';
     if(descInput) descInput.value = '';
 
@@ -658,10 +658,12 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         }
         document.getElementById('appointmentId').value = cleanId;
 
-        if(titleInput) titleInput.value = event.title;
+        // WICHTIG: Verwende originalTitle statt title für das Modal
+        const originalTitle = event.extendedProps?.originalTitle || event.title;
+        if(titleInput) titleInput.value = originalTitle;
         if(descInput) descInput.value = event.extendedProps?.description || '';
 
-        // Raum setzen bei Edit
+        // Raum setzen
         if (event.extendedProps && event.extendedProps.roomId && roomSelect) {
             roomSelect.value = event.extendedProps.roomId;
         }
@@ -680,13 +682,15 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         if (type === 'technician' && event.extendedProps.technicianId && techSelect) {
             techSelect.value = event.extendedProps.technicianId;
         }
+        if (type === 'production' && event.extendedProps.productionId && prodSelect) {
+            prodSelect.value = event.extendedProps.productionId;
+        }
 
-        // Datum/Zeit-Handling mit korrekter Timezone-Berücksichtigung
+        // Datum/Zeit
         let startDate = event.start;
         let endDate = event.end || event.start;
 
         if (event.allDay) {
-            // Bei ganztägigen Events: End-Datum um 1 Tag reduzieren (exklusives End-Datum von FullCalendar)
             const adjustedEnd = new Date(endDate);
             adjustedEnd.setDate(adjustedEnd.getDate() - 1);
             endDate = adjustedEnd;
@@ -698,24 +702,17 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
 
         toggleAllDay({target: {checked: event.allDay}});
 
-        const color = event.backgroundColor || '#4285f4';
-        document.getElementById('appointmentColor').value = color;
-        document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
-        const sel = document.querySelector(`.color-option[data-color="${color}"]`);
-        if(sel) sel.classList.add('selected');
-
     } else {
+        // Neu erstellen
         modalTitle.textContent = 'Neuer Termin';
         deleteBtn.style.display = 'none';
         document.getElementById('appointmentId').value = '';
 
-        // Reset Date Fields explicitly
         const startInput = document.getElementById('appointmentStart');
         const endInput = document.getElementById('appointmentEnd');
         startInput.value = '';
         endInput.value = '';
 
-        // Raum vorselektieren wenn übergeben
         if(roomId && roomSelect) {
             roomSelect.value = roomId;
         }
@@ -742,11 +739,6 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         endInput.value = formatDateForInput(endDate);
 
         toggleAllDay({target: {checked: false}});
-
-        document.getElementById('appointmentColor').value = '#4285f4';
-        document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
-        const def = document.querySelector(`.color-option[data-color="#4285f4"]`);
-        if(def) def.classList.add('selected');
     }
 
     if(appointmentModal) appointmentModal.show();
@@ -793,19 +785,22 @@ function saveAppointment() {
 
     let cleaningId = null;
     let technicianId = null;
+    let productionId = null;
 
     if (type === 'cleaning') {
         cleaningId = document.getElementById('appointmentCleaning').value;
-        title = 'Reinigung'; // Fallback Titel
+        if (!title) title = 'Reinigung'; // Fallback
     } else if (type === 'technician') {
         technicianId = document.getElementById('appointmentTechnician').value;
-        title = 'Techniker'; // Fallback Titel
+        if (!title) title = 'Techniker'; // Fallback
+    } else if (type === 'production') {
+        productionId = document.getElementById('appointmentProduction').value;
+        if (!title) title = 'Produktion'; // Fallback
     }
 
     let start = document.getElementById('appointmentStart').value;
     let end = document.getElementById('appointmentEnd').value;
     const allDay = document.getElementById('appointmentAllDay').checked;
-    const color = document.getElementById('appointmentColor').value;
 
     if (!title || !start || !end) {
         alert('Bitte füllen Sie alle Pflichtfelder aus.');
@@ -814,17 +809,16 @@ function saveAppointment() {
 
     if (allDay) {
         start = start + 'T00:00:00';
-        // Input "2025-11-08" (inklusiv). Backend erwartet für DB (nach -1 Tag Logik) "2025-11-09".
-        // Also 1 Tag addieren.
         const parts = end.split('-');
         const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        d.setDate(d.getDate() + 1); // Add 1 Day -> "2025-11-09"
+        d.setDate(d.getDate() + 1);
 
         const nextDayStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         end = nextDayStr + 'T00:00:00';
     }
 
-    const data = { title, description, start, end, allDay, color, roomId, cleaningId, technicianId };
+    // FARBE WIRD NICHT MEHR VOM CLIENT GESENDET - Server bestimmt sie automatisch
+    const data = { title, description, start, end, allDay, roomId, cleaningId, technicianId, productionId };
     const url = id ? `/appointment/${id}/edit` : '/appointment/create';
     const method = id ? 'PUT' : 'POST';
 

@@ -25,6 +25,8 @@ class CalendarEventDto
             'end' => $this->end,
             'classNames' => ['event-type-' . $this->type], // Für CSS Styling
             'color' => $this->color,
+            'backgroundColor' => $this->color,  // Explizit für FullCalendar
+            'borderColor' => $this->color,      // Explizit für FullCalendar
             'allDay' => $this->allDay,
             'description' => $this->description,
             'extendedProps' => [

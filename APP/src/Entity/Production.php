@@ -208,4 +208,9 @@ class Production extends Base
     {
         return $this->title ?? '';
     }
+
+    public function __toString(): string
+    {
+        return $this->getDisplayName();
+    }
 }
