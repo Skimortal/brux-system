@@ -18,14 +18,14 @@
     {% endfor %}
 
     {{ form_start(form, { attr: { 'data-turbo': 'false' } }) }}
-    
+
     {{ form_row(form.name) }}
     {{ form_row(form.address) }}
-    
-    <h5 class="mt-4">{{ 'volunteer.payments'|trans }}</h5>
-    <div class="payments-collection" data-controller="form-collection" data-form-collection-target="collection">
-        {{ form_row(form.payments) }}
-    </div>
+
+{#    <h5 class="mt-4">{{ 'volunteer.payments'|trans }}</h5>#}
+{#    <div class="payments-collection" data-controller="form-collection" data-form-collection-target="collection">#}
+{#        {{ form_row(form.payments) }}#}
+{#    </div>#}
 
     <div class="mb-3 row">
         <div class="col-sm-8">
