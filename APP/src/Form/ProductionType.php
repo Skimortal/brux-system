@@ -19,28 +19,34 @@ class ProductionType extends AbstractType
             ->add('externalId', TextType::class, [
                 'label' => 'production.external_id',
                 'required' => false,
+                'disabled' => true,
             ])
             ->add('title', TextType::class, [
                 'label' => 'production.title',
                 'required' => true,
+                'disabled' => true,
             ])
             ->add('permalink', UrlType::class, [
                 'label' => 'production.permalink',
                 'required' => false,
+                'disabled' => true,
             ])
             ->add('postThumbnailUrl', UrlType::class, [
                 'label' => 'production.post_thumbnail_url',
                 'required' => false,
+                'disabled' => true,
             ])
             ->add('contentHtml', TextareaType::class, [
                 'label' => 'production.content_html',
                 'required' => false,
                 'attr' => ['rows' => 10],
+                'disabled' => true,
             ])
             ->add('excerptHtml', TextareaType::class, [
                 'label' => 'production.excerpt_html',
                 'required' => false,
                 'attr' => ['rows' => 5],
+                'disabled' => true,
             ])
             ->add('technicians', CollectionType::class, [
                 'entry_type' => ProductionTechnicianType::class,

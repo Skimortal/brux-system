@@ -28,31 +28,37 @@ class ProductionEventType extends AbstractType
                 'class' => Production::class,
                 'choice_label' => 'displayName',
                 'required' => true,
+                'disabled' => true,
             ])
             ->add('eventIndex', IntegerType::class, [
                 'label' => 'production_event.event_index',
                 'required' => false,
+                'disabled' => true,
             ])
             ->add('date', DateType::class, [
                 'label' => 'production_event.date',
                 'widget' => 'single_text',
                 'required' => false,
+                'disabled' => true,
             ])
             ->add('timeFrom', TextType::class, [
                 'label' => 'production_event.time_from',
                 'required' => false,
                 'attr' => ['placeholder' => 'HH:MM'],
+                'disabled' => true,
             ])
             ->add('timeTo', TextType::class, [
                 'label' => 'production_event.time_to',
                 'required' => false,
                 'attr' => ['placeholder' => 'HH:MM'],
+                'disabled' => true,
             ])
             ->add('room', EntityType::class, [
                 'label' => 'production_event.room',
                 'class' => Room::class,
                 'choice_label' => 'name',
                 'required' => false,
+                'disabled' => true,
             ])
             ->add('status', ChoiceType::class, [
                 'label' => 'production_event.status',
@@ -64,6 +70,7 @@ class ProductionEventType extends AbstractType
                     return $entity?->value;
                 },
                 'required' => false,
+                'disabled' => true,
             ])
             ->add('reservationStatus', ChoiceType::class, [
                 'label' => 'production_event.reservation_status',
@@ -75,23 +82,28 @@ class ProductionEventType extends AbstractType
                     return $entity?->value;
                 },
                 'required' => false,
+                'disabled' => true,
             ])
             ->add('quota', IntegerType::class, [
                 'label' => 'production_event.quota',
                 'required' => false,
+                'disabled' => true,
             ])
             ->add('incomingTotal', IntegerType::class, [
                 'label' => 'production_event.incoming_total',
                 'required' => false,
+                'disabled' => true,
             ])
             ->add('freeSeats', IntegerType::class, [
                 'label' => 'production_event.free_seats',
                 'required' => false,
+                'disabled' => true,
             ])
             ->add('reservationNote', TextareaType::class, [
                 'label' => 'production_event.reservation_note',
                 'required' => false,
                 'attr' => ['rows' => 3],
+                'disabled' => true,
             ])
             ->add('categories', EntityType::class, [
                 'label' => 'production_event.categories',
@@ -99,6 +111,11 @@ class ProductionEventType extends AbstractType
                 'choice_label' => 'name',
                 'multiple' => true,
                 'required' => false,
+                'attr' => [
+                    'class' => 'tom-select',
+                    'data-placeholder' => 'Bitte auswählen',
+                ],
+                'disabled' => true,
             ])
         ;
     }

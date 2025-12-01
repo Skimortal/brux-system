@@ -239,11 +239,19 @@
 
                                 <div class="mb-3">
                                     <label class="form-label">Ausgabedatum</label>
-                                    <input type="date" class="form-control" id="keyBorrowDate">
+                                    <input type="text"
+                                           class="form-control"
+                                           id="keyBorrowDate"
+                                           data-daterangepicker="single-datetime"
+                                           placeholder="Datum und Uhrzeit wählen">
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Rückgabedatum (geplant)</label>
-                                    <input type="date" class="form-control" id="keyReturnDate">
+                                    <input type="text"
+                                           class="form-control"
+                                           id="keyReturnDate"
+                                           data-daterangepicker="single-datetime"
+                                           placeholder="Datum und Uhrzeit wählen">
                                 </div>
                             </div>
                         </form>
@@ -344,13 +352,12 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="appointmentStart" class="form-label">Start *</label>
-                                <input type="datetime-local" class="form-control" id="appointmentStart" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="appointmentEnd" class="form-label">Ende *</label>
-                                <input type="datetime-local" class="form-control" id="appointmentEnd" required>
+                                <label for="appointmentDateRange" class="form-label">Zeitraum *</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="appointmentDateRange"
+                                       data-daterangepicker="datetime-range"
+                                       placeholder="Start - Ende wählen">
                             </div>
 
                             <div class="mb-3 form-check">

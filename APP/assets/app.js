@@ -6,6 +6,7 @@ import './dashboard.js';
 import './datatables.js';
 import TomSelect from 'tom-select';
 import 'tom-select/dist/css/tom-select.css';
+import { initDaterangepickers, destroyDaterangepickers } from './daterangepicker-init.js';
 
 function initAdminator() {
     if (window.AdminatorApp && typeof window.AdminatorApp.init === 'function') {
@@ -71,6 +72,7 @@ function boot() {
 function bootAlways() {
     initTomSelect();
     initProductionTypeToggle();
+    initDaterangepickers();
 }
 
 document.addEventListener('DOMContentLoaded', bootAlways);

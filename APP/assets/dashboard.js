@@ -5,6 +5,8 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import deLocale from '@fullcalendar/core/locales/de';
 import { Modal } from 'bootstrap';
+import moment from 'moment';
+import { initDaterangepicker, getPickerInstance, initDaterangepickers } from './daterangepicker-init.js';
 
 var doughnutChart;
 function initDoughnutChart() {
@@ -865,18 +867,6 @@ function setupModalListeners() {
         newBtn.addEventListener('change', toggleAllDay);
     }
 
-    // Farbauswahl Listener
-    // document.querySelectorAll('.color-option').forEach(option => {
-    //     const newOpt = option.cloneNode(true);
-    //     option.parentNode.replaceChild(newOpt, option);
-    //     newOpt.addEventListener('click', function() {
-    //         document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
-    //         this.classList.add('selected');
-    //         document.getElementById('appointmentColor').value = this.getAttribute('data-color');
-    //     });
-    // });
-
-    // Typ Auswahl Listener (Radio Buttons)
     document.querySelectorAll('.type-radio').forEach(radio => {
         const newRadio = radio.cloneNode(true);
         radio.parentNode.replaceChild(newRadio, radio);
@@ -925,6 +915,7 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
     const prodSelect = document.getElementById('appointmentProduction');
     const titleInput = document.getElementById('appointmentTitle');
     const descInput = document.getElementById('appointmentDescription');
+    const dateRangeInput = document.getElementById('appointmentDateRange');
 
     // Reset All Fields
     if(roomSelect) roomSelect.value = '';
@@ -941,7 +932,11 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         toggleTypeFields();
     }
 
+    // Initialisiere Daterangepicker
+    const picker = initDaterangepicker(dateRangeInput, 'dateTimeRange');
+
     if (event) {
+        // BEARBEITEN
         modalTitle.textContent = 'Termin bearbeiten';
         deleteBtn.style.display = 'inline-block';
 
@@ -952,7 +947,7 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         }
         document.getElementById('appointmentId').value = cleanId;
 
-        // WICHTIG: Verwende originalTitle statt title für das Modal
+        // Titel und Beschreibung
         const originalTitle = event.extendedProps?.originalTitle || event.title;
         if(titleInput) titleInput.value = originalTitle;
         if(descInput) descInput.value = event.extendedProps?.description || '';
@@ -980,32 +975,25 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
             prodSelect.value = event.extendedProps.productionId;
         }
 
-        // Datum/Zeit
-        let startDate = event.start;
-        let endDate = event.end || event.start;
+        // Datum/Zeit für Range Picker setzen
+        let startDate = moment(event.start);
+        let endDate = moment(event.end || event.start);
 
         if (event.allDay) {
-            const adjustedEnd = new Date(endDate);
-            adjustedEnd.setDate(adjustedEnd.getDate() - 1);
-            endDate = adjustedEnd;
+            endDate.subtract(1, 'days');
         }
 
-        document.getElementById('appointmentStart').value = formatDateForInput(startDate, event.allDay);
-        document.getElementById('appointmentEnd').value = formatDateForInput(endDate, event.allDay);
-        document.getElementById('appointmentAllDay').checked = event.allDay;
+        picker.setStartDate(startDate);
+        picker.setEndDate(endDate);
 
+        document.getElementById('appointmentAllDay').checked = event.allDay;
         toggleAllDay({target: {checked: event.allDay}});
 
     } else {
-        // Neu erstellen
+        // NEU ERSTELLEN
         modalTitle.textContent = 'Neuer Termin';
         deleteBtn.style.display = 'none';
         document.getElementById('appointmentId').value = '';
-
-        const startInput = document.getElementById('appointmentStart');
-        const endInput = document.getElementById('appointmentEnd');
-        startInput.value = '';
-        endInput.value = '';
 
         if(roomId && roomSelect) {
             roomSelect.value = roomId;
@@ -1013,24 +1001,22 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
 
         let startDate, endDate;
         if (clickedDateTime) {
-            startDate = clickedDateTime;
-            endDate = new Date(startDate.getTime());
-            endDate.setHours(endDate.getHours() + 1);
+            startDate = moment(clickedDateTime);
+            endDate = moment(clickedDateTime).add(1, 'hours');
             document.getElementById('appointmentAllDay').checked = false;
         } else {
             if(dateStr) {
-                startDate = new Date(dateStr);
+                startDate = moment(dateStr);
             } else {
-                startDate = new Date();
+                startDate = moment();
             }
-            startDate.setHours(9,0,0,0);
-            endDate = new Date(startDate);
-            endDate.setHours(10,0,0,0);
+            startDate.hours(9).minutes(0).seconds(0);
+            endDate = moment(startDate).add(1, 'hours');
             document.getElementById('appointmentAllDay').checked = false;
         }
 
-        startInput.value = formatDateForInput(startDate);
-        endInput.value = formatDateForInput(endDate);
+        picker.setStartDate(startDate);
+        picker.setEndDate(endDate);
 
         toggleAllDay({target: {checked: false}});
     }
@@ -1038,34 +1024,32 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
     if(appointmentModal) appointmentModal.show();
 }
 
-function formatDateForInput(date, isAllDay = false) {
-    if (!date) return '';
-    const d = date instanceof Date ? date : new Date(date);
-
-    // Verwende lokale Zeit für die Darstellung im Input-Feld
-    const pad = n => String(n).padStart(2, '0');
-    const datePart = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
-    if (isAllDay) {
-        return datePart;
-    }
-
-    // Für zeitbasierte Events: Verwende lokale Zeit (nicht UTC)
-    return `${datePart}T${pad(d.getHours() - 1)}:${pad(d.getMinutes())}`;
-}
-
 function toggleAllDay(e) {
-    const startInput = document.getElementById('appointmentStart');
-    const endInput = document.getElementById('appointmentEnd');
+    const dateRangeInput = document.getElementById('appointmentDateRange');
+    if (!dateRangeInput) return;
+
+    const picker = getPickerInstance(dateRangeInput);
+    if (!picker) return;
+
     if (e.target.checked) {
-        startInput.type = 'date';
-        endInput.type = 'date';
-        if(startInput.value.includes('T')) startInput.value = startInput.value.split('T')[0];
-        if(endInput.value.includes('T')) endInput.value = endInput.value.split('T')[0];
+        // Ganztägig: Nur Datum, keine Zeit
+        const currentStart = picker.startDate;
+        const currentEnd = picker.endDate;
+
+        picker.timePicker = false;
+        picker.locale.format = 'DD.MM.YYYY';
+
+        picker.setStartDate(currentStart.startOf('day'));
+        picker.setEndDate(currentEnd.startOf('day'));
     } else {
-        startInput.type = 'datetime-local';
-        endInput.type = 'datetime-local';
+        // Mit Zeit
+        picker.timePicker = true;
+        picker.timePicker24Hour = true;
+        picker.timePickerIncrement = 15;
+        picker.locale.format = 'DD.MM.YYYY HH:mm';
     }
+
+    picker.updateView();
 }
 
 function saveAppointment() {
@@ -1083,36 +1067,58 @@ function saveAppointment() {
 
     if (type === 'cleaning') {
         cleaningId = document.getElementById('appointmentCleaning').value;
-        if (!title) title = 'Reinigung'; // Fallback
+        if (!title) title = 'Reinigung';
     } else if (type === 'technician') {
         technicianId = document.getElementById('appointmentTechnician').value;
-        if (!title) title = 'Techniker'; // Fallback
+        if (!title) title = 'Techniker';
     } else if (type === 'production') {
         productionId = document.getElementById('appointmentProduction').value;
-        if (!title) title = 'Produktion'; // Fallback
+        if (!title) title = 'Produktion';
     }
 
-    let start = document.getElementById('appointmentStart').value;
-    let end = document.getElementById('appointmentEnd').value;
     const allDay = document.getElementById('appointmentAllDay').checked;
+    const dateRangeInput = document.getElementById('appointmentDateRange');
 
-    if (!title || !start || !end) {
-        alert('Bitte füllen Sie alle Pflichtfelder aus.');
+    if (!title) {
+        alert('Bitte geben Sie einen Titel ein.');
         return;
     }
 
-    if (allDay) {
-        start = start + 'T00:00:00';
-        const parts = end.split('-');
-        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        d.setDate(d.getDate() + 1);
+    const picker = getPickerInstance(dateRangeInput);
 
-        const nextDayStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        end = nextDayStr + 'T00:00:00';
+    if (!picker || !picker.startDate || !picker.endDate) {
+        alert('Bitte wählen Sie einen Zeitraum aus.');
+        return;
     }
 
-    // FARBE WIRD NICHT MEHR VOM CLIENT GESENDET - Server bestimmt sie automatisch
-    const data = { title, description, start, end, allDay, roomId, cleaningId, technicianId, productionId };
+    let startDate = picker.startDate;
+    let endDate = picker.endDate;
+
+    // Formatiere Datum für Backend
+    let start, end;
+
+    if (allDay) {
+        // Ganztägig
+        start = startDate.format('YYYY-MM-DD') + 'T00:00:00';
+        // Füge einen Tag zum Ende hinzu für FullCalendar
+        end = endDate.clone().add(1, 'days').format('YYYY-MM-DD') + 'T00:00:00';
+    } else {
+        start = startDate.format('YYYY-MM-DDTHH:mm:ss');
+        end = endDate.format('YYYY-MM-DDTHH:mm:ss');
+    }
+
+    const data = {
+        title,
+        description,
+        start,
+        end,
+        allDay,
+        roomId,
+        cleaningId,
+        technicianId,
+        productionId
+    };
+
     const url = id ? `/appointment/${id}/edit` : '/appointment/create';
     const method = id ? 'PUT' : 'POST';
 
@@ -1238,11 +1244,25 @@ function openKeyModal(btn) {
         statusEl.dispatchEvent(new Event('change'));
     }
 
+    // Initialisiere Daterangepicker für Borrow/Return Dates
     const borrowEl = document.getElementById('keyBorrowDate');
-    if(borrowEl) borrowEl.value = btn.dataset.borrowDate;
-
     const returnEl = document.getElementById('keyReturnDate');
-    if(returnEl) returnEl.value = btn.dataset.returnDate;
+
+    if (borrowEl) {
+        const borrowPicker = initDaterangepicker(borrowEl, 'singleDateTime');
+        const borrowDate = btn.dataset.borrowDate;
+        if (borrowDate && borrowPicker) {
+            borrowPicker.setStartDate(moment(borrowDate));
+        }
+    }
+
+    if (returnEl) {
+        const returnPicker = initDaterangepicker(returnEl, 'singleDateTime');
+        const returnDate = btn.dataset.returnDate;
+        if (returnDate && returnPicker) {
+            returnPicker.setStartDate(moment(returnDate));
+        }
+    }
 
     const uId = btn.dataset.userId;
     const tId = btn.dataset.techId;
@@ -1282,14 +1302,34 @@ function saveKeyData() {
         return el ? el.value : null;
     };
 
+    const borrowEl = document.getElementById('keyBorrowDate');
+    const returnEl = document.getElementById('keyReturnDate');
+
+    let borrowDate = null;
+    let returnDate = null;
+
+    if (borrowEl) {
+        const borrowPicker = getPickerInstance(borrowEl);
+        if (borrowPicker && borrowPicker.startDate) {
+            borrowDate = borrowPicker.startDate.format('YYYY-MM-DD HH:mm:ss');
+        }
+    }
+
+    if (returnEl) {
+        const returnPicker = getPickerInstance(returnEl);
+        if (returnPicker && returnPicker.startDate) {
+            returnDate = returnPicker.startDate.format('YYYY-MM-DD HH:mm:ss');
+        }
+    }
+
     const data = {
         status: status,
         userId: getVal('userId'),
         technicianId: getVal('technicianId'),
         productionId: getVal('productionId'),
         cleaningId: getVal('cleaningId'),
-        borrowDate: getVal('keyBorrowDate'),
-        returnDate: getVal('keyReturnDate')
+        borrowDate: borrowDate,
+        returnDate: returnDate
     };
 
     fetch(`/dashboard/key/${id}/update`, {

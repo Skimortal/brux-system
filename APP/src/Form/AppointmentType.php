@@ -26,15 +26,14 @@ class AppointmentType extends AbstractType
                 'required' => false,
                 'attr' => ['class' => 'form-control', 'rows' => 3, 'placeholder' => 'Optional: Beschreibung']
             ])
-            ->add('startDate', DateTimeType::class, [
-                'label' => 'Start',
-                'widget' => 'single_text',
-                'attr' => ['class' => 'form-control']
-            ])
-            ->add('endDate', DateTimeType::class, [
-                'label' => 'Ende',
-                'widget' => 'single_text',
-                'attr' => ['class' => 'form-control']
+            ->add('dateRange', TextType::class, [
+                'label' => 'Zeitraum',
+                'mapped' => false,
+                'attr' => [
+                    'data-daterangepicker' => 'datetime-range',
+                    'placeholder' => 'Start - Ende wählen',
+                    'class' => 'form-control'
+                ]
             ])
             ->add('allDay', CheckboxType::class, [
                 'label' => 'Ganztägig',
