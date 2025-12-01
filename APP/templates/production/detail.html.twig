@@ -108,6 +108,7 @@
                         </div>
                     </div>
 
+                    {# Contact Persons Collection #}
                     <div class="bd bgc-white p-20 mt-4">
                         <div class="layers">
                             <div class="layer w-100 mB-10">
@@ -202,8 +203,21 @@
             </div>
         </div>
 
-        {# Rechte Spalte: Events Liste #}
+        {# Rechte Spalte: Kalender & Events Liste #}
         <div class="col-md-6">
+            {# NEU: Kalender #}
+            {% if production.id %}
+                <div class="bgc-white p-20 bd mb-4">
+                    <h6 class="c-grey-900">{{ 'production.events_calendar'|trans }}</h6>
+                    <div class="mT-20">
+                        <div id="production-events-calendar"
+                             data-production-id="{{ production.id }}"
+                             data-edit-route="{{ path('app_production_event_edit', {id: '__ID__'}) }}"></div>
+                    </div>
+                </div>
+            {% endif %}
+
+            {# Events Liste #}
             <div class="bgc-white p-20 bd">
                 <h6 class="c-grey-900">
                     {{ 'production.events'|trans }}
@@ -254,4 +268,31 @@
         </div>
     </div>
 
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if production.id %}
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof window.initProductionCalendar === 'function') {
+                    window.initProductionCalendar(
+                        'production-events-calendar',
+                        {{ production.id }},
+                        '{{ path('app_production_event_edit', {id: '__ID__'})|raw }}'
+                    );
+                }
+            });
+
+            document.addEventListener('turbo:load', function() {
+                if (typeof window.initProductionCalendar === 'function') {
+                    window.initProductionCalendar(
+                        'production-events-calendar',
+                        {{ production.id }},
+                        '{{ path('app_production_event_edit', {id: '__ID__'})|raw }}'
+                    );
+                }
+            });
+        </script>
+    {% endif %}
 {% endblock %}

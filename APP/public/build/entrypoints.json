@@ -3,9 +3,9 @@
     "app": {
       "js": [
         "/build/runtime.f82f4939.js",
-        "/build/952.ea81af83.js",
+        "/build/474.4a832a7a.js",
         "/build/752.a0b871ab.js",
-        "/build/app.1ae1ff0f.js"
+        "/build/app.8bc23a37.js"
       ],
       "css": [
         "/build/752.09ff731b.css",
@@ -15,9 +15,9 @@
     "dashboard": {
       "js": [
         "/build/runtime.f82f4939.js",
-        "/build/952.ea81af83.js",
-        "/build/193.d8b1b7ea.js",
-        "/build/dashboard.3bbe6b05.js"
+        "/build/474.4a832a7a.js",
+        "/build/80.9d7a0b6a.js",
+        "/build/dashboard.41d3bbb9.js"
       ],
       "css": [
         "/build/dashboard.bf678ff3.css"

@@ -4,9 +4,12 @@ namespace App\Controller;
 
 use App\Entity\Production;
 use App\Form\ProductionType;
+use App\Repository\ProductionEventRepository;
 use App\Repository\ProductionRepository;
+use App\Service\CalendarColorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -100,5 +103,95 @@ class ProductionController extends AbstractController
             $this->addFlash('danger', $t->trans('data_save_error').": ".$e->getMessage());
             return $this->redirectToRoute('app_production_edit', ['id' => $production->getId()]);
         }
+    }
+
+    #[Route('/{id}/events', name: 'app_production_events_json', methods: ['GET'])]
+    public function getProductionEvents(
+        Production $production,
+        Request $request,
+        ProductionEventRepository $productionEventRepo,
+        CalendarColorService $colorService
+    ): JsonResponse
+    {
+        $startStr = $request->query->get('start');
+        $endStr = $request->query->get('end');
+        if (!$startStr || !$endStr) {
+            return $this->json([]);
+        }
+
+        try {
+            $start = new \DateTime($startStr);
+            $end = new \DateTime($endStr);
+        } catch (\Exception $e) {
+
+            return $this->json([]);
+        }
+
+        $events = [];
+
+        // Nur Events dieser Produktion laden
+        $productionEvents = $productionEventRepo->createQueryBuilder('pe')
+            ->where('pe.production = :production')
+            ->andWhere('pe.date BETWEEN :start AND :end')
+            ->andWhere('pe.date IS NOT NULL')
+            ->setParameter('production', $production)
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->getQuery()
+            ->getResult();
+
+
+        foreach ($productionEvents as $pe) {
+            $title = $pe->getProduction() ? $pe->getProduction()->getTitle() : 'Produktion';
+
+            // Farbe basierend auf Production-ID
+            $color = $colorService->getProductionEventColor($production->getId());
+
+            // Zeit kombinieren
+            $eventStart = clone $pe->getDate();
+            if ($pe->getTimeFrom()) {
+                $timeParts = explode(':', $pe->getTimeFrom());
+                $eventStart->setTime((int)$timeParts[0], (int)($timeParts[1] ?? 0));
+            }
+
+            $eventEnd = clone $eventStart;
+            if ($pe->getTimeTo()) {
+                $timeParts = explode(':', $pe->getTimeTo());
+                $eventEnd->setTime((int)$timeParts[0], (int)($timeParts[1] ?? 0));
+            } else {
+                $eventEnd->modify('+2 hours');
+            }
+
+            $isAllDay = empty($pe->getTimeFrom()) && empty($pe->getTimeTo());
+
+            if ($isAllDay) {
+                $eventEnd->modify('+1 day');
+            }
+
+            $eventData = [
+                'id' => 'prod_event_' . $pe->getId(),
+                'title' => $title,
+                'start' => $eventStart->format('c'),
+                'end' => $eventEnd->format('c'),
+                'allDay' => $isAllDay,
+                'color' => $color,
+                'backgroundColor' => $color,
+                'borderColor' => $color,
+                'extendedProps' => [
+                    'type' => 'production_event',
+                    'productionId' => $production->getId(),
+                    'productionEventId' => $pe->getId(),
+                    'roomId' => $pe->getRoom() ? $pe->getRoom()->getId() : null,
+                    'roomName' => $pe->getRoom() ? $pe->getRoom()->getName() : 'Kein Raum',
+                    'status' => $pe->getStatus() ? $pe->getStatus()->getLabel() : '-',
+                    'timeFrom' => $pe->getTimeFrom(),
+                    'timeTo' => $pe->getTimeTo(),
+                ]
+            ];
+
+            $events[] = $eventData;
+        }
+
+        return $this->json($events);
     }
 }

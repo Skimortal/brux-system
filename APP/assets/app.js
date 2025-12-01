@@ -7,6 +7,9 @@ import './datatables.js';
 import TomSelect from 'tom-select';
 import 'tom-select/dist/css/tom-select.css';
 import { initDaterangepickers, destroyDaterangepickers } from './daterangepicker-init.js';
+import { initProductionCalendar } from './production-calendar.js';
+
+window.initProductionCalendar = initProductionCalendar;
 
 function initAdminator() {
     if (window.AdminatorApp && typeof window.AdminatorApp.init === 'function') {
