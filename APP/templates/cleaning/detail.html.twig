@@ -18,20 +18,10 @@
     {% endfor %}
 
     {{ form_start(form, { attr: { 'data-turbo': 'false' } }) }}
-    
+
     {{ form_row(form.name) }}
     {{ form_row(form.address) }}
-    {{ form_row(form.cleaningDate) }}
     {{ form_row(form.cleaningType) }}
-    
-    <h5 class="mt-4">{{ 'cleaning.areas_to_clean'|trans }}</h5>
-    {{ form_row(form.generalAreas) }}
-    {{ form_row(form.blackRoom) }}
-    {{ form_row(form.whiteRoom) }}
-    {{ form_row(form.backstageToilets) }}
-    {{ form_row(form.dressingRoom) }}
-    {{ form_row(form.backstageCorridor) }}
-    {{ form_row(form.officeGroundFloor) }}
 
     <div class="mb-3 row">
         <div class="col-sm-8">

@@ -37,7 +37,6 @@
                         <tfoot>
                         <tr>
                             <th>{{ 'cleaning.name'|trans }}</th>
-                            <th>{{ 'cleaning.cleaning_date'|trans }}</th>
                             <th>{{ 'cleaning.cleaning_type'|trans }}</th>
                             <th>{{ 'action'|trans }}</th>
                         </tr>
@@ -46,7 +45,6 @@
                         {% for cleaning in cleanings %}
                             <tr>
                                 <td><a href="{{ path('app_cleaning_edit', { id: cleaning.id }) }}">{{ cleaning.name }}</a></td>
-                                <td><a href="{{ path('app_cleaning_edit', { id: cleaning.id }) }}">{{ cleaning.cleaningDate ? cleaning.cleaningDate|date('d.m.Y H:i') : '-' }}</a></td>
                                 <td><a href="{{ path('app_cleaning_edit', { id: cleaning.id }) }}">{{ cleaning.cleaningType }}</a></td>
                                 <td class="text-nowrap">
                                     <a href="{{ path('app_cleaning_edit', {id: cleaning.id}) }}" title="{{ 'edit'|trans }}">
