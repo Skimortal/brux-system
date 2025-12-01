@@ -27,33 +27,23 @@
                     <table class="mcDataTable table table-striped table-bordered" cellspacing="0" width="100%">
                         <thead>
                         <tr>
+                            <th>{{ 'key_management.room'|trans }}</th>
                             <th>{{ 'key_management.name'|trans }}</th>
-                            <th>{{ 'key_management.status'|trans }}</th>
-                            <th>{{ 'key_management.borrow_date'|trans }}</th>
-                            <th>{{ 'key_management.return_date'|trans }}</th>
                             <th>{{ 'action'|trans }}</th>
                         </tr>
                         </thead>
                         <tfoot>
                         <tr>
+                            <th>{{ 'key_management.room'|trans }}</th>
                             <th>{{ 'key_management.name'|trans }}</th>
-                            <th>{{ 'key_management.status'|trans }}</th>
-                            <th>{{ 'key_management.borrow_date'|trans }}</th>
-                            <th>{{ 'key_management.return_date'|trans }}</th>
                             <th>{{ 'action'|trans }}</th>
                         </tr>
                         </tfoot>
                         <tbody>
                         {% for key in keys %}
                             <tr>
+                                <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">{{ key.room }}</a></td>
                                 <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">{{ key.name }}</a></td>
-                                <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">
-                                    <span class="badge bg-{{ key.status.value == 'available' ? 'success' : (key.status.value == 'borrowed' ? 'warning' : 'danger') }}">
-                                        {{ key.status.getLabel()|trans }}
-                                    </span>
-                                    </a></td>
-                                <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">{{ key.borrowDate ? key.borrowDate|date('d.m.Y') : '-' }}</a></td>
-                                <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">{{ key.returnDate ? key.returnDate|date('d.m.Y') : '-' }}</a></td>
                                 <td class="text-nowrap">
                                     <a href="{{ path('app_key_management_edit', {id: key.id}) }}" title="{{ 'edit'|trans }}">
                                         <span class="badge bg-info"><i class="ti-pencil-alt"></i></span>

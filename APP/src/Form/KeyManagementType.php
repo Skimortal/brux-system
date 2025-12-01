@@ -33,55 +33,6 @@ class KeyManagementType extends AbstractType
                 'label' => 'key_management.name',
                 'required' => true,
             ])
-            ->add('status', ChoiceType::class, [
-                'label' => 'key_management.status',
-                'choices' => [
-                    'key_management.status.available' => KeyStatus::AVAILABLE,
-                    'key_management.status.borrowed' => KeyStatus::BORROWED,
-                    'key_management.status.lost' => KeyStatus::LOST,
-                ],
-                'required' => true,
-            ])
-            ->add('user', EntityType::class, [
-                'class' => User::class,
-                'choice_label' => 'email',
-                'label' => 'Benutzer',
-                'required' => false,
-                'placeholder' => 'Kein Benutzer',
-            ])
-            ->add('technician', EntityType::class, [
-                'class' => Technician::class,
-                'choice_label' => 'name',
-                'label' => 'Techniker',
-                'required' => false,
-                'placeholder' => 'Kein Techniker',
-            ])
-            ->add('production', EntityType::class, [
-                'class' => Production::class,
-                'choice_label' => function (Production $production) {
-                    return $production->getDisplayName();
-                },
-                'label' => 'Produktion',
-                'required' => false,
-                'placeholder' => 'Keine Produktion',
-            ])
-            ->add('cleaning', EntityType::class, [
-                'class' => Cleaning::class,
-                'choice_label' => 'id',
-                'label' => 'Reinigung',
-                'required' => false,
-                'placeholder' => 'Keine Reinigung',
-            ])
-            ->add('borrowDate', DateType::class, [
-                'label' => 'key_management.borrow_date',
-                'widget' => 'single_text',
-                'required' => false,
-            ])
-            ->add('returnDate', DateType::class, [
-                'label' => 'key_management.return_date',
-                'widget' => 'single_text',
-                'required' => false,
-            ])
         ;
     }
 
