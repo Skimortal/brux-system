@@ -263,3 +263,8 @@ sync.categories_created: 'Kategorien erstellt'
 sync.last_sync: 'Letzte Synchronisation'
 
 room.show_on_dashboard: 'Auf Dashboard als Kalender anzeigen'
+
+event_categories: 'Veranstaltung Kategorien'
+event_category.externalId: 'Externe ID'
+externalId.label: 'Externe ID'
+slug.label: 'Slug'

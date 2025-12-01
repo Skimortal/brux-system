@@ -1,0 +1,41 @@
+
+{% extends 'base_logged_in.html.twig' %}
+
+{% block title %}{{ 'event_category.detail_title'|trans }}{% endblock %}
+
+{% block logged_in_content %}
+    <h1 class="mb-4">{{ 'event_category.detail_title'|trans }}</h1>
+
+    {% form_theme form 'form/adminator_bootstrap_5_layout.html.twig' %}
+
+    {% for label, messages in app.flashes(['success', 'danger', 'warning', 'info']) %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
+                {{ message|trans }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    {{ form_start(form, { attr: { 'data-turbo': 'false' } }) }}
+
+    {{ form_row(form.name) }}
+    {{ form_row(form.externalId) }}
+    {{ form_row(form.slug) }}
+
+    <div class="mb-3 row">
+        <div class="col-sm-8">
+            <a href="{{ path('app_event_category_index') }}" class="btn btn-secondary">{{ 'back_to_list'|trans }}</a>
+            <button type="submit" class="btn btn-primary">{{ 'save'|trans }}</button>
+        </div>
+        <div class="col-sm-4" style="text-align: right;">
+            {% if event_category.id and is_granted('ROLE_ADMIN') %}
+                <a href="{{ path('app_event_category_delete', {'id': event_category.id}) }}" class="btn btn-danger confirmRemoveItem" role="button" data-confirm="{}" data-confirm-message="{{ 'confirm_remove'|trans }}">{{ 'delete'|trans }}</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {{ form_rest(form) }}
+    {{ form_end(form) }}
+
+{% endblock %}
