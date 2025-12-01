@@ -3,12 +3,24 @@
     "app": {
       "js": [
         "/build/runtime.f82f4939.js",
-        "/build/648.798a63ba.js",
-        "/build/app.f16bee8c.js"
+        "/build/952.ea81af83.js",
+        "/build/752.a0b871ab.js",
+        "/build/app.30a5730c.js"
       ],
       "css": [
-        "/build/648.b95f2f6e.css",
+        "/build/752.09ff731b.css",
         "/build/app.c7a2d675.css"
+      ]
+    },
+    "dashboard": {
+      "js": [
+        "/build/runtime.f82f4939.js",
+        "/build/952.ea81af83.js",
+        "/build/193.d8b1b7ea.js",
+        "/build/dashboard.75fc110c.js"
+      ],
+      "css": [
+        "/build/dashboard.bf678ff3.css"
       ]
     }
   }

@@ -1,5 +1,11 @@
 {% extends 'base.html.twig' %}
 
+{% block javascripts %}
+    {{ parent() }}
+    {# Dashboard nur für eingeloggte User #}
+    {{ encore_entry_script_tags('dashboard') }}
+{% endblock %}
+
 {% block body %}
     <div>
         {% include 'adminator/partials/_sidebar.html.twig' %}

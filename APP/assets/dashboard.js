@@ -1346,14 +1346,12 @@ function saveKeyData() {
     }).catch(e => console.error(e));
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    initDoughnutChart();
+function bootDashboard() {
     initCalendar();
     initKeyManagement();
-});
+}
 
-document.addEventListener('turbo:render', function() {
-    initDoughnutChart();
-    initCalendar();
-    initKeyManagement();
-});
+document.addEventListener('DOMContentLoaded', bootDashboard);
+document.addEventListener('turbo:load', bootDashboard);
+document.addEventListener('turbo:render', bootDashboard);
+document.addEventListener('turbo:visit', bootDashboard);
