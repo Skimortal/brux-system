@@ -469,3 +469,11 @@ table.table.dataTable>:not(caption)>*>*,
         max-height: 300px;
     }
 }
+
+.logo img, .logo-auth {
+    filter: none !important;
+}
+
+[data-theme=dark] .logo img, [data-theme=dark] .logo-auth {
+    filter: invert(1) hue-rotate(180deg) brightness(1.2) !important;
+}
