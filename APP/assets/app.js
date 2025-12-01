@@ -64,6 +64,13 @@ function initProductionTypeToggle() {
     // Initial call to set correct state
     toggleFields();
 }
+
+function initBody() {
+    if (window.innerWidth < 768) {
+        document.body.classList.remove('is-collapsed');
+    }
+}
+
 function boot() {
     initTomSelect();
     initAdminator();
@@ -74,6 +81,7 @@ function bootAlways() {
     initTomSelect();
     initProductionTypeToggle();
     initDaterangepickers();
+    initBody();
 }
 
 document.addEventListener('DOMContentLoaded', bootAlways);
