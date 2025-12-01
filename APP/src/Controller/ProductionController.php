@@ -58,6 +58,19 @@ class ProductionController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
+                // Hauptansprechperson-Logik: nur eine Person kann Hauptansprechperson sein
+                foreach ($production->getContactPersons() as $contactPerson) {
+                    if ($contactPerson->isHauptansprechperson()) {
+                        // Alle anderen Hauptansprechpersonen deaktivieren
+                        foreach ($production->getContactPersons() as $otherPerson) {
+                            if ($otherPerson !== $contactPerson && $otherPerson->isHauptansprechperson()) {
+                                $otherPerson->setHauptansprechperson(false);
+                            }
+                        }
+                        break;
+                    }
+                }
+
                 $entityManager->persist($production);
                 $entityManager->flush();
 

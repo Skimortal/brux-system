@@ -268,3 +268,10 @@ event_categories: 'Veranstaltung Kategorien'
 event_category.externalId: 'Externe ID'
 externalId.label: 'Externe ID'
 slug.label: 'Slug'
+
+production.contact_persons: 'Ansprechpersonen'
+production_contact_person.name: 'Vorname'
+production_contact_person.nachname: 'Nachname'
+production_contact_person.hauptansprechperson: 'Hauptansprechperson'
+add_contact_person: 'Ansprechperson hinzufügen'
+

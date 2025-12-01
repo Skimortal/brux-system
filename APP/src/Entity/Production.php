@@ -32,6 +32,9 @@ class Production extends Base
     #[ORM\OneToMany(targetEntity: ProductionTechnician::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $technicians;
 
+    #[ORM\OneToMany(targetEntity: ProductionContactPerson::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $contactPersons;
+
     #[ORM\OneToMany(targetEntity: ProductionEvent::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $events;
 
@@ -41,6 +44,7 @@ class Production extends Base
     public function __construct()
     {
         $this->technicians = new ArrayCollection();
+        $this->contactPersons = new ArrayCollection();
         $this->events = new ArrayCollection();
         $this->priceList = new ArrayCollection();
     }
@@ -169,6 +173,35 @@ class Production extends Base
         if ($this->events->removeElement($event)) {
             if ($event->getProduction() === $this) {
                 $event->setProduction(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductionContactPerson>
+     */
+    public function getContactPersons(): Collection
+    {
+        return $this->contactPersons;
+    }
+
+    public function addContactPerson(ProductionContactPerson $contactPerson): static
+    {
+        if (!$this->contactPersons->contains($contactPerson)) {
+            $this->contactPersons->add($contactPerson);
+            $contactPerson->setProduction($this);
+        }
+
+        return $this;
+    }
+
+    public function removeContactPerson(ProductionContactPerson $contactPerson): static
+    {
+        if ($this->contactPersons->removeElement($contactPerson)) {
+            if ($contactPerson->getProduction() === $this) {
+                $contactPerson->setProduction(null);
             }
         }
 
