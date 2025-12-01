@@ -329,23 +329,23 @@ function initGlobalCalendar(isMobile) {
 
     globalCalendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-        initialView: isMobile ? 'timeGridDay' : 'dayGridMonth',
+        initialView: isMobile ? 'timeGridWeek' : 'dayGridMonth',
         locale: deLocale,
         timeZone: 'Europe/Berlin',
         firstDay: 1,
         headerToolbar: isMobile ? {
             left: 'prev,next',
             center: 'title',
-            right: 'today'
+            right: 'today,dayGridMonth,timeGridWeek,timeGridDay'
         } : {
             left: 'prev,next today',
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        slotMinTime: '06:00:00',
+        slotMinTime: '08:00:00',
         slotMaxTime: '22:00:00',
         allDaySlot: true,
-        height: 700,
+        height: 1000,
         eventTimeFormat: {
             hour: '2-digit',
             minute: '2-digit',
@@ -430,7 +430,7 @@ function createRoomCalendar(calendarEl, isMobile) {
 
     const calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-        initialView: isMobile ? 'timeGridDay' : 'dayGridMonth',
+        initialView: isMobile ? 'timeGridWeek' : 'dayGridMonth',
         locale: deLocale,
         timeZone: 'Europe/Berlin',
         firstDay: 1,
@@ -443,10 +443,10 @@ function createRoomCalendar(calendarEl, isMobile) {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        slotMinTime: '06:00:00',
+        slotMinTime: '08:00:00',
         slotMaxTime: '22:00:00',
         allDaySlot: true,
-        height: 600,
+        height: 1000,
         eventTimeFormat: {
             hour: '2-digit',
             minute: '2-digit',
@@ -571,23 +571,23 @@ function initSingleCalendar(calendarEl, isMobile) {
 
     const calendar = new Calendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-        initialView: isMobile ? 'timeGridDay' : 'dayGridMonth',
+        initialView: isMobile ? 'timeGridWeek' : 'dayGridMonth',
         locale: deLocale,
         timeZone: 'Europe/Berlin',
         firstDay: 1,
         headerToolbar: isMobile ? {
             left: 'prev,next',
             center: 'title',
-            right: 'today'
+            right: 'today,dayGridMonth,timeGridWeek,timeGridDay'
         } : {
             left: 'prev,next today',
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        slotMinTime: '06:00:00',
+        slotMinTime: '08:00:00',
         slotMaxTime: '22:00:00',
         allDaySlot: true,
-        height: 600,
+        height: 1000,
         eventTimeFormat: {
             hour: '2-digit',
             minute: '2-digit',

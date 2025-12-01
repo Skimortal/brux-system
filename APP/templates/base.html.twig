@@ -20,6 +20,14 @@
 
     {% block javascripts %}
         {{ encore_entry_script_tags('app') }}
+        <script>
+            // Füge is-collapsed nur bei Desktop-Breite hinzu
+            document.addEventListener('DOMContentLoaded', function() {
+                if (window.innerWidth < 768) {
+                    document.body.classList.remove('is-collapsed');
+                }
+            });
+        </script>
     {% endblock %}
 </head>
 <body class="app is-collapsed">
