@@ -8,80 +8,96 @@
             <div class="row gap-20">
 
                 {# --- Linke Spalte: NUR Schlüsselübersicht --- #}
+                {% set allKeysFlat = [] %}
+
+                {% for roomId, keys in keysByRoom %}
+                    {% for key in keys %}
+                        {% set allKeysFlat = allKeysFlat|merge([key]) %}
+                    {% endfor %}
+                {% endfor %}
+
+                {% if keysWithoutRoom is not empty %}
+                    {% for key in keysWithoutRoom %}
+                        {% set allKeysFlat = allKeysFlat|merge([key]) %}
+                    {% endfor %}
+                {% endif %}
+
                 <div class="col-md-3">
                     <div class="bdrs-3 ov-h bgc-white bd">
                         <div class="bgc-deep-purple-500 ta-c p-15">
                             <h4 class="c-white m-0">Schlüsselübersicht</h4>
                         </div>
+
                         <div class="p-0">
-                            {# Scrollbarer Bereich falls viele Schlüssel #}
                             <div class="layer w-100" style="max-height: 80vh; overflow-y: auto;">
-                                {% for roomId, keys in keysByRoom %}
-                                    {# Raumnamen ermitteln #}
-                                    {% set roomName = keys[0].room ? keys[0].room.name : 'Unbekannt' %}
 
-                                    <div class="p-15 border-bottom">
-                                        <h6 class="c-grey-900 mB-10">{{ roomName }}</h6>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            {% for key in keys %}
-                                                {% set statusColor = 'success' %}
-                                                {% if key.status.value == 'borrowed' %}
-                                                    {% set statusColor = 'warning' %}
-                                                {% elseif key.status.value == 'lost' %}
-                                                    {% set statusColor = 'danger' %}
-                                                {% endif %}
+                                <div class="pos-r">
+                                    <ul class="m-0 p-0 mT-10">
+                                        {% for key in allKeysFlat %}
+                                            {# Status-Farbe + Icon bestimmen #}
+                                            {% set statusColor = 'c-green-500' %}
+                                            {% set statusIcon = 'ti-check' %}
+                                            {% set statusLabel = 'Verfügbar' %}
 
-                                                <button type="button"
-                                                        class="btn btn-outline-{{ statusColor }} btn-sm d-flex align-items-center gap-2 key-item-btn"
-                                                        data-key-id="{{ key.id }}"
-                                                        data-key-name="{{ key.name }}"
-                                                        data-key-status="{{ key.status.value }}"
-                                                        data-borrow-date="{{ key.borrowDate ? key.borrowDate|date('Y-m-d') : '' }}"
-                                                        data-return-date="{{ key.returnDate ? key.returnDate|date('Y-m-d') : '' }}"
-                                                        data-user-id="{{ key.user ? key.user.id : '' }}"
-                                                        data-tech-id="{{ key.technician ? key.technician.id : '' }}"
-                                                        data-prod-id="{{ key.production ? key.production.id : '' }}"
-                                                        data-clean-id="{{ key.cleaning ? key.cleaning.id : '' }}"
-                                                        title="Name: {{ key.name }}">
-                                                    <i class="ti-key"></i>
-                                                    <span>{{ key.name }}</span>
-                                                </button>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% endfor %}
+                                            {% if key.status.value == 'borrowed' %}
+                                                {% set statusColor = 'c-amber-500' %}
+                                                {% set statusIcon = 'ti-export' %}
+                                                {% set statusLabel = 'Verliehen' %}
+                                            {% elseif key.status.value == 'lost' %}
+                                                {% set statusColor = 'c-red-500' %}
+                                                {% set statusIcon = 'ti-close' %}
+                                                {% set statusLabel = 'Verloren' %}
+                                            {% endif %}
 
-                                {% if keysWithoutRoom is not empty %}
-                                    <div class="p-15 border-bottom">
-                                        <h6 class="c-grey-900 mB-10">Ohne Raumzuordnung</h6>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            {% for key in keysWithoutRoom %}
-                                                {% set statusColor = 'success' %}
-                                                {% if key.status.value == 'borrowed' %}
-                                                    {% set statusColor = 'warning' %}
-                                                {% elseif key.status.value == 'lost' %}
-                                                    {% set statusColor = 'danger' %}
-                                                {% endif %}
+                                            {# Wenn du getCurrentHolderName() im Entity hast (wie im Controller) #}
+                                            {% set holderName = key.currentHolderName ?? '' %}
 
-                                                <button type="button"
-                                                        class="btn btn-outline-{{ statusColor }} btn-sm d-flex align-items-center gap-2 key-item-btn"
-                                                        data-key-id="{{ key.id }}"
-                                                        data-key-name="{{ key.name }}"
-                                                        data-key-status="{{ key.status.value }}"
-                                                        data-borrow-date="{{ key.borrowDate ? key.borrowDate|date('Y-m-d') : '' }}"
-                                                        data-return-date="{{ key.returnDate ? key.returnDate|date('Y-m-d') : '' }}"
-                                                        data-user-id="{{ key.user ? key.user.id : '' }}"
-                                                        data-tech-id="{{ key.technician ? key.technician.id : '' }}"
-                                                        data-prod-id="{{ key.production ? key.production.id : '' }}"
-                                                        data-clean-id="{{ key.cleaning ? key.cleaning.id : '' }}"
-                                                        title="Name: {{ key.name }}">
-                                                    <i class="ti-key"></i>
-                                                    <span>{{ key.name }}</span>
-                                                </button>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% endif %}
+                                            <li class="bdB peers ai-c jc-sb fxw-nw key-item-btn" style="cursor: pointer;"
+                                                data-key-id="{{ key.id }}"
+                                                data-key-name="{{ key.name }}"
+                                                data-key-status="{{ key.status.value }}"
+                                                data-borrow-date="{{ key.borrowDate ? key.borrowDate|date('Y-m-d') : '' }}"
+                                                data-return-date="{{ key.returnDate ? key.returnDate|date('Y-m-d') : '' }}"
+                                                data-user-id="{{ key.user ? key.user.id : '' }}"
+                                                data-tech-id="{{ key.technician ? key.technician.id : '' }}"
+                                                data-prod-id="{{ key.production ? key.production.id : '' }}"
+                                                data-clean-id="{{ key.cleaning ? key.cleaning.id : '' }}"
+                                            >
+                                                {# Link-/Content-Bereich links #}
+                                                <div class="td-n p-20 peers fxw-nw me-20 peer-greed c-grey-900">
+                                                    <div class="peer mR-15">
+                                                        <i class="ti-key {{ statusColor }}"></i>
+                                                    </div>
+                                                    <div class="peer">
+                                                        {# fw-600: Name des Schlüssels #}
+                                                        <span class="fw-600">{{ key.name }}</span>
+                                                        <div class="c-grey-600">
+                                                            {# c-grey-700: an wen verliehen #}
+                                                            {% if key.status.value == 'borrowed' %}
+                                                                <span class="c-grey-700">
+                                            {{ holderName }}
+                                        </span>
+                                                            {% else %}
+                                                                <span class="c-grey-700">&nbsp;</span>
+                                                            {% endif %}
+                                                            <i>{{ statusLabel }}</i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {# Rechts nur ein Status-Icon #}
+                                                <div class="peers mR-15">
+                                                    <div class="peer">
+                                <span class="fsz-md p-5" title="{{ statusLabel }}">
+                                    <i class="{{ statusIcon }} {{ statusColor }}"></i>
+                                </span>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -110,7 +126,7 @@
                                     </label>
                                 </div>
 
-                                <div class="d-flex gap-3 flex-wrap" id="calendar-filters">
+                                <div class="d-flex gap-3 flex-wrap" id="calendar-filters" style="display: none !important;">
                                     <div class="form-check">
                                         <input class="form-check-input filter-checkbox" type="checkbox" value="production"
                                                id="filterProduction" checked>
@@ -130,6 +146,11 @@
                                         <input class="form-check-input filter-checkbox" type="checkbox" value="private"
                                                id="filterPrivate" checked>
                                         <label class="form-check-label" for="filterPrivate">Privat / Sonstiges</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input filter-checkbox" type="checkbox" value="keys"
+                                               id="filterKeys" checked>
+                                        <label class="form-check-label" for="filterKeys">🔑 Schlüssel</label>
                                     </div>
                                 </div>
                             </div>

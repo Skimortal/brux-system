@@ -86,6 +86,7 @@ class HomeController extends AbstractController
         ProductionEventRepository $productionEventRepo,
         TechnicianRepository $techRepo,
         RoomRepository $roomRepo,
+        KeyManagementRepository $keyManagementRepo,
         CalendarColorService $colorService
     ): JsonResponse
     {
@@ -256,6 +257,70 @@ class HomeController extends AbstractController
                 ];
 
                 $events[] = $eventData;
+            }
+        }
+
+        // 3. NEU: Verliehene Schlüssel laden
+        if (in_array('keys', $filters)) {
+            $borrowedKeys = $keyManagementRepo->createQueryBuilder('k')
+                ->where('k.status = :borrowed')
+                ->andWhere('k.borrowDate <= :end')
+                ->andWhere('(k.returnDate >= :start OR k.returnDate IS NULL)')
+                ->setParameter('borrowed', KeyStatus::BORROWED)
+                ->setParameter('start', $start)
+                ->setParameter('end', $end)
+                ->getQuery()
+                ->getResult();
+
+            foreach ($borrowedKeys as $key) {
+                $keyRoom = $key->getRoom();
+
+                // Raum-Filterung
+                if ($roomId) {
+                    if ($keyRoom !== null && $keyRoom->getId() != $roomId) {
+                        continue;
+                    }
+                }
+
+                $borrowDate = $key->getBorrowDate();
+                $returnDate = $key->getReturnDate();
+
+                if (!$borrowDate) {
+                    continue;
+                }
+
+                // Event-Start und -Ende
+                $eventStart = clone $borrowDate;
+                $eventStart->setTime(0, 0, 0);
+
+                $eventEnd = $returnDate ? clone $returnDate : clone $end;
+                $eventEnd->setTime(23, 59, 59);
+
+                // Titel mit Schlüsselname und Inhaber
+                $holderName = $key->getCurrentHolderName();
+                $title = '🔑 ' . $key->getName() . ' (' . $holderName . ')';
+
+                $events[] = [
+                    'id' => 'key_' . $key->getId(),
+                    'title' => $title,
+                    'start' => $eventStart->format('c'),
+                    'end' => $eventEnd->format('c'),
+                    'allDay' => true,
+                    'color' => '#FF9800',
+                    'backgroundColor' => '#FF9800',
+                    'borderColor' => '#F57C00',
+                    'extendedProps' => [
+                        'type' => 'key',
+                        'keyId' => $key->getId(),
+                        'roomId' => $keyRoom ? $keyRoom->getId() : null,
+                        'description' => sprintf(
+                            'Schlüssel: %s | Verliehen an: %s | Rückgabe: %s',
+                            $key->getName(),
+                            $holderName,
+                            $returnDate ? $returnDate->format('d.m.Y') : 'Offen'
+                        ),
+                    ]
+                ];
             }
         }
 

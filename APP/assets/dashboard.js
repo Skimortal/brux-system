@@ -380,6 +380,12 @@ function initGlobalCalendar(isMobile) {
                 if (productionEventId) {
                     openProductionEventModal(productionEventId);
                 }
+            } else if (type === 'key') {
+                // NEU: Schlüssel-Event geklickt
+                const keyId = info.event.extendedProps.keyId;
+                if (keyId) {
+                    openKeyModal(keyId);
+                }
             } else if (['private', 'cleaning', 'technician', 'production'].includes(type)) {
                 openAppointmentModal(null, info.event);
             } else {
@@ -479,6 +485,12 @@ function createRoomCalendar(calendarEl, isMobile) {
                 const productionEventId = info.event.extendedProps.productionEventId;
                 if (productionEventId) {
                     openProductionEventModal(productionEventId);
+                }
+            } else if (type === 'key') {
+                // NEU: Schlüssel-Event geklickt
+                const keyId = info.event.extendedProps.keyId;
+                if (keyId) {
+                    openKeyModal(keyId);
                 }
             } else if (['private', 'cleaning', 'technician', 'production'].includes(type)) {
                 openAppointmentModal(null, info.event);
@@ -621,6 +633,12 @@ function initSingleCalendar(calendarEl, isMobile) {
                 const productionEventId = info.event.extendedProps.productionEventId;
                 if (productionEventId) {
                     openProductionEventModal(productionEventId);
+                }
+            } else if (type === 'key') {
+                // NEU: Schlüssel-Event geklickt
+                const keyId = info.event.extendedProps.keyId;
+                if (keyId) {
+                    openKeyModal(keyId);
                 }
             } else if (['private', 'cleaning', 'technician', 'production'].includes(type)) {
                 // Appointment Modal
@@ -1262,8 +1280,12 @@ function initKeyManagement() {
     }
 }
 
-function openKeyModal(btn) {
-    if (!btn) return;
+function openKeyModal(keyId) {
+    var btn = document.querySelector(`.key-item-btn[data-key-id="${keyId}"]`);
+
+    if (!btn) {
+        btn = keyId;
+    }
 
     const id = btn.dataset.keyId;
     const name = btn.dataset.keyName;
