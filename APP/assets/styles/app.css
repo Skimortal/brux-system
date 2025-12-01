@@ -60,7 +60,7 @@ table.table.dataTable>:not(caption)>*>*,
     .header .nav-left:before {
         content: "" !important;
         display: inline-block !important;
-        background-image: url("images/logo-mc.png") !important;
+        background-image: url("images/logo.png") !important;
         background-repeat: no-repeat !important;
         background-position: center !important;
         background-size: contain !important;
@@ -71,7 +71,7 @@ table.table.dataTable>:not(caption)>*>*,
     .header .nav-left:before {
         content: "" !important;
         display: inline-block !important;
-        background-image: url("images/logo-mc.png") !important;
+        background-image: url("images/logo.png") !important;
         background-repeat: no-repeat !important;
         background-position: center !important;
         background-size: contain !important;
