@@ -70,6 +70,7 @@ function boot() {
     initProductionTypeToggle();
 }
 function bootAlways() {
+    initAdminator();
     initTomSelect();
     initProductionTypeToggle();
     initDaterangepickers();
@@ -78,7 +79,7 @@ function bootAlways() {
 document.addEventListener('DOMContentLoaded', bootAlways);
 document.addEventListener('turbo:load', bootAlways);
 document.addEventListener('turbo:render', bootAlways);
-document.addEventListener('turbo:visit', boot);
+document.addEventListener('turbo:visit', bootAlways);
 
 // Dein vorhandenes Setup bleibt
 (function setupConfirmDeleteOnce() {

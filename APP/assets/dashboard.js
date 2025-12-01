@@ -437,7 +437,7 @@ function createRoomCalendar(calendarEl, isMobile) {
         headerToolbar: isMobile ? {
             left: 'prev,next',
             center: 'title',
-            right: 'today'
+            right: 'today,dayGridMonth,timeGridWeek,timeGridDay'
         } : {
             left: 'prev,next today',
             center: 'title',
@@ -494,11 +494,48 @@ function createRoomCalendar(calendarEl, isMobile) {
                 info.el.style.textDecoration = 'line-through';
             }
         },
-        editable: false
+        editable: false,
+        // NEU: Synchronisiere alle Kalender beim Datumswechsel
+        datesSet: function(dateInfo) {
+            syncAllRoomCalendars(calendar, dateInfo);
+        }
     });
 
     calendar.render();
     return calendar;
+}
+
+// NEU: Funktion zum Synchronisieren aller Raum-Kalender
+function syncAllRoomCalendars(sourceCalendar, dateInfo) {
+    // Verhindere Endlosschleife bei gegenseitigen Updates
+    if (sourceCalendar._isSyncing) {
+        return;
+    }
+
+    calendarInstances.forEach(cal => {
+        // Nicht den Quell-Kalender updaten
+        if (cal === sourceCalendar) {
+            return;
+        }
+
+        // Markiere als syncing um Endlosschleife zu verhindern
+        cal._isSyncing = true;
+
+        // Gehe zum gleichen Datum und zur gleichen Ansicht
+        const currentView = sourceCalendar.view.type;
+        const currentDate = sourceCalendar.getDate();
+
+        if (cal.view.type !== currentView) {
+            cal.changeView(currentView);
+        }
+
+        cal.gotoDate(currentDate);
+
+        // Entferne sync-Flag nach kurzer Verzögerung
+        setTimeout(() => {
+            cal._isSyncing = false;
+        }, 100);
+    });
 }
 
 // NEU: Zwischen Ansichten wechseln
