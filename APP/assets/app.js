@@ -80,7 +80,6 @@ function boot() {
     initProductionTypeToggle();
 }
 function bootAlways() {
-    initAdminator();
     initTomSelect();
     initProductionTypeToggle();
     initDaterangepickers();
