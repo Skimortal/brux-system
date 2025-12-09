@@ -270,8 +270,9 @@ externalId.label: 'Externe ID'
 slug.label: 'Slug'
 
 production.contact_persons: 'Ansprechpersonen'
-production_contact_person.name: 'Vorname'
-production_contact_person.nachname: 'Nachname'
+production_contact_person.name: 'Name'
+production_contact_person.email: 'E-Mail'
+production_contact_person.phone: 'Telefon'
 production_contact_person.hauptansprechperson: 'Hauptansprechperson'
 add_contact_person: 'Ansprechperson hinzufügen'
 

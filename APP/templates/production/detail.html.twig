@@ -125,7 +125,8 @@
                                     <tr data-collection-item>
                                         <td><span data-collection-counter>__n__</span></td>
                                         <td>{{ form_widget(form.contactPersons.vars.prototype.name) }}</td>
-                                        <td>{{ form_widget(form.contactPersons.vars.prototype.nachname) }}</td>
+                                        <td>{{ form_widget(form.contactPersons.vars.prototype.email) }}</td>
+                                        <td>{{ form_widget(form.contactPersons.vars.prototype.phone) }}</td>
                                         <td class="text-center">{{ form_widget(form.contactPersons.vars.prototype.hauptansprechperson) }}</td>
                                         <td>
                                             <button type="button"
@@ -144,7 +145,8 @@
                                     <tr>
                                         <th>#</th>
                                         <th style="width: 25%;">{{ 'production_contact_person.name'|trans }}</th>
-                                        <th style="width: 25%;">{{ 'production_contact_person.nachname'|trans }}</th>
+                                        <th style="width: 25%;">{{ 'production_contact_person.email'|trans }}</th>
+                                        <th style="width: 25%;">{{ 'production_contact_person.phone'|trans }}</th>
                                         <th style="width: 20%;" class="text-center">{{ 'production_contact_person.hauptansprechperson'|trans }}</th>
                                         <th style="width: 15%;">{{ 'action'|trans }}</th>
                                     </tr>
@@ -155,7 +157,8 @@
                                         <tr data-collection-item>
                                             <td width="5%"><span data-collection-counter>{{ loop.index }}</span></td>
                                             <td>{{ form_widget(contactPersonForm.name) }}</td>
-                                            <td>{{ form_widget(contactPersonForm.nachname) }}</td>
+                                            <td>{{ form_widget(contactPersonForm.email) }}</td>
+                                            <td>{{ form_widget(contactPersonForm.phone) }}</td>
                                             <td class="text-center">{{ form_widget(contactPersonForm.hauptansprechperson) }}</td>
                                             <td>
                                                 <button type="button"
@@ -172,7 +175,7 @@
 
                                     <tfoot>
                                     <tr>
-                                        <td colspan="5">
+                                        <td colspan="6">
                                             <button type="button"
                                                     class="btn btn-success mt-3 js-collection-add">
                                                 {{ 'add_contact_person'|trans }}

@@ -12,8 +12,10 @@ class ProductionContactPerson extends Base
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $nachname = null;
+    private ?string $email = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $phone = null;
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $hauptansprechperson = false;
 
@@ -33,16 +35,24 @@ class ProductionContactPerson extends Base
         return $this;
     }
 
-    public function getNachname(): ?string
+    public function getEmail(): ?string
     {
-        return $this->nachname;
+        return $this->email;
     }
 
-    public function setNachname(string $nachname): static
+    public function setEmail(?string $email): void
     {
-        $this->nachname = $nachname;
+        $this->email = $email;
+    }
 
-        return $this;
+    public function getPhone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(?string $phone): void
+    {
+        $this->phone = $phone;
     }
 
     public function isHauptansprechperson(): bool

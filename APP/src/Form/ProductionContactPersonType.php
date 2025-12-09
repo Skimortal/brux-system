@@ -5,6 +5,7 @@ namespace App\Form;
 use App\Entity\ProductionContactPerson;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -18,9 +19,13 @@ class ProductionContactPersonType extends AbstractType
                 'label' => 'production_contact_person.name',
                 'required' => true,
             ])
-            ->add('nachname', TextType::class, [
-                'label' => 'production_contact_person.nachname',
+            ->add('email', EmailType::class, [
+                'label' => 'production_technician.email',
                 'required' => true,
+            ])
+            ->add('phone', TextType::class, [
+                'label' => 'production_technician.phone',
+                'required' => false,
             ])
             ->add('hauptansprechperson', CheckboxType::class, [
                 'label' => 'production_contact_person.hauptansprechperson',
