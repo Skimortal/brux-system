@@ -477,3 +477,24 @@ table.table.dataTable>:not(caption)>*>*,
 [data-theme=dark] .logo img, [data-theme=dark] .logo-auth {
     filter: invert(1) hue-rotate(180deg) brightness(1.2) !important;
 }
+
+/* Verhindere Bootstrap Focus-Enforcement für Daterangepicker */
+.daterangepicker {
+    z-index: 9999 !important;
+}
+
+.daterangepicker select {
+    pointer-events: auto !important;
+    -webkit-appearance: menulist !important;
+    -moz-appearance: menulist !important;
+    appearance: menulist !important;
+}
+
+/* Firefox-spezifisch */
+@-moz-document url-prefix() {
+    .daterangepicker select.hourselect,
+    .daterangepicker select.minuteselect,
+    .daterangepicker select.ampmselect {
+        -moz-appearance: menulist !important;
+    }
+}
