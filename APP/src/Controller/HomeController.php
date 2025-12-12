@@ -4,8 +4,12 @@ namespace App\Controller;
 
 use App\DTO\CalendarEventDto;
 use App\Entity\Appointment;
+use App\Entity\AppointmentTechnician;
+use App\Entity\AppointmentVolunteer;
 use App\Entity\KeyManagement;
-use App\Entity\Room;
+use App\Enum\AppointmentStatusEnum;
+use App\Enum\AppointmentTypeEnum;
+use App\Enum\EventTypeEnum;
 use App\Enum\KeyStatus;
 use App\Repository\AppointmentRepository;
 use App\Repository\CleaningRepository;
@@ -14,10 +18,12 @@ use App\Repository\ProductionEventRepository;
 use App\Repository\ProductionRepository;
 use App\Repository\RoomRepository;
 use App\Repository\TechnicianRepository;
+use App\Repository\VolunteerRepository;
 use App\Service\BruxApiSyncService;
 use App\Service\CalendarColorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\ErrorHandler\Debug;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -43,16 +49,13 @@ class HomeController extends AbstractController
         \App\Repository\UserRepository $userRepo,
         \App\Repository\TechnicianRepository $techRepo,
         \App\Repository\ProductionRepository $prodRepo,
-        \App\Repository\CleaningRepository $cleanRepo
+        \App\Repository\CleaningRepository $cleanRepo,
+        VolunteerRepository $volunteerRepo
     ): Response
     {
-        // 1. Nur Räume laden, die angezeigt werden sollen
         $rooms = $roomRepository->findBy(['showOnDashboard' => true]);
-
-        // 2. ALLE Schlüssel laden, gruppiert nach Raum
         $allKeys = $keyRepository->findAll();
 
-        // 3. Schlüssel nach Raum gruppieren
         $keysByRoom = [];
         $keysWithoutRoom = [];
 
@@ -64,16 +67,56 @@ class HomeController extends AbstractController
             }
         }
 
+        // Daten für JavaScript aufbereiten
+        $techniciansData = array_map(function($tech) {
+            return [
+                'id' => $tech->getId(),
+                'name' => $tech->getName(),
+                'email' => $tech->getEmail(),
+                'phone' => $tech->getPhone()
+            ];
+        }, $techRepo->findAll());
+
+        $volunteersData = array_map(function($vol) {
+            return [
+                'id' => $vol->getId(),
+                'name' => $vol->getName(),
+//                'email' => $vol->getEmail(),
+//                'phone' => $vol->getPhone()
+            ];
+        }, $volunteerRepo->findAll());
+
+        $productionsData = array_map(function($prod) {
+            return [
+                'id' => $prod->getId(),
+                'title' => $prod->getTitle(),
+                'displayName' => $prod->getDisplayName()
+            ];
+        }, $prodRepo->findAll());
+
+        $cleaningsData = array_map(function($clean) {
+            return [
+                'id' => $clean->getId(),
+                'name' => $clean->getName()
+            ];
+        }, $cleanRepo->findAll());
+
         return $this->render('home/dashboard.html.twig', [
             'user' => $this->getUser(),
             'rooms' => $rooms,
-            'allRooms' => $roomRepository->findAll(), // NEU: Alle Räume für Dropdown
+            'allRooms' => $roomRepository->findAll(),
             'keysByRoom' => $keysByRoom,
             'keysWithoutRoom' => $keysWithoutRoom,
             'allUsers' => $userRepo->findAll(),
             'allTechnicians' => $techRepo->findAll(),
             'allProductions' => $prodRepo->findAll(),
             'allCleanings' => $cleanRepo->findAll(),
+            'allVolunteers' => $volunteerRepo->findAll(),
+            // JSON-Data für JavaScript
+            'techniciansData' => $techniciansData,
+            'volunteersData' => $volunteersData,
+            'productionsData' => $productionsData,
+            'cleaningsData' => $cleaningsData,
         ]);
     }
 
@@ -81,23 +124,17 @@ class HomeController extends AbstractController
     public function getDashboardEvents(
         Request $request,
         AppointmentRepository $appointmentRepo,
-        CleaningRepository $cleaningRepo,
-        ProductionRepository $productionRepo,
         ProductionEventRepository $productionEventRepo,
-        TechnicianRepository $techRepo,
-        RoomRepository $roomRepo,
         KeyManagementRepository $keyManagementRepo,
-        CalendarColorService $colorService
+        CalendarColorService $colorService,
+        TranslatorInterface $translator
     ): JsonResponse
     {
         $startStr = $request->query->get('start');
         $endStr = $request->query->get('end');
         $roomId = $request->query->get('roomId');
-
-        // Filter als Array
         $filters = explode(',', $request->query->get('filters', ''));
 
-        // Validierung der Datumsangaben
         if (!$startStr || !$endStr) {
             return $this->json([]);
         }
@@ -117,49 +154,24 @@ class HomeController extends AbstractController
         foreach ($appointments as $app) {
             $appRoom = $app->getRoom();
 
-            // Raum-Filterung
-            if ($roomId) {
-                if ($appRoom !== null && $appRoom->getId() != $roomId) {
-                    continue;
-                }
+            if ($roomId && $appRoom && $appRoom->getId() != $roomId) {
+                continue;
             }
 
-            // Typ-Bestimmung & Kategorien-Filterung
-            $type = 'private';
-            $color = $colorService->getAppointmentColor(
-                $app->getCleaning(),
-                $app->getTechnician(),
-                $app->getProduction()
-            );
-
-            // Titel zusammensetzen mit Relation
-            $displayTitle = $app->getTitle();
-
-            if ($app->getProduction()) {
-                $type = 'production';
-                // Verwende Nuance für Produktions-Appointments
-                $color = $colorService->getProductionAppointmentNuance($app->getProduction()->getId());
-                if (!in_array('production', $filters)) continue;
-
-                // Titel: "Mein Titel (Produktionsname)"
-                $displayTitle .= ' (' . $app->getProduction()->__toString() . ')';
-            } elseif ($app->getCleaning()) {
-                $type = 'cleaning';
-                if (!in_array('cleaning', $filters)) continue;
-
-                // Titel: "Mein Titel (Reinigungsname)"
-                $displayTitle .= ' (' . $app->getCleaning()->__toString() . ')';
-            } elseif ($app->getTechnician()) {
-                $type = 'technician';
-                if (!in_array('technician', $filters)) continue;
-
-                // Titel: "Mein Titel (Technikername)"
-                $displayTitle .= ' (' . $app->getTechnician()->__toString() . ')';
-            } else {
-                if (!in_array('private', $filters)) continue;
+            // Type Migration: Falls noch NULL oder leer, setze PRIVATE als Default
+            $appType = $app->getType();
+            if (!$appType) {
+                $appType = AppointmentTypeEnum::PRIVATE;
             }
 
-            // End-Datum für FullCalendar anpassen
+            $typeFilter = $this->mapAppointmentTypeToFilter($appType);
+            if (!in_array($typeFilter, $filters)) {
+                continue;
+            }
+
+            $color = $this->getAppointmentColor($app, $colorService);
+            $displayTitle = $this->buildAppointmentTitle($app, $translator);
+
             $startDate = clone $app->getStartDate();
             $endDate = clone $app->getEndDate();
             if ($app->isAllDay()) {
@@ -168,21 +180,41 @@ class HomeController extends AbstractController
 
             $eventData = (new CalendarEventDto(
                 'appt_' . $app->getId(),
-                $displayTitle,  // Erweiterten Titel verwenden
+                $displayTitle,
                 $startDate->format('c'),
                 $endDate->format('c'),
-                $type,
+                $typeFilter,
                 $color,
                 $app->isAllDay(),
                 $app->getDescription()
             ))->toArray();
 
+            $eventData['extendedProps']['technicians'] = array_map(function($appTech) {
+                return [
+                    'id' => $appTech->getTechnician()->getId(),
+                    'name' => $appTech->getTechnician()->getName(),
+                    'confirmed' => $appTech->isConfirmed()
+                ];
+            }, $app->getAppointmentTechnicians()->toArray());
+
+            $eventData['extendedProps']['volunteers'] = array_map(function($appVol) {
+                return [
+                    'id' => $appVol->getVolunteer()->getId(),
+                    'name' => $appVol->getVolunteer()->getName(),
+                    'confirmed' => $appVol->isConfirmed(),
+                    'tasks' => $appVol->getTasks()
+                ];
+            }, $app->getAppointmentVolunteers()->toArray());
+
             $eventData['extendedProps']['roomId'] = $appRoom ? $appRoom->getId() : null;
             $eventData['extendedProps']['cleaningId'] = $app->getCleaning() ? $app->getCleaning()->getId() : null;
-            $eventData['extendedProps']['technicianId'] = $app->getTechnician() ? $app->getTechnician()->getId() : null;
             $eventData['extendedProps']['productionId'] = $app->getProduction() ? $app->getProduction()->getId() : null;
-            $eventData['extendedProps']['type'] = $type;
-            $eventData['extendedProps']['originalTitle'] = $app->getTitle(); // ORIGINAL Titel ohne toString
+            $eventData['extendedProps']['type'] = $typeFilter;
+            $eventData['extendedProps']['originalTitle'] = $app->getTitle();
+            $eventData['extendedProps']['appointmentType'] = $appType->value;
+            $eventData['extendedProps']['eventType'] = $app->getEventType()?->value;
+            $eventData['extendedProps']['status'] = $app->getStatus()?->value;
+            $eventData['extendedProps']['internalTechniciansAttending'] = $app->isInternalTechniciansAttending();
 
             $events[] = $eventData;
         }
@@ -200,20 +232,15 @@ class HomeController extends AbstractController
             foreach ($productionEvents as $pe) {
                 $peRoom = $pe->getRoom();
 
-                if ($roomId) {
-                    if ($peRoom !== null && $peRoom->getId() != $roomId) {
-                        continue;
-                    }
+                if ($roomId && $peRoom && $peRoom->getId() != $roomId) {
+                    continue;
                 }
 
                 $title = $pe->getProduction() ? $pe->getProduction()->getTitle() : 'Produktion';
-
-                // Farbe basierend auf Production-ID
                 $color = $pe->getProduction()
                     ? $colorService->getProductionEventColor($pe->getProduction()->getId())
                     : '#E91E63';
 
-                // Zeit kombinieren
                 $eventStart = clone $pe->getDate();
                 if ($pe->getTimeFrom()) {
                     $timeParts = explode(':', $pe->getTimeFrom());
@@ -229,12 +256,11 @@ class HomeController extends AbstractController
                 }
 
                 $isAllDay = empty($pe->getTimeFrom()) && empty($pe->getTimeTo());
-
                 if ($isAllDay) {
                     $eventEnd->modify('+1 day');
                 }
 
-                $eventData = [
+                $events[] = [
                     'id' => 'prod_event_' . $pe->getId(),
                     'title' => $title,
                     'start' => $eventStart->format('c'),
@@ -251,16 +277,14 @@ class HomeController extends AbstractController
                         'description' => sprintf(
                             'Raum: %s | Status: %s',
                             $peRoom ? $peRoom->getName() : 'Kein Raum',
-                            $pe->getStatus() ? $pe->getStatus()->getLabel() : '-'
+                            $pe->getStatus() ? $translator->trans($pe->getStatus()->getLabel()) : '-'
                         ),
                     ]
                 ];
-
-                $events[] = $eventData;
             }
         }
 
-        // 3. NEU: Verliehene Schlüssel laden
+        // 3. Verliehene Schlüssel laden
         if (in_array('keys', $filters)) {
             $borrowedKeys = $keyManagementRepo->createQueryBuilder('k')
                 ->where('k.status = :borrowed')
@@ -275,11 +299,8 @@ class HomeController extends AbstractController
             foreach ($borrowedKeys as $key) {
                 $keyRoom = $key->getRoom();
 
-                // Raum-Filterung
-                if ($roomId) {
-                    if ($keyRoom !== null && $keyRoom->getId() != $roomId) {
-                        continue;
-                    }
+                if ($roomId && $keyRoom && $keyRoom->getId() != $roomId) {
+                    continue;
                 }
 
                 $borrowDate = $key->getBorrowDate();
@@ -289,14 +310,12 @@ class HomeController extends AbstractController
                     continue;
                 }
 
-                // Event-Start und -Ende
                 $eventStart = clone $borrowDate;
                 $eventStart->setTime(0, 0, 0);
 
                 $eventEnd = $returnDate ? clone $returnDate : clone $end;
                 $eventEnd->setTime(23, 59, 59);
 
-                // Titel mit Schlüsselname und Inhaber
                 $holderName = $key->getCurrentHolderName();
                 $title = '🔑 ' . $key->getName() . ' (' . $holderName . ')';
 
@@ -325,6 +344,70 @@ class HomeController extends AbstractController
         }
 
         return $this->json($events);
+    }
+
+    private function mapAppointmentTypeToFilter(AppointmentTypeEnum $type): string
+    {
+        return match($type) {
+            AppointmentTypeEnum::PRIVATE => 'private',
+            AppointmentTypeEnum::PRODUCTION => 'production',
+            AppointmentTypeEnum::CLOSED_EVENT => 'production',
+            AppointmentTypeEnum::SCHOOL_EVENT => 'private',
+            AppointmentTypeEnum::INTERNAL => 'private',
+            AppointmentTypeEnum::CLEANING => 'cleaning',
+        };
+    }
+
+    private function getAppointmentColor(Appointment $app, CalendarColorService $colorService): string
+    {
+        if ($app->getProduction()) {
+            return $colorService->getProductionAppointmentNuance($app->getProduction()->getId());
+        }
+
+        return $colorService->getAppointmentColor(
+            $app->getCleaning(),
+            null,
+            $app->getProduction()
+        );
+    }
+
+    private function buildAppointmentTitle(Appointment $app, TranslatorInterface $translator): string
+    {
+        $icons = [];
+
+        // Event Type Icons
+        if ($app->getEventType()) {
+            $icons[] = '<i class="' . $app->getEventType()->getIcon() . '"></i>';
+        }
+
+        // Techniker Icons
+        foreach ($app->getAppointmentTechnicians() as $appTech) {
+            $icon = $appTech->isConfirmed()
+                ? '<i class="ti-check c-green-500"></i>'
+                : '<i class="ti-close c-red-500"></i>';
+            $icons[] = $icon;
+        }
+
+        // Volunteer Icons
+        foreach ($app->getAppointmentVolunteers() as $appVol) {
+            $icon = $appVol->isConfirmed()
+                ? '<i class="ti-user c-blue-500"></i>'
+                : '<i class="ti-user c-grey-500"></i>';
+            $icons[] = $icon;
+        }
+
+        $iconString = !empty($icons) ? implode(' ', $icons) . ' ' : '';
+
+        $baseTitle = $app->getTitle();
+
+        // Anhängsel für Typ
+        if ($app->getProduction()) {
+            $baseTitle .= ' (' . $app->getProduction()->__toString() . ')';
+        } elseif ($app->getCleaning()) {
+            $baseTitle .= ' (' . $app->getCleaning()->__toString() . ')';
+        }
+
+        return $iconString . $baseTitle;
     }
 
     #[Route('/dashboard/production-event/{id}/details', name: 'app_dashboard_production_event_details', methods: ['GET'])]
@@ -397,7 +480,6 @@ class HomeController extends AbstractController
             $key->setStatus(KeyStatus::from($data['status']));
         }
 
-        // Reset relations
         $key->setUser(null);
         $key->setTechnician(null);
         $key->setProduction(null);
@@ -451,8 +533,9 @@ class HomeController extends AbstractController
         EntityManagerInterface $em,
         RoomRepository $roomRepository,
         CleaningRepository $cleanRepo,
-        TechnicianRepository $techRepo,
         ProductionRepository $productionRepo,
+        TechnicianRepository $technicianRepo,
+        VolunteerRepository $volunteerRepo,
         CalendarColorService $colorService
     ): JsonResponse
     {
@@ -462,7 +545,36 @@ class HomeController extends AbstractController
         $appointment->setTitle($data['title'] ?? 'Neuer Termin');
         $appointment->setDescription($data['description'] ?? null);
 
-        // Raum setzen
+        // Type setzen
+        $typeValue = $data['type'] ?? 'private';
+        try {
+            $appointment->setType(AppointmentTypeEnum::from($typeValue));
+        } catch (\ValueError $e) {
+            $appointment->setType(AppointmentTypeEnum::PRIVATE);
+        }
+
+        // Event Type
+        if (!empty($data['eventType'])) {
+            try {
+                $appointment->setEventType(EventTypeEnum::from($data['eventType']));
+            } catch (\ValueError $e) {
+                // Ignore
+            }
+        }
+
+        // Status
+        if (!empty($data['status'])) {
+            try {
+                $appointment->setStatus(AppointmentStatusEnum::from($data['status']));
+            } catch (\ValueError $e) {
+                // Ignore
+            }
+        }
+
+        // Internal Technicians
+        $appointment->setInternalTechniciansAttending($data['internalTechniciansAttending'] ?? false);
+
+        // Raum
         if (!empty($data['roomId'])) {
             $room = $roomRepository->find($data['roomId']);
             if ($room) {
@@ -470,17 +582,15 @@ class HomeController extends AbstractController
             }
         }
 
-        // Typ Relationen setzen
+        // Relationen
         if (!empty($data['cleaningId'])) {
             $appointment->setCleaning($cleanRepo->find($data['cleaningId']));
-        }
-        if (!empty($data['technicianId'])) {
-            $appointment->setTechnician($techRepo->find($data['technicianId']));
         }
         if (!empty($data['productionId'])) {
             $appointment->setProduction($productionRepo->find($data['productionId']));
         }
 
+        // Datum
         try {
             $startDate = new \DateTime($data['start']);
             $endDate = new \DateTime($data['end']);
@@ -489,41 +599,147 @@ class HomeController extends AbstractController
         }
 
         $allDay = $data['allDay'] ?? false;
-
         $appointment->setStartDate($startDate);
         $appointment->setEndDate($endDate);
         $appointment->setAllDay($allDay);
 
-        // Farbe automatisch setzen basierend auf Typ
-        $color = $colorService->getAppointmentColor(
-            $appointment->getCleaning(),
-            $appointment->getTechnician(),
-            $appointment->getProduction()
-        );
-        // Bei Production: Nuance verwenden
-        if ($appointment->getProduction()) {
-            $color = $colorService->getProductionAppointmentNuance($appointment->getProduction()->getId());
-        }
+        // Farbe
+        $color = $this->getAppointmentColor($appointment, $colorService);
         $appointment->setColor($color);
 
-        $em->persist($appointment);
-        $em->flush();
-
-        $responseEndDate = clone $appointment->getEndDate();
-        if ($allDay) {
-            $responseEndDate->modify('+1 day')->setTime(0, 0, 0);
+        // Techniker hinzufügen
+        if (!empty($data['technicians']) && is_array($data['technicians'])) {
+            foreach ($data['technicians'] as $techData) {
+                $tech = $technicianRepo->find($techData['id']);
+                if ($tech) {
+                    $appTech = new AppointmentTechnician();
+                    $appTech->setTechnician($tech);
+                    $appTech->setConfirmed($techData['confirmed'] ?? false);
+                    $appointment->addAppointmentTechnician($appTech);
+                }
+            }
         }
+
+        // Volunteers hinzufügen
+        if (!empty($data['volunteers']) && is_array($data['volunteers'])) {
+            foreach ($data['volunteers'] as $volData) {
+                $vol = $volunteerRepo->find($volData['id']);
+                if ($vol) {
+                    $appVol = new AppointmentVolunteer();
+                    $appVol->setVolunteer($vol);
+                    $appVol->setConfirmed($volData['confirmed'] ?? false);
+                    $appVol->setTasks($volData['tasks'] ?? []);
+                    $appointment->addAppointmentVolunteer($appVol);
+                }
+            }
+        }
+
+        $em->persist($appointment);
+
+        // Wiederholungen erstellen
+        if (!empty($data['recurrenceFrequency']) && !empty($data['recurrenceEndDate'])) {
+            try {
+                $recurrenceEnd = new \DateTime($data['recurrenceEndDate']);
+                $this->createRecurringAppointments(
+                    $appointment,
+                    $data['recurrenceFrequency'],
+                    $recurrenceEnd,
+                    $em,
+                    $roomRepository,
+                    $cleanRepo,
+                    $productionRepo,
+                    $technicianRepo,
+                    $volunteerRepo,
+                    $colorService
+                );
+            } catch (\Exception $e) {
+                // Log error
+            }
+        }
+
+        $em->flush();
 
         return $this->json([
             'success' => true,
-            'id' => $appointment->getId(),
-            'title' => $appointment->getTitle(),
-            'start' => $appointment->getStartDate()->format('c'),
-            'end' => $responseEndDate->format('c'),
-            'allDay' => $appointment->isAllDay(),
-            'color' => $appointment->getColor(),
-            'roomId' => $appointment->getRoom() ? $appointment->getRoom()->getId() : null,
+            'id' => $appointment->getId()
         ]);
+    }
+
+    private function createRecurringAppointments(
+        Appointment $baseAppointment,
+        string $frequency,
+        \DateTime $endDate,
+        EntityManagerInterface $em,
+        RoomRepository $roomRepository,
+        CleaningRepository $cleanRepo,
+        ProductionRepository $productionRepo,
+        TechnicianRepository $technicianRepo,
+        VolunteerRepository $volunteerRepo,
+        CalendarColorService $colorService
+    ): void
+    {
+        $currentStart = clone $baseAppointment->getStartDate();
+        $currentEnd = clone $baseAppointment->getEndDate();
+
+        $interval = match($frequency) {
+            'daily' => new \DateInterval('P1D'),
+            'weekly' => new \DateInterval('P7D'),
+            'monthly' => new \DateInterval('P1M'),
+            default => null
+        };
+
+        if (!$interval) {
+            return;
+        }
+
+        $baseAppointment->setRecurrenceFrequency($frequency);
+        $baseAppointment->setRecurrenceEndDate($endDate);
+
+        while (true) {
+            $currentStart->add($interval);
+            $currentEnd->add($interval);
+
+            if ($currentStart > $endDate) {
+                break;
+            }
+
+            $newAppointment = new Appointment();
+            $newAppointment->setTitle($baseAppointment->getTitle());
+            $newAppointment->setDescription($baseAppointment->getDescription());
+            $newAppointment->setType($baseAppointment->getType());
+            $newAppointment->setEventType($baseAppointment->getEventType());
+            $newAppointment->setStatus($baseAppointment->getStatus());
+            $newAppointment->setInternalTechniciansAttending($baseAppointment->isInternalTechniciansAttending());
+            $newAppointment->setRoom($baseAppointment->getRoom());
+            $newAppointment->setCleaning($baseAppointment->getCleaning());
+            $newAppointment->setProduction($baseAppointment->getProduction());
+            $newAppointment->setStartDate(clone $currentStart);
+            $newAppointment->setEndDate(clone $currentEnd);
+            $newAppointment->setAllDay($baseAppointment->isAllDay());
+            $newAppointment->setColor($baseAppointment->getColor());
+            $newAppointment->setParentAppointment($baseAppointment);
+            $newAppointment->setRecurrenceFrequency($frequency);
+            $newAppointment->setRecurrenceEndDate($endDate);
+
+            // Techniker kopieren
+            foreach ($baseAppointment->getAppointmentTechnicians() as $appTech) {
+                $newAppTech = new AppointmentTechnician();
+                $newAppTech->setTechnician($appTech->getTechnician());
+                $newAppTech->setConfirmed($appTech->isConfirmed());
+                $newAppointment->addAppointmentTechnician($newAppTech);
+            }
+
+            // Volunteers kopieren
+            foreach ($baseAppointment->getAppointmentVolunteers() as $appVol) {
+                $newAppVol = new AppointmentVolunteer();
+                $newAppVol->setVolunteer($appVol->getVolunteer());
+                $newAppVol->setConfirmed($appVol->isConfirmed());
+                $newAppVol->setTasks($appVol->getTasks());
+                $newAppointment->addAppointmentVolunteer($newAppVol);
+            }
+
+            $em->persist($newAppointment);
+        }
     }
 
     #[Route('/appointment/{id}/edit', name: 'app_appointment_edit', methods: ['PUT'])]
@@ -533,8 +749,9 @@ class HomeController extends AbstractController
         EntityManagerInterface $em,
         RoomRepository $roomRepository,
         CleaningRepository $cleanRepo,
-        TechnicianRepository $techRepo,
         ProductionRepository $productionRepo,
+        TechnicianRepository $technicianRepo,
+        VolunteerRepository $volunteerRepo,
         CalendarColorService $colorService
     ): JsonResponse
     {
@@ -547,27 +764,60 @@ class HomeController extends AbstractController
             $appointment->setDescription($data['description']);
         }
 
-        // Raum Update
-        if (array_key_exists('roomId', $data)) {
-            if (!empty($data['roomId'])) {
-                $room = $roomRepository->find($data['roomId']);
-                $appointment->setRoom($room);
-            } else {
-                $appointment->setRoom(null);
+        // Type Update
+        if (isset($data['type'])) {
+            try {
+                $appointment->setType(AppointmentTypeEnum::from($data['type']));
+            } catch (\ValueError $e) {
+                // Ignore
             }
         }
 
-        // Typ Update
+        // Event Type
+        if (isset($data['eventType'])) {
+            if ($data['eventType']) {
+                try {
+                    $appointment->setEventType(EventTypeEnum::from($data['eventType']));
+                } catch (\ValueError $e) {
+                    // Ignore
+                }
+            } else {
+                $appointment->setEventType(null);
+            }
+        }
+
+        // Status
+        if (isset($data['status'])) {
+            if ($data['status']) {
+                try {
+                    $appointment->setStatus(AppointmentStatusEnum::from($data['status']));
+                } catch (\ValueError $e) {
+                    // Ignore
+                }
+            } else {
+                $appointment->setStatus(null);
+            }
+        }
+
+        // Internal Technicians
+        if (isset($data['internalTechniciansAttending'])) {
+            $appointment->setInternalTechniciansAttending($data['internalTechniciansAttending']);
+        }
+
+        // Raum
+        if (array_key_exists('roomId', $data)) {
+            $appointment->setRoom(!empty($data['roomId']) ? $roomRepository->find($data['roomId']) : null);
+        }
+
+        // Relationen
         if (array_key_exists('cleaningId', $data)) {
             $appointment->setCleaning(!empty($data['cleaningId']) ? $cleanRepo->find($data['cleaningId']) : null);
-        }
-        if (array_key_exists('technicianId', $data)) {
-            $appointment->setTechnician(!empty($data['technicianId']) ? $techRepo->find($data['technicianId']) : null);
         }
         if (array_key_exists('productionId', $data)) {
             $appointment->setProduction(!empty($data['productionId']) ? $productionRepo->find($data['productionId']) : null);
         }
 
+        // Datum
         if (isset($data['start'])) {
             $appointment->setStartDate(new \DateTime($data['start']));
         }
@@ -601,15 +851,47 @@ class HomeController extends AbstractController
             $appointment->setAllDay($newAllDay);
         }
 
-        // Farbe automatisch neu setzen
-        $color = $colorService->getAppointmentColor(
-            $appointment->getCleaning(),
-            $appointment->getTechnician(),
-            $appointment->getProduction()
-        );
-        if ($appointment->getProduction()) {
-            $color = $colorService->getProductionAppointmentNuance($appointment->getProduction()->getId());
+        // Techniker aktualisieren
+        if (isset($data['technicians']) && is_array($data['technicians'])) {
+            // Alle vorhandenen entfernen
+            foreach ($appointment->getAppointmentTechnicians() as $appTech) {
+                $appointment->removeAppointmentTechnician($appTech);
+            }
+
+            // Neue hinzufügen
+            foreach ($data['technicians'] as $techData) {
+                $tech = $technicianRepo->find($techData['id']);
+                if ($tech) {
+                    $appTech = new AppointmentTechnician();
+                    $appTech->setTechnician($tech);
+                    $appTech->setConfirmed($techData['confirmed'] ?? false);
+                    $appointment->addAppointmentTechnician($appTech);
+                }
+            }
         }
+
+        // Volunteers aktualisieren
+        if (isset($data['volunteers']) && is_array($data['volunteers'])) {
+            // Alle vorhandenen entfernen
+            foreach ($appointment->getAppointmentVolunteers() as $appVol) {
+                $appointment->removeAppointmentVolunteer($appVol);
+            }
+
+            // Neue hinzufügen
+            foreach ($data['volunteers'] as $volData) {
+                $vol = $volunteerRepo->find($volData['id']);
+                if ($vol) {
+                    $appVol = new AppointmentVolunteer();
+                    $appVol->setVolunteer($vol);
+                    $appVol->setConfirmed($volData['confirmed'] ?? false);
+                    $appVol->setTasks($volData['tasks'] ?? []);
+                    $appointment->addAppointmentVolunteer($appVol);
+                }
+            }
+        }
+
+        // Farbe neu setzen
+        $color = $this->getAppointmentColor($appointment, $colorService);
         $appointment->setColor($color);
 
         $em->flush();
@@ -618,39 +900,61 @@ class HomeController extends AbstractController
     }
 
     #[Route('/appointment/{id}/delete', name: 'app_appointment_delete', methods: ['DELETE'])]
-    public function deleteAppointment(Appointment $appointment, EntityManagerInterface $em): JsonResponse
+    public function deleteAppointment(
+        Appointment $appointment,
+        Request $request,
+        EntityManagerInterface $em,
+        AppointmentRepository $appointmentRepo
+    ): JsonResponse
     {
-        $em->remove($appointment);
+        $data = json_decode($request->getContent(), true);
+        $deleteMode = $data['mode'] ?? 'single'; // 'single' oder 'series'
+
+        if ($deleteMode === 'series' && $appointment->getParentAppointment()) {
+            // Lösche Parent und alle Kinder
+            $parent = $appointment->getParentAppointment();
+            $siblings = $appointmentRepo->findBy(['parentAppointment' => $parent]);
+
+            foreach ($siblings as $sibling) {
+                $em->remove($sibling);
+            }
+            $em->remove($parent);
+        } elseif ($deleteMode === 'series' && $appointment->isRecurring()) {
+            // Dieser Termin ist Parent, lösche alle Kinder
+            $children = $appointmentRepo->findBy(['parentAppointment' => $appointment]);
+
+            foreach ($children as $child) {
+                $em->remove($child);
+            }
+            $em->remove($appointment);
+        } else {
+            // Nur diesen Termin löschen
+            $em->remove($appointment);
+        }
+
         $em->flush();
 
         return $this->json(['success' => true]);
     }
 
     #[Route('/appointments/all', name: 'app_appointments_all', methods: ['GET'])]
-    public function getAllAppointments(AppointmentRepository $appointmentRepository): JsonResponse
+    public function getAllAppointments(
+        AppointmentRepository $appointmentRepository,
+        TranslatorInterface $translator
+    ): JsonResponse
     {
         $appointments = $appointmentRepository->findAllForCalendar();
 
-        $events = array_map(function (Appointment $appointment) {
+        $events = array_map(function (Appointment $appointment) use ($translator) {
             $endDate = clone $appointment->getEndDate();
 
             if ($appointment->isAllDay()) {
                 $endDate->modify('+1 day')->setTime(0, 0, 0);
             }
 
-            $type = 'private';
-            $displayTitle = $appointment->getTitle();
-
-            if ($appointment->getProduction()) {
-                $type = 'production';
-                $displayTitle .= ' (' . $appointment->getProduction()->__toString() . ')';
-            } elseif ($appointment->getCleaning()) {
-                $type = 'cleaning';
-                $displayTitle .= ' (' . $appointment->getCleaning()->__toString() . ')';
-            } elseif ($appointment->getTechnician()) {
-                $type = 'technician';
-                $displayTitle .= ' (' . $appointment->getTechnician()->__toString() . ')';
-            }
+            $appType = $appointment->getType() ?? AppointmentTypeEnum::PRIVATE;
+            $typeFilter = $this->mapAppointmentTypeToFilter($appType);
+            $displayTitle = $this->buildAppointmentTitle($appointment, $translator);
 
             return [
                 'id' => $appointment->getId(),
@@ -661,12 +965,15 @@ class HomeController extends AbstractController
                 'color' => $appointment->getColor(),
                 'description' => $appointment->getDescription(),
                 'extendedProps' => [
-                    'type' => $type,
+                    'type' => $typeFilter,
                     'roomId' => $appointment->getRoom() ? $appointment->getRoom()->getId() : null,
                     'cleaningId' => $appointment->getCleaning() ? $appointment->getCleaning()->getId() : null,
-                    'technicianId' => $appointment->getTechnician() ? $appointment->getTechnician()->getId() : null,
                     'productionId' => $appointment->getProduction() ? $appointment->getProduction()->getId() : null,
-                    'originalTitle' => $appointment->getTitle(), // ORIGINAL Titel ohne toString
+                    'originalTitle' => $appointment->getTitle(),
+                    'appointmentType' => $appType->value,
+                    'eventType' => $appointment->getEventType()?->value,
+                    'status' => $appointment->getStatus()?->value,
+                    'internalTechniciansAttending' => $appointment->isInternalTechniciansAttending(),
                 ]
             ];
         }, $appointments);

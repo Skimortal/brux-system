@@ -1,3 +1,4 @@
+
 import Chart from 'chart.js/auto';
 import { Calendar } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -10,19 +11,15 @@ import { initDaterangepicker, getPickerInstance, initDaterangepickers } from './
 
 var doughnutChart;
 function initDoughnutChart() {
-    // if(typeof doughnutChart !== "undefined") {
-    //     doughnutChart.destroy();
-    // }
-    // ... chart logic ...
+    // ... chart logic if needed ...
 }
 
 let allEvents = [];
 let currentSelectedDate = new Date();
-let calendarInstances = []; // Array für Raum-Kalender
-let globalCalendar = null; // Globaler Kalender
-let currentView = 'global'; // Aktuelle Ansicht
+let calendarInstances = [];
+let globalCalendar = null;
+let currentView = 'global';
 
-// Mapping für Farben zu Icon-Farben (Adminator CSS Klassen)
 const colorToIconClass = {
     '#4285f4': 'c-blue-500',
     '#0f9d58': 'c-green-500',
@@ -34,19 +31,24 @@ const colorToIconClass = {
     '#9e9e9e': 'c-grey-500'
 };
 
-// Funktion um Datum im Header anzuzeigen
+// Volunteer Task Labels
+const volunteerTaskLabels = {
+    'bar': 'Bar',
+    'setup': 'Aufbau',
+    'teardown': 'Abbau',
+    'ticketing': 'Ticketing',
+    'cleanup': 'Aufräumen',
+    'other': 'Anderes'
+};
+
 function displayDate(date) {
     currentSelectedDate = new Date(date);
-
-    const dayNumber = date.getDate();
-    const dayName = date.toLocaleDateString('de-DE', { weekday: 'long' });
-
-    // Formatiere das Datum im Format dd.mm.yyyy
     const formattedDate = date.toLocaleDateString('de-DE', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric'
     });
+    const dayName = date.toLocaleDateString('de-DE', { weekday: 'long' });
 
     const numText = document.getElementById('day-number-text');
     if(numText) numText.textContent = formattedDate;
@@ -58,10 +60,8 @@ function displayDate(date) {
     if(nameEl) nameEl.textContent = dayName.charAt(0).toUpperCase() + dayName.slice(1);
 }
 
-// Funktion um Events eines bestimmten Tages anzuzeigen
 function displayEventsForDate(date, events) {
     const listEl = document.getElementById('day-events-list');
-
     if (!listEl) return;
 
     const targetDate = new Date(date);
@@ -70,10 +70,8 @@ function displayEventsForDate(date, events) {
     const dayEvents = events.filter(event => {
         const eventStartDate = new Date(event.start);
         eventStartDate.setHours(0, 0, 0, 0);
-
         const eventEndDate = event.end ? new Date(event.end) : new Date(event.start);
         eventEndDate.setHours(0, 0, 0, 0);
-
         return (eventStartDate.getTime() <= targetDate.getTime() &&
             eventEndDate.getTime() >= targetDate.getTime());
     });
@@ -88,7 +86,6 @@ function displayEventsForDate(date, events) {
         `;
     } else {
         const now = new Date();
-
         listEl.innerHTML = dayEvents.map(event => {
             const eventColor = event.color || event.backgroundColor || '#4285f4';
             const iconClass = colorToIconClass[eventColor] || 'c-blue-500';
@@ -97,13 +94,11 @@ function displayEventsForDate(date, events) {
                 minute: '2-digit',
                 hour12: false
             }) : '';
-
             const dateStr = new Date(event.start).toLocaleDateString('de-DE', {
                 day: '2-digit',
                 month: 'short'
             });
 
-            // Prüfe, ob Event in der Vergangenheit liegt
             const eventEnd = event.end ? new Date(event.end) : new Date(event.start);
             const isPast = eventEnd < now;
             const pastClass = isPast ? 'style="opacity: 0.5;"' : '';
@@ -126,7 +121,7 @@ function displayEventsForDate(date, events) {
                             </div>
                         </div>
                     </a>
-                    ${(event.extendedProps && ['private', 'cleaning', 'technician'].includes(event.extendedProps.type)) ? `
+                    ${(event.extendedProps && ['private', 'cleaning', 'production'].includes(event.extendedProps.type)) ? `
                     <div class="peers mR-15">
                         <div class="peer">
                             <a href="javascript:void(0);"
@@ -147,12 +142,10 @@ function displayEventsForDate(date, events) {
             `;
         }).join('');
 
-        // Event Listener für Klicks auf Events
         listEl.querySelectorAll('.event-item, .edit-event').forEach(el => {
             el.addEventListener('click', function(e) {
                 e.preventDefault();
                 const eventId = this.getAttribute('data-event-id');
-                // Versuche Event in allEvents zu finden
                 const event = allEvents.find(evt => evt.id == eventId);
                 if (event) {
                     openAppointmentModal(null, event);
@@ -160,14 +153,11 @@ function displayEventsForDate(date, events) {
             });
         });
 
-        // Event Listener für Löschen
         listEl.querySelectorAll('.delete-event').forEach(el => {
             el.addEventListener('click', function(e) {
                 e.preventDefault();
                 const eventId = this.getAttribute('data-event-id');
-                if (confirm('Möchten Sie diesen Termin wirklich löschen?')) {
-                    deleteAppointmentById(eventId);
-                }
+                showDeleteConfirmation(eventId);
             });
         });
     }
@@ -175,6 +165,9 @@ function displayEventsForDate(date, events) {
 
 var appointmentModal;
 var productionEventModal;
+var keyModal;
+var deleteConfirmModal;
+let currentDeleteAppointmentId = null;
 
 function initCalendar() {
     const modalEl = document.getElementById('appointmentModal');
@@ -187,7 +180,11 @@ function initCalendar() {
         productionEventModal = new Modal(prodEventModalEl);
     }
 
-    // Aufräumen alter Instanzen
+    const deleteModalEl = document.getElementById('deleteConfirmModal');
+    if (deleteModalEl) {
+        deleteConfirmModal = new Modal(deleteModalEl);
+    }
+
     calendarInstances.forEach(cal => cal.destroy());
     calendarInstances = [];
     if (globalCalendar) {
@@ -195,7 +192,6 @@ function initCalendar() {
         globalCalendar = null;
     }
 
-    // Filter-Listener initialisieren
     const filterCheckboxes = document.querySelectorAll('.filter-checkbox');
     filterCheckboxes.forEach(box => {
         const newBox = box.cloneNode(true);
@@ -203,7 +199,6 @@ function initCalendar() {
         newBox.addEventListener('change', refreshCurrentView);
     });
 
-    // View Switcher Listener
     const viewRadios = document.querySelectorAll('input[name="calendarView"]');
     viewRadios.forEach(radio => {
         const newRadio = radio.cloneNode(true);
@@ -214,7 +209,6 @@ function initCalendar() {
         });
     });
 
-    // NEU: Sync Button Listener
     const syncBtn = document.getElementById('syncApiBtn');
     if (syncBtn) {
         const newSyncBtn = syncBtn.cloneNode(true);
@@ -222,14 +216,11 @@ function initCalendar() {
         newSyncBtn.addEventListener('click', triggerApiSync);
     }
 
-    // Mobile-Check
     const isMobile = window.innerWidth <= 767;
 
-    // Beide Kalender initialisieren
     initGlobalCalendar(isMobile);
     initRoomCalendars(isMobile);
 
-    // Sidebar initialisieren
     fetch('/appointments/all')
         .then(response => response.json())
         .then(data => {
@@ -242,17 +233,14 @@ function initCalendar() {
     setupModalListeners();
 }
 
-// NEU: API Sync triggern
 function triggerApiSync() {
     const btn = document.getElementById('syncApiBtn');
     if (!btn) return;
 
-    // Button deaktivieren und Loading-State anzeigen
     const originalContent = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<i class="ti-reload spin"></i> Synchronisiere...';
 
-    // Add spinning animation via CSS (optional)
     const style = document.createElement('style');
     style.textContent = `
         .spin {
@@ -280,13 +268,8 @@ function triggerApiSync() {
             btn.innerHTML = originalContent;
 
             if (data.success) {
-                // Erfolg anzeigen
                 showToast('success', data.message);
-
-                // Kalender neu laden
                 refreshCurrentView();
-
-                // Sidebar neu laden
                 fetch('/appointments/all')
                     .then(r => r.json())
                     .then(events => {
@@ -306,7 +289,6 @@ function triggerApiSync() {
 }
 
 function showToast(type, message) {
-    // Verwende Bootstrap Alert
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
     alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
@@ -317,7 +299,6 @@ function showToast(type, message) {
 
     document.body.appendChild(alertDiv);
 
-    // Auto-remove nach 5 Sekunden
     setTimeout(() => {
         alertDiv.remove();
     }, 5000);
@@ -358,7 +339,6 @@ function initGlobalCalendar(isMobile) {
                 .map(cb => cb.value)
                 .join(',');
 
-            // Kein roomId Filter - alle Räume anzeigen
             const url = `/dashboard/events?roomId=&start=${info.startStr}&end=${info.endStr}&filters=${activeFilters}`;
 
             fetch(url)
@@ -373,24 +353,7 @@ function initGlobalCalendar(isMobile) {
             openAppointmentModal(info.dateStr, null, info.date, null);
         },
         eventClick: function(info) {
-            const type = info.event.extendedProps.type;
-
-            if (type === 'production_event') {
-                const productionEventId = info.event.extendedProps.productionEventId;
-                if (productionEventId) {
-                    openProductionEventModal(productionEventId);
-                }
-            } else if (type === 'key') {
-                // NEU: Schlüssel-Event geklickt
-                const keyId = info.event.extendedProps.keyId;
-                if (keyId) {
-                    openKeyModal(keyId);
-                }
-            } else if (['private', 'cleaning', 'technician', 'production'].includes(type)) {
-                openAppointmentModal(null, info.event);
-            } else {
-                alert(info.event.title + '\n' + (info.event.extendedProps.description || ''));
-            }
+            handleEventClick(info);
         },
         eventDidMount: function(info) {
             const now = new Date();
@@ -415,7 +378,6 @@ function initRoomCalendars(isMobile) {
     });
 }
 
-// NEU: Aktualisiert die aktuelle Ansicht
 function refreshCurrentView() {
     if (currentView === 'global') {
         if (globalCalendar) {
@@ -426,7 +388,6 @@ function refreshCurrentView() {
     }
 }
 
-// ÄNDERN: Alte Funktion wird umbenannt
 function refreshAllCalendars() {
     refreshCurrentView();
 }
@@ -479,24 +440,7 @@ function createRoomCalendar(calendarEl, isMobile) {
             openAppointmentModal(info.dateStr, null, info.date, roomId);
         },
         eventClick: function(info) {
-            const type = info.event.extendedProps.type;
-
-            if (type === 'production_event') {
-                const productionEventId = info.event.extendedProps.productionEventId;
-                if (productionEventId) {
-                    openProductionEventModal(productionEventId);
-                }
-            } else if (type === 'key') {
-                // NEU: Schlüssel-Event geklickt
-                const keyId = info.event.extendedProps.keyId;
-                if (keyId) {
-                    openKeyModal(keyId);
-                }
-            } else if (['private', 'cleaning', 'technician', 'production'].includes(type)) {
-                openAppointmentModal(null, info.event);
-            } else {
-                alert(info.event.title + '\n' + (info.event.extendedProps.description || ''));
-            }
+            handleEventClick(info);
         },
         eventDidMount: function(info) {
             const now = new Date();
@@ -507,7 +451,6 @@ function createRoomCalendar(calendarEl, isMobile) {
             }
         },
         editable: false,
-        // NEU: Synchronisiere alle Kalender beim Datumswechsel
         datesSet: function(dateInfo) {
             syncAllRoomCalendars(calendar, dateInfo);
         }
@@ -517,23 +460,18 @@ function createRoomCalendar(calendarEl, isMobile) {
     return calendar;
 }
 
-// NEU: Funktion zum Synchronisieren aller Raum-Kalender
 function syncAllRoomCalendars(sourceCalendar, dateInfo) {
-    // Verhindere Endlosschleife bei gegenseitigen Updates
     if (sourceCalendar._isSyncing) {
         return;
     }
 
     calendarInstances.forEach(cal => {
-        // Nicht den Quell-Kalender updaten
         if (cal === sourceCalendar) {
             return;
         }
 
-        // Markiere als syncing um Endlosschleife zu verhindern
         cal._isSyncing = true;
 
-        // Gehe zum gleichen Datum und zur gleichen Ansicht
         const currentView = sourceCalendar.view.type;
         const currentDate = sourceCalendar.getDate();
 
@@ -543,34 +481,28 @@ function syncAllRoomCalendars(sourceCalendar, dateInfo) {
 
         cal.gotoDate(currentDate);
 
-        // Entferne sync-Flag nach kurzer Verzögerung
         setTimeout(() => {
             cal._isSyncing = false;
         }, 100);
     });
 }
 
-// NEU: Zwischen Ansichten wechseln
 function switchCalendarView(view) {
     const globalContainer = document.getElementById('globalCalendarContainer');
     const roomsContainer = document.getElementById('roomCalendarsContainer');
 
     if (view === 'global') {
-        // Zeige globalen Kalender
         if (globalContainer) globalContainer.style.display = 'block';
         if (roomsContainer) roomsContainer.style.display = 'none';
 
-        // Refresh global calendar
         if (globalCalendar) {
             globalCalendar.updateSize();
             globalCalendar.refetchEvents();
         }
     } else {
-        // Zeige Raum-Kalender
         if (globalContainer) globalContainer.style.display = 'none';
         if (roomsContainer) roomsContainer.style.display = 'block';
 
-        // Refresh room calendars
         calendarInstances.forEach(cal => {
             cal.updateSize();
             cal.refetchEvents();
@@ -578,88 +510,24 @@ function switchCalendarView(view) {
     }
 }
 
-function initSingleCalendar(calendarEl, isMobile) {
-    const roomId = calendarEl.dataset.roomId || '';
+function handleEventClick(info) {
+    const type = info.event.extendedProps.type;
 
-    const calendar = new Calendar(calendarEl, {
-        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-        initialView: isMobile ? 'timeGridWeek' : 'dayGridMonth',
-        locale: deLocale,
-        timeZone: 'Europe/Berlin',
-        firstDay: 1,
-        headerToolbar: isMobile ? {
-            left: 'prev,next',
-            center: 'title',
-            right: 'today,dayGridMonth,timeGridWeek,timeGridDay'
-        } : {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
-        },
-        slotMinTime: '08:00:00',
-        slotMaxTime: '22:00:00',
-        allDaySlot: true,
-        height: 1000,
-        eventTimeFormat: {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-            meridiem: false
-        },
-        eventDisplay: 'block', // WICHTIG: Erzwingt Block-Darstellung statt Dot-Darstellung
-        events: function(info, successCallback, failureCallback) {
-            const activeFilters = Array.from(document.querySelectorAll('.filter-checkbox:checked'))
-                .map(cb => cb.value)
-                .join(',');
-
-            const url = `/dashboard/events?roomId=${roomId}&start=${info.startStr}&end=${info.endStr}&filters=${activeFilters}`;
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => successCallback(data))
-                .catch(error => {
-                    console.error('Error loading events:', error);
-                    failureCallback(error);
-                });
-        },
-        dateClick: function(info) {
-            openAppointmentModal(info.dateStr, null, info.date, roomId);
-        },
-        eventClick: function(info) {
-            const type = info.event.extendedProps.type;
-
-            if (type === 'production_event') {
-                // ProductionEvent Modal öffnen (nicht editierbar über Dashboard)
-                const productionEventId = info.event.extendedProps.productionEventId;
-                if (productionEventId) {
-                    openProductionEventModal(productionEventId);
-                }
-            } else if (type === 'key') {
-                // NEU: Schlüssel-Event geklickt
-                const keyId = info.event.extendedProps.keyId;
-                if (keyId) {
-                    openKeyModal(keyId);
-                }
-            } else if (['private', 'cleaning', 'technician', 'production'].includes(type)) {
-                // Appointment Modal
-                openAppointmentModal(null, info.event);
-            } else {
-                alert(info.event.title + '\n' + (info.event.extendedProps.description || ''));
-            }
-        },
-        eventDidMount: function(info) {
-            const now = new Date();
-            const eventEnd = info.event.end || info.event.start;
-            if (eventEnd < now) {
-                info.el.style.opacity = '0.5';
-                info.el.style.textDecoration = 'line-through';
-            }
-        },
-        editable: false
-    });
-
-    calendar.render();
-    calendarInstances.push(calendar);
+    if (type === 'production_event') {
+        const productionEventId = info.event.extendedProps.productionEventId;
+        if (productionEventId) {
+            openProductionEventModal(productionEventId);
+        }
+    } else if (type === 'key') {
+        const keyId = info.event.extendedProps.keyId;
+        if (keyId) {
+            openKeyModal(keyId);
+        }
+    } else if (['private', 'cleaning', 'production'].includes(type)) {
+        openAppointmentModal(null, info.event);
+    } else {
+        alert(info.event.title + '\n' + (info.event.extendedProps.description || ''));
+    }
 }
 
 function openProductionEventModal(eventId) {
@@ -669,7 +537,6 @@ function openProductionEventModal(eventId) {
 
     if (!productionEventModal) return;
 
-    // Loading State
     modalBody.innerHTML = `
         <div class="text-center p-5">
             <div class="spinner-border text-primary" role="status">
@@ -680,7 +547,6 @@ function openProductionEventModal(eventId) {
 
     productionEventModal.show();
 
-    // Daten laden
     fetch(`/dashboard/production-event/${eventId}/details`)
         .then(response => response.json())
         .then(data => {
@@ -694,16 +560,13 @@ function openProductionEventModal(eventId) {
 
             modalTitle.textContent = production ? production.title : 'Veranstaltung';
 
-            // Edit Button konfigurieren
             if (editBtn) {
                 editBtn.href = `/production-event/${event.id}/edit`;
                 editBtn.style.display = 'inline-block';
             }
 
-            // Modal Content aufbauen
             let html = '';
 
-            // Produktionsbild falls vorhanden
             if (production && production.postThumbnailUrl) {
                 html += `
                     <div class="text-center mb-4">
@@ -715,10 +578,7 @@ function openProductionEventModal(eventId) {
                 `;
             }
 
-            // Event Details
             html += `<div class="row mb-4">`;
-
-            // Linke Spalte: Event Info
             html += `<div class="col-md-6">`;
             html += `<h6 class="text-muted mb-3">Veranstaltungsinformationen</h6>`;
 
@@ -759,9 +619,7 @@ function openProductionEventModal(eventId) {
                 `;
             }
 
-            html += `</div>`; // Ende linke Spalte
-
-            // Rechte Spalte: Plätze & Preise
+            html += `</div>`;
             html += `<div class="col-md-6">`;
             html += `<h6 class="text-muted mb-3">Plätze & Reservierungen</h6>`;
 
@@ -793,10 +651,9 @@ function openProductionEventModal(eventId) {
                 `;
             }
 
-            html += `</div>`; // Ende rechte Spalte
-            html += `</div>`; // Ende row
+            html += `</div>`;
+            html += `</div>`;
 
-            // Preise anzeigen
             if (event.prices && event.prices.length > 0) {
                 html += `
                     <div class="mb-4">
@@ -831,7 +688,6 @@ function openProductionEventModal(eventId) {
                 `;
             }
 
-            // Kategorien (z.B. "Ausverkauft")
             if (event.categories && event.categories.length > 0) {
                 html += `
                     <div class="mb-4">
@@ -848,7 +704,6 @@ function openProductionEventModal(eventId) {
                 `;
             }
 
-            // Reservierungshinweis
             if (event.reservationNote) {
                 const isUrl = event.reservationNote.startsWith('http');
                 html += `
@@ -864,7 +719,6 @@ function openProductionEventModal(eventId) {
                 `;
             }
 
-            // Produktionsbeschreibung
             if (production && production.contentHtml) {
                 html += `
                     <div class="mt-4 pt-4 border-top">
@@ -876,7 +730,6 @@ function openProductionEventModal(eventId) {
                 `;
             }
 
-            // Link zur Website
             if (production && production.permalink) {
                 html += `
                     <div class="mt-3">
@@ -900,7 +753,6 @@ function openProductionEventModal(eventId) {
 }
 
 function setupModalListeners() {
-    // Helper um Listener nicht mehrfach zu binden
     const saveBtn = document.getElementById('saveAppointmentBtn');
     if (saveBtn) {
         const newBtn = saveBtn.cloneNode(true);
@@ -912,7 +764,17 @@ function setupModalListeners() {
     if (deleteBtn) {
         const newBtn = deleteBtn.cloneNode(true);
         deleteBtn.parentNode.replaceChild(newBtn, deleteBtn);
-        newBtn.addEventListener('click', deleteAppointment);
+        newBtn.addEventListener('click', () => {
+            const appointmentId = document.getElementById('appointmentId').value;
+            showDeleteConfirmation(appointmentId);
+        });
+    }
+
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    if (confirmDeleteBtn) {
+        const newBtn = confirmDeleteBtn.cloneNode(true);
+        confirmDeleteBtn.parentNode.replaceChild(newBtn, confirmDeleteBtn);
+        newBtn.addEventListener('click', confirmDelete);
     }
 
     const allDayCheckbox = document.getElementById('appointmentAllDay');
@@ -922,13 +784,19 @@ function setupModalListeners() {
         newBtn.addEventListener('change', toggleAllDay);
     }
 
-    document.querySelectorAll('.type-radio').forEach(radio => {
+    const recurringCheckbox = document.getElementById('appointmentRecurring');
+    if (recurringCheckbox) {
+        const newBtn = recurringCheckbox.cloneNode(true);
+        recurringCheckbox.parentNode.replaceChild(newBtn, recurringCheckbox);
+        newBtn.addEventListener('change', toggleRecurrence);
+    }
+
+    document.querySelectorAll('.appointment-type-radio').forEach(radio => {
         const newRadio = radio.cloneNode(true);
         radio.parentNode.replaceChild(newRadio, radio);
-        newRadio.addEventListener('change', toggleTypeFields);
+        newRadio.addEventListener('change', updateTypeSpecificFields);
     });
 
-    // Plus Button
     const addBtn = document.getElementById('add-appointment-btn');
     if (addBtn) {
         const newAdd = addBtn.cloneNode(true);
@@ -940,54 +808,439 @@ function setupModalListeners() {
     }
 }
 
-function toggleTypeFields() {
-    const selectedRadio = document.querySelector('input[name="appointmentType"]:checked');
-    const type = selectedRadio ? selectedRadio.value : 'private';
-
-    const cleanGroup = document.getElementById('cleaningSelectGroup');
-    const techGroup = document.getElementById('technicianSelectGroup');
-    const prodGroup = document.getElementById('productionSelectGroup');
-    const titleGroup = document.getElementById('titleGroup');
-    const titleInput = document.getElementById('appointmentTitle');
-
-    if (cleanGroup) cleanGroup.style.display = (type === 'cleaning') ? 'block' : 'none';
-    if (techGroup) techGroup.style.display = (type === 'technician') ? 'block' : 'none';
-    if (prodGroup) prodGroup.style.display = (type === 'production') ? 'block' : 'none';
-
-    // Titel immer anzeigen (auch bei Production)
-    if (titleGroup) {
-        titleGroup.style.display = 'block';
-        if(titleInput) titleInput.setAttribute('required', 'required');
+function toggleRecurrence(e) {
+    const recurrenceOptions = document.getElementById('recurrenceOptions');
+    if (recurrenceOptions) {
+        recurrenceOptions.style.display = e.target.checked ? 'block' : 'none';
     }
+}
+
+
+// ... Vorheriger Code bleibt gleich bis "// Fortsetzung folgt im nächsten Teil..."
+
+function updateTypeSpecificFields() {
+    const selectedType = document.querySelector('input[name="appointmentType"]:checked');
+    if (!selectedType) return;
+
+    const type = selectedType.value;
+    const container = document.getElementById('typeSpecificFields');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    switch(type) {
+        case 'private':
+            // Privat: Keine zusätzlichen Felder
+            break;
+
+        case 'production':
+            container.innerHTML = buildProductionFields();
+            initializeProductionFieldListeners();
+            break;
+
+        case 'closed_event':
+            container.innerHTML = buildClosedEventFields();
+            initializeClosedEventFieldListeners();
+            break;
+
+        case 'school_event':
+            // Schulveranstaltung: wie Privat, keine zusätzlichen Felder
+            break;
+
+        case 'internal':
+            // Intern: keine zusätzlichen Felder
+            break;
+
+        case 'cleaning':
+            container.innerHTML = buildCleaningFields();
+            break;
+    }
+}
+
+function buildProductionFields() {
+    const productions = window.dashboardData.allProductions || [];
+    const technicians = window.dashboardData.allTechnicians || [];
+    const volunteers = window.dashboardData.allVolunteers || [];
+
+    return `
+        <div class="border-top pt-3 mt-3">
+            <h6 class="fw-bold mb-3">Produktions-Details</h6>
+
+            <div class="mb-3">
+                <label for="productionSelect" class="form-label">Produktion</label>
+                <select class="form-select" id="productionSelect">
+                    <option value="">Bitte wählen...</option>
+                    ${productions.map(p => `<option value="${p.id}">${p.title || p.displayName}</option>`).join('')}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label d-block">Ereignisart</label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="eventType" id="eventTypeRehearsal" value="rehearsal">
+                    <label class="btn btn-outline-secondary" for="eventTypeRehearsal">
+                        <i class="ti-music-alt"></i> Probe
+                    </label>
+
+                    <input type="radio" class="btn-check" name="eventType" id="eventTypeSetup" value="setup_teardown">
+                    <label class="btn btn-outline-secondary" for="eventTypeSetup">
+                        <i class="ti-package"></i> Aufbau/Abbau
+                    </label>
+
+                    <input type="radio" class="btn-check" name="eventType" id="eventTypeEvent" value="event">
+                    <label class="btn btn-outline-secondary" for="eventTypeEvent">
+                        <i class="ti-flag-alt"></i> Veranstaltung
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Status</label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="appointmentStatus" id="statusReserved" value="reserved">
+                    <label class="btn btn-outline-warning" for="statusReserved">Reserviert</label>
+
+                    <input type="radio" class="btn-check" name="appointmentStatus" id="statusConfirmed" value="confirmed">
+                    <label class="btn btn-outline-success" for="statusConfirmed">Fix</label>
+                </div>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="internalTechniciansAttending">
+                <label class="form-check-label" for="internalTechniciansAttending">
+                    Interne Techniker kommen
+                </label>
+            </div>
+
+            <div class="mb-3">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="assignTechniciansCheckbox">
+                    <label class="form-check-label fw-bold" for="assignTechniciansCheckbox">
+                        Techniker zuweisen
+                    </label>
+                </div>
+            </div>
+
+            <div id="techniciansContainer" style="display: none;">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th style="width: 50%;">Techniker</th>
+                            <th style="width: 25%;">Bestätigt</th>
+                            <th style="width: 25%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="techniciansList">
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-sm btn-success" id="addTechnicianBtn">
+                    <i class="ti-plus"></i> Techniker hinzufügen
+                </button>
+            </div>
+
+            <div class="mb-3 mt-3">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="assignVolunteersCheckbox">
+                    <label class="form-check-label fw-bold" for="assignVolunteersCheckbox">
+                        Volunteers zuweisen
+                    </label>
+                </div>
+            </div>
+
+            <div id="volunteersContainer" style="display: none;">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">Volunteer</th>
+                            <th style="width: 20%;">Bestätigt</th>
+                            <th style="width: 35%;">Aufgaben</th>
+                            <th style="width: 10%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="volunteersList">
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-sm btn-success" id="addVolunteerBtn">
+                    <i class="ti-plus"></i> Volunteer hinzufügen
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function buildClosedEventFields() {
+    const technicians = window.dashboardData.allTechnicians || [];
+    const volunteers = window.dashboardData.allVolunteers || [];
+
+    return `
+        <div class="border-top pt-3 mt-3">
+            <h6 class="fw-bold mb-3">Veranstaltungs-Details</h6>
+
+            <div class="mb-3">
+                <label class="form-label d-block">Ereignisart</label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="eventType" id="eventTypeRehearsal" value="rehearsal">
+                    <label class="btn btn-outline-secondary" for="eventTypeRehearsal">
+                        <i class="ti-music-alt"></i> Probe
+                    </label>
+
+                    <input type="radio" class="btn-check" name="eventType" id="eventTypeSetup" value="setup_teardown">
+                    <label class="btn btn-outline-secondary" for="eventTypeSetup">
+                        <i class="ti-package"></i> Aufbau/Abbau
+                    </label>
+
+                    <input type="radio" class="btn-check" name="eventType" id="eventTypeEvent" value="event">
+                    <label class="btn btn-outline-secondary" for="eventTypeEvent">
+                        <i class="ti-flag-alt"></i> Veranstaltung
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Status</label>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="appointmentStatus" id="statusReserved" value="reserved">
+                    <label class="btn btn-outline-warning" for="statusReserved">Reserviert</label>
+
+                    <input type="radio" class="btn-check" name="appointmentStatus" id="statusConfirmed" value="confirmed">
+                    <label class="btn btn-outline-success" for="statusConfirmed">Fix</label>
+                </div>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="internalTechniciansAttending">
+                <label class="form-check-label" for="internalTechniciansAttending">
+                    Interne Techniker kommen
+                </label>
+            </div>
+
+            <div class="mb-3">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="assignTechniciansCheckbox">
+                    <label class="form-check-label fw-bold" for="assignTechniciansCheckbox">
+                        Techniker zuweisen
+                    </label>
+                </div>
+            </div>
+
+            <div id="techniciansContainer" style="display: none;">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th style="width: 50%;">Techniker</th>
+                            <th style="width: 25%;">Bestätigt</th>
+                            <th style="width: 25%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="techniciansList">
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-sm btn-success" id="addTechnicianBtn">
+                    <i class="ti-plus"></i> Techniker hinzufügen
+                </button>
+            </div>
+
+            <div class="mb-3 mt-3">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="assignVolunteersCheckbox">
+                    <label class="form-check-label fw-bold" for="assignVolunteersCheckbox">
+                        Volunteers zuweisen
+                    </label>
+                </div>
+            </div>
+
+            <div id="volunteersContainer" style="display: none;">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">Volunteer</th>
+                            <th style="width: 20%;">Bestätigt</th>
+                            <th style="width: 35%;">Aufgaben</th>
+                            <th style="width: 10%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="volunteersList">
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-sm btn-success" id="addVolunteerBtn">
+                    <i class="ti-plus"></i> Volunteer hinzufügen
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function buildCleaningFields() {
+    const cleanings = window.dashboardData.allCleanings || [];
+
+    return `
+        <div class="border-top pt-3 mt-3">
+            <h6 class="fw-bold mb-3">Reinigungs-Details</h6>
+
+            <div class="mb-3">
+                <label for="cleaningSelect" class="form-label">Reinigung</label>
+                <select class="form-select" id="cleaningSelect">
+                    <option value="">Bitte wählen...</option>
+                    ${cleanings.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                </select>
+            </div>
+        </div>
+    `;
+}
+
+function initializeProductionFieldListeners() {
+    const assignTechCheckbox = document.getElementById('assignTechniciansCheckbox');
+    const techContainer = document.getElementById('techniciansContainer');
+    const addTechBtn = document.getElementById('addTechnicianBtn');
+
+    if (assignTechCheckbox && techContainer) {
+        assignTechCheckbox.addEventListener('change', function() {
+            techContainer.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    if (addTechBtn) {
+        addTechBtn.addEventListener('click', addTechnicianRow);
+    }
+
+    const assignVolCheckbox = document.getElementById('assignVolunteersCheckbox');
+    const volContainer = document.getElementById('volunteersContainer');
+    const addVolBtn = document.getElementById('addVolunteerBtn');
+
+    if (assignVolCheckbox && volContainer) {
+        assignVolCheckbox.addEventListener('change', function() {
+            volContainer.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    if (addVolBtn) {
+        addVolBtn.addEventListener('click', addVolunteerRow);
+    }
+}
+
+function initializeClosedEventFieldListeners() {
+    initializeProductionFieldListeners(); // Gleiche Logik
+}
+
+function addTechnicianRow(technicianData = null) {
+    const technicians = window.dashboardData.allTechnicians || [];
+    const list = document.getElementById('techniciansList');
+    if (!list) return;
+
+    const row = document.createElement('tr');
+    const rowId = 'tech_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    row.dataset.rowId = rowId;
+
+    row.innerHTML = `
+        <td>
+            <select class="form-select form-select-sm technician-select" data-row-id="${rowId}">
+                <option value="">Wählen...</option>
+                ${technicians.map(t => `
+                    <option value="${t.id}" ${technicianData && technicianData.id == t.id ? 'selected' : ''}>
+                        ${t.name}
+                    </option>
+                `).join('')}
+            </select>
+        </td>
+        <td class="text-center">
+            <input type="checkbox" class="form-check-input technician-confirmed"
+                   data-row-id="${rowId}"
+                   ${technicianData && technicianData.confirmed ? 'checked' : ''}>
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-danger remove-technician-btn" data-row-id="${rowId}">
+                <i class="ti-trash"></i>
+            </button>
+        </td>
+    `;
+
+    list.appendChild(row);
+
+    row.querySelector('.remove-technician-btn').addEventListener('click', function() {
+        row.remove();
+    });
+}
+
+function addVolunteerRow(volunteerData = null) {
+    const volunteers = window.dashboardData.allVolunteers || [];
+    const list = document.getElementById('volunteersList');
+    if (!list) return;
+
+    const row = document.createElement('tr');
+    const rowId = 'vol_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    row.dataset.rowId = rowId;
+
+    const tasksHtml = Object.entries(volunteerTaskLabels).map(([value, label]) => {
+        const checked = volunteerData && volunteerData.tasks && volunteerData.tasks.includes(value) ? 'checked' : '';
+        return `
+            <div class="form-check form-check-inline">
+                <input class="form-check-input volunteer-task" type="checkbox"
+                       value="${value}"
+                       data-row-id="${rowId}"
+                       ${checked}>
+                <label class="form-check-label" style="font-size: 0.85rem;">${label}</label>
+            </div>
+        `;
+    }).join('');
+
+    row.innerHTML = `
+        <td>
+            <select class="form-select form-select-sm volunteer-select" data-row-id="${rowId}">
+                <option value="">Wählen...</option>
+                ${volunteers.map(v => `
+                    <option value="${v.id}" ${volunteerData && volunteerData.id == v.id ? 'selected' : ''}>
+                        ${v.name}
+                    </option>
+                `).join('')}
+            </select>
+        </td>
+        <td class="text-center">
+            <input type="checkbox" class="form-check-input volunteer-confirmed"
+                   data-row-id="${rowId}"
+                   ${volunteerData && volunteerData.confirmed ? 'checked' : ''}>
+        </td>
+        <td>
+            ${tasksHtml}
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-sm btn-danger remove-volunteer-btn" data-row-id="${rowId}">
+                <i class="ti-trash"></i>
+            </button>
+        </td>
+    `;
+
+    list.appendChild(row);
+
+    row.querySelector('.remove-volunteer-btn').addEventListener('click', function() {
+        row.remove();
+    });
 }
 
 function openAppointmentModal(dateStr = null, event = null, clickedDateTime = null, roomId = null) {
     const modalTitle = document.getElementById('appointmentModalLabel');
     const deleteBtn = document.getElementById('deleteAppointmentBtn');
     const roomSelect = document.getElementById('appointmentRoom');
-    const cleanSelect = document.getElementById('appointmentCleaning');
-    const techSelect = document.getElementById('appointmentTechnician');
-    const prodSelect = document.getElementById('appointmentProduction');
     const titleInput = document.getElementById('appointmentTitle');
     const descInput = document.getElementById('appointmentDescription');
     const dateRangeInput = document.getElementById('appointmentDateRange');
+    const allDayCheckbox = document.getElementById('appointmentAllDay');
+    const recurringCheckbox = document.getElementById('appointmentRecurring');
 
-    // Reset All Fields
+    // Reset
     if(roomSelect) roomSelect.value = '';
-    if(cleanSelect) cleanSelect.value = '';
-    if(techSelect) techSelect.value = '';
-    if(prodSelect) prodSelect.value = '';
     if(titleInput) titleInput.value = '';
     if(descInput) descInput.value = '';
+    if(allDayCheckbox) allDayCheckbox.checked = false;
+    if(recurringCheckbox) recurringCheckbox.checked = false;
+    document.getElementById('recurrenceOptions').style.display = 'none';
 
-    // Reset Radios to Private
+    // Reset Type to Private
     const privateRadio = document.getElementById('typePrivate');
     if(privateRadio) {
         privateRadio.checked = true;
-        toggleTypeFields();
+        updateTypeSpecificFields();
     }
 
-    // Initialisiere Daterangepicker
     const picker = initDaterangepicker(dateRangeInput, 'dateTimeRange');
 
     if (event) {
@@ -1002,35 +1255,23 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         }
         document.getElementById('appointmentId').value = cleanId;
 
-        // Titel und Beschreibung
         const originalTitle = event.extendedProps?.originalTitle || event.title;
         if(titleInput) titleInput.value = originalTitle;
         if(descInput) descInput.value = event.extendedProps?.description || '';
 
-        // Raum setzen
         if (event.extendedProps && event.extendedProps.roomId && roomSelect) {
             roomSelect.value = event.extendedProps.roomId;
         }
 
-        // Typ & Relationen setzen
-        const type = event.extendedProps.type || 'private';
-        const typeRadio = document.querySelector(`input[name="appointmentType"][value="${type}"]`);
+        // Type setzen
+        const appointmentType = event.extendedProps?.appointmentType || 'private';
+        const typeRadio = document.querySelector(`input[name="appointmentType"][value="${appointmentType}"]`);
         if(typeRadio) {
             typeRadio.checked = true;
-            toggleTypeFields();
+            updateTypeSpecificFields();
         }
 
-        if (type === 'cleaning' && event.extendedProps.cleaningId && cleanSelect) {
-            cleanSelect.value = event.extendedProps.cleaningId;
-        }
-        if (type === 'technician' && event.extendedProps.technicianId && techSelect) {
-            techSelect.value = event.extendedProps.technicianId;
-        }
-        if (type === 'production' && event.extendedProps.productionId && prodSelect) {
-            prodSelect.value = event.extendedProps.productionId;
-        }
-
-        // Datum/Zeit für Range Picker setzen
+        // Datum setzen
         let startDate = moment(event.start);
         let endDate = moment(event.end || event.start);
 
@@ -1041,8 +1282,13 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         picker.setStartDate(startDate);
         picker.setEndDate(endDate);
 
-        document.getElementById('appointmentAllDay').checked = event.allDay;
+        if(allDayCheckbox) allDayCheckbox.checked = event.allDay;
         toggleAllDay({target: {checked: event.allDay}});
+
+        // Typ-spezifische Daten laden
+        setTimeout(() => {
+            loadTypeSpecificData(event);
+        }, 100);
 
     } else {
         // NEU ERSTELLEN
@@ -1058,7 +1304,7 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         if (clickedDateTime) {
             startDate = moment(clickedDateTime);
             endDate = moment(clickedDateTime).add(1, 'hours');
-            document.getElementById('appointmentAllDay').checked = false;
+            if(allDayCheckbox) allDayCheckbox.checked = false;
         } else {
             if(dateStr) {
                 startDate = moment(dateStr);
@@ -1067,7 +1313,7 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
             }
             startDate.hours(9).minutes(0).seconds(0);
             endDate = moment(startDate).add(1, 'hours');
-            document.getElementById('appointmentAllDay').checked = false;
+            if(allDayCheckbox) allDayCheckbox.checked = false;
         }
 
         picker.setStartDate(startDate);
@@ -1079,6 +1325,74 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
     if(appointmentModal) appointmentModal.show();
 }
 
+// Ersetze die loadTypeSpecificData Funktion mit dieser erweiterten Version:
+
+function loadTypeSpecificData(event) {
+    const type = event.extendedProps?.appointmentType;
+
+    if (type === 'production' || type === 'closed_event') {
+        // Production setzen
+        if (type === 'production' && event.extendedProps?.productionId) {
+            const prodSelect = document.getElementById('productionSelect');
+            if (prodSelect) prodSelect.value = event.extendedProps.productionId;
+        }
+
+        // Event Type
+        if (event.extendedProps?.eventType) {
+            const eventTypeRadio = document.querySelector(`input[name="eventType"][value="${event.extendedProps.eventType}"]`);
+            if (eventTypeRadio) eventTypeRadio.checked = true;
+        }
+
+        // Status
+        if (event.extendedProps?.status) {
+            const statusRadio = document.querySelector(`input[name="appointmentStatus"][value="${event.extendedProps.status}"]`);
+            if (statusRadio) statusRadio.checked = true;
+        }
+
+        // Internal Technicians
+        const internalTechCheckbox = document.getElementById('internalTechniciansAttending');
+        if (internalTechCheckbox) {
+            internalTechCheckbox.checked = event.extendedProps?.internalTechniciansAttending || false;
+        }
+
+        // Techniker laden
+        if (event.extendedProps?.technicians && event.extendedProps.technicians.length > 0) {
+            const assignTechCheckbox = document.getElementById('assignTechniciansCheckbox');
+            if (assignTechCheckbox) {
+                assignTechCheckbox.checked = true;
+                assignTechCheckbox.dispatchEvent(new Event('change'));
+            }
+
+            setTimeout(() => {
+                event.extendedProps.technicians.forEach(tech => {
+                    addTechnicianRow(tech);
+                });
+            }, 100);
+        }
+
+        // Volunteers laden
+        if (event.extendedProps?.volunteers && event.extendedProps.volunteers.length > 0) {
+            const assignVolCheckbox = document.getElementById('assignVolunteersCheckbox');
+            if (assignVolCheckbox) {
+                assignVolCheckbox.checked = true;
+                assignVolCheckbox.dispatchEvent(new Event('change'));
+            }
+
+            setTimeout(() => {
+                event.extendedProps.volunteers.forEach(vol => {
+                    addVolunteerRow(vol);
+                });
+            }, 100);
+        }
+
+    } else if (type === 'cleaning') {
+        if (event.extendedProps?.cleaningId) {
+            const cleanSelect = document.getElementById('cleaningSelect');
+            if (cleanSelect) cleanSelect.value = event.extendedProps.cleaningId;
+        }
+    }
+}
+
 function toggleAllDay(e) {
     const dateRangeInput = document.getElementById('appointmentDateRange');
     if (!dateRangeInput) return;
@@ -1087,7 +1401,6 @@ function toggleAllDay(e) {
     if (!picker) return;
 
     if (e.target.checked) {
-        // Ganztägig: Nur Datum, keine Zeit
         const currentStart = picker.startDate;
         const currentEnd = picker.endDate;
 
@@ -1097,7 +1410,6 @@ function toggleAllDay(e) {
         picker.setStartDate(currentStart.startOf('day'));
         picker.setEndDate(currentEnd.startOf('day'));
     } else {
-        // Mit Zeit
         picker.timePicker = true;
         picker.timePicker24Hour = true;
         picker.timePickerIncrement = 15;
@@ -1116,28 +1428,13 @@ function saveAppointment() {
     const selectedRadio = document.querySelector('input[name="appointmentType"]:checked');
     const type = selectedRadio ? selectedRadio.value : 'private';
 
-    let cleaningId = null;
-    let technicianId = null;
-    let productionId = null;
-
-    if (type === 'cleaning') {
-        cleaningId = document.getElementById('appointmentCleaning').value;
-        if (!title) title = 'Reinigung';
-    } else if (type === 'technician') {
-        technicianId = document.getElementById('appointmentTechnician').value;
-        if (!title) title = 'Techniker';
-    } else if (type === 'production') {
-        productionId = document.getElementById('appointmentProduction').value;
-        if (!title) title = 'Produktion';
-    }
-
-    const allDay = document.getElementById('appointmentAllDay').checked;
-    const dateRangeInput = document.getElementById('appointmentDateRange');
-
     if (!title) {
         alert('Bitte geben Sie einen Titel ein.');
         return;
     }
+
+    const allDay = document.getElementById('appointmentAllDay').checked;
+    const dateRangeInput = document.getElementById('appointmentDateRange');
 
     const picker = getPickerInstance(dateRangeInput);
 
@@ -1149,13 +1446,10 @@ function saveAppointment() {
     let startDate = picker.startDate;
     let endDate = picker.endDate;
 
-    // Formatiere Datum für Backend
     let start, end;
 
     if (allDay) {
-        // Ganztägig
         start = startDate.format('YYYY-MM-DD') + 'T00:00:00';
-        // Füge einen Tag zum Ende hinzu für FullCalendar
         end = endDate.clone().add(1, 'days').format('YYYY-MM-DD') + 'T00:00:00';
     } else {
         start = startDate.format('YYYY-MM-DDTHH:mm:ss');
@@ -1169,10 +1463,69 @@ function saveAppointment() {
         end,
         allDay,
         roomId,
-        cleaningId,
-        technicianId,
-        productionId
+        type
     };
+
+    // Typ-spezifische Daten sammeln
+    if (type === 'production') {
+        const prodSelect = document.getElementById('productionSelect');
+        data.productionId = prodSelect ? prodSelect.value : null;
+
+        const eventTypeRadio = document.querySelector('input[name="eventType"]:checked');
+        data.eventType = eventTypeRadio ? eventTypeRadio.value : null;
+
+        const statusRadio = document.querySelector('input[name="appointmentStatus"]:checked');
+        data.status = statusRadio ? statusRadio.value : null;
+
+        const internalTechCheckbox = document.getElementById('internalTechniciansAttending');
+        data.internalTechniciansAttending = internalTechCheckbox ? internalTechCheckbox.checked : false;
+
+        // Techniker sammeln
+        data.technicians = collectTechnicians();
+
+        // Volunteers sammeln
+        data.volunteers = collectVolunteers();
+
+    } else if (type === 'closed_event') {
+        const eventTypeRadio = document.querySelector('input[name="eventType"]:checked');
+        data.eventType = eventTypeRadio ? eventTypeRadio.value : null;
+
+        const statusRadio = document.querySelector('input[name="appointmentStatus"]:checked');
+        data.status = statusRadio ? statusRadio.value : null;
+
+        const internalTechCheckbox = document.getElementById('internalTechniciansAttending');
+        data.internalTechniciansAttending = internalTechCheckbox ? internalTechCheckbox.checked : false;
+
+        data.technicians = collectTechnicians();
+        data.volunteers = collectVolunteers();
+
+    } else if (type === 'cleaning') {
+        const cleanSelect = document.getElementById('cleaningSelect');
+        data.cleaningId = cleanSelect ? cleanSelect.value : null;
+    }
+
+    // Wiederholung
+    const recurringCheckbox = document.getElementById('appointmentRecurring');
+    if (recurringCheckbox && recurringCheckbox.checked) {
+        const freqSelect = document.getElementById('recurrenceFrequency');
+        const endDateInput = document.getElementById('recurrenceEndDate');
+
+        if (freqSelect) {
+            data.recurrenceFrequency = freqSelect.value;
+        }
+
+        if (endDateInput) {
+            const endPicker = getPickerInstance(endDateInput);
+            if (endPicker && endPicker.startDate) {
+                data.recurrenceEndDate = endPicker.startDate.format('YYYY-MM-DD');
+            }
+        }
+
+        if (!data.recurrenceEndDate) {
+            alert('Bitte geben Sie ein Enddatum für die Wiederholung an.');
+            return;
+        }
+    }
 
     const url = id ? `/appointment/${id}/edit` : '/appointment/create';
     const method = id ? 'PUT' : 'POST';
@@ -1191,43 +1544,119 @@ function saveAppointment() {
                     allEvents = d;
                     displayEventsForDate(currentSelectedDate, d);
                 });
+                showToast('success', 'Termin erfolgreich gespeichert');
             } else {
-                alert('Fehler beim Speichern.');
+                alert('Fehler beim Speichern: ' + (result.message || 'Unbekannter Fehler'));
             }
         })
-        .catch(error => console.error(error));
+        .catch(error => {
+            console.error(error);
+            alert('Fehler beim Speichern.');
+        });
 }
 
-function deleteAppointmentById(id) {
-    const rawId = String(id);
+function collectTechnicians() {
+    const rows = document.querySelectorAll('#techniciansList tr');
+    const technicians = [];
+
+    rows.forEach(row => {
+        const rowId = row.dataset.rowId;
+        const select = row.querySelector(`.technician-select[data-row-id="${rowId}"]`);
+        const confirmedCheckbox = row.querySelector(`.technician-confirmed[data-row-id="${rowId}"]`);
+
+        if (select && select.value) {
+            technicians.push({
+                id: select.value,
+                confirmed: confirmedCheckbox ? confirmedCheckbox.checked : false
+            });
+        }
+    });
+
+    return technicians;
+}
+
+function collectVolunteers() {
+    const rows = document.querySelectorAll('#volunteersList tr');
+    const volunteers = [];
+
+    rows.forEach(row => {
+        const rowId = row.dataset.rowId;
+        const select = row.querySelector(`.volunteer-select[data-row-id="${rowId}"]`);
+        const confirmedCheckbox = row.querySelector(`.volunteer-confirmed[data-row-id="${rowId}"]`);
+        const taskCheckboxes = row.querySelectorAll(`.volunteer-task[data-row-id="${rowId}"]:checked`);
+
+        if (select && select.value) {
+            const tasks = Array.from(taskCheckboxes).map(cb => cb.value);
+            volunteers.push({
+                id: select.value,
+                confirmed: confirmedCheckbox ? confirmedCheckbox.checked : false,
+                tasks: tasks
+            });
+        }
+    });
+
+    return volunteers;
+}
+
+function showDeleteConfirmation(appointmentId) {
+    currentDeleteAppointmentId = appointmentId;
+
+    const message = document.getElementById('deleteConfirmMessage');
+    const recurringOptions = document.getElementById('deleteRecurringOptions');
+
+    // Check if recurring (ToDo: Backend muss Info liefern ob recurring)
+    // Für jetzt: immer beide Optionen anzeigen wenn es ein Edit ist
+    if (appointmentId) {
+        recurringOptions.style.display = 'block';
+        message.textContent = 'Möchten Sie diesen Termin löschen?';
+    } else {
+        recurringOptions.style.display = 'none';
+        message.textContent = 'Möchten Sie diesen Termin wirklich löschen?';
+    }
+
+    if (deleteConfirmModal) {
+        deleteConfirmModal.show();
+    }
+}
+
+function confirmDelete() {
+    if (!currentDeleteAppointmentId) return;
+
+    const deleteMode = document.querySelector('input[name="deleteMode"]:checked');
+    const mode = deleteMode ? deleteMode.value : 'single';
+
+    const rawId = String(currentDeleteAppointmentId);
     let cleanId = rawId;
     if(rawId.includes('_')) {
         cleanId = rawId.split('_')[1];
     }
 
-    fetch(`/appointment/${cleanId}/delete`, { method: 'DELETE' })
+    fetch(`/appointment/${cleanId}/delete`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: mode })
+    })
         .then(response => response.json())
         .then(result => {
             if (result.success) {
-                if (appointmentModal._isShown) appointmentModal.hide();
+                if (deleteConfirmModal) deleteConfirmModal.hide();
+                if (appointmentModal && appointmentModal._isShown) appointmentModal.hide();
                 refreshAllCalendars();
                 fetch('/appointments/all').then(r=>r.json()).then(d => {
                     allEvents = d;
                     displayEventsForDate(currentSelectedDate, d);
                 });
+                showToast('success', 'Termin erfolgreich gelöscht');
             } else {
                 alert('Fehler beim Löschen.');
             }
+        })
+        .catch(error => {
+            console.error(error);
+            alert('Fehler beim Löschen.');
         });
 }
 
-function deleteAppointment() {
-    const id = document.getElementById('appointmentId').value;
-    if (!id || !confirm('Wirklich löschen?')) return;
-    deleteAppointmentById(id);
-}
-
-var keyModal;
 function initKeyManagement() {
     const modalEl = document.getElementById('keyManagementModal');
     if (!modalEl) return;
@@ -1303,7 +1732,6 @@ function openKeyModal(keyId) {
         statusEl.dispatchEvent(new Event('change'));
     }
 
-    // Initialisiere Daterangepicker für Borrow/Return Dates
     const borrowEl = document.getElementById('keyBorrowDate');
     const returnEl = document.getElementById('keyReturnDate');
 

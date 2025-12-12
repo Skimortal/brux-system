@@ -30,11 +30,9 @@
 
                         <div class="p-0">
                             <div class="layer w-100" style="max-height: 80vh; overflow-y: auto;">
-
                                 <div class="pos-r">
-                                    <ul class="m-0 p-0 mT-10">
+                                    <ul class="m-0 p-0 mT-10" id="day-events-list">
                                         {% for key in allKeysFlat %}
-                                            {# Status-Farbe + Icon bestimmen #}
                                             {% set statusColor = 'c-green-500' %}
                                             {% set statusIcon = 'ti-check' %}
                                             {% set statusLabel = 'Verfügbar' %}
@@ -49,7 +47,6 @@
                                                 {% set statusLabel = 'Verloren' %}
                                             {% endif %}
 
-                                            {# Wenn du getCurrentHolderName() im Entity hast (wie im Controller) #}
                                             {% set holderName = key.currentHolderName ?? '' %}
 
                                             <li class="bdB peers ai-c jc-sb fxw-nw key-item-btn" style="cursor: pointer;"
@@ -61,22 +58,16 @@
                                                 data-user-id="{{ key.user ? key.user.id : '' }}"
                                                 data-tech-id="{{ key.technician ? key.technician.id : '' }}"
                                                 data-prod-id="{{ key.production ? key.production.id : '' }}"
-                                                data-clean-id="{{ key.cleaning ? key.cleaning.id : '' }}"
-                                            >
-                                                {# Link-/Content-Bereich links #}
+                                                data-clean-id="{{ key.cleaning ? key.cleaning.id : '' }}">
                                                 <div class="td-n p-20 peers fxw-nw me-20 peer-greed c-grey-900">
                                                     <div class="peer mR-15">
                                                         <i class="ti-key {{ statusColor }}"></i>
                                                     </div>
                                                     <div class="peer">
-                                                        {# fw-600: Name des Schlüssels #}
                                                         <span class="fw-600">{{ key.name }}</span>
                                                         <div class="c-grey-600">
-                                                            {# c-grey-700: an wen verliehen #}
                                                             {% if key.status.value == 'borrowed' %}
-                                                                <span class="c-grey-700">
-                                            {{ holderName }}
-                                        </span>
+                                                                <span class="c-grey-700">{{ holderName }}</span>
                                                             {% else %}
                                                                 <span class="c-grey-700">&nbsp;</span>
                                                             {% endif %}
@@ -84,20 +75,17 @@
                                                         </div>
                                                     </div>
                                                 </div>
-
-                                                {# Rechts nur ein Status-Icon #}
                                                 <div class="peers mR-15">
                                                     <div class="peer">
-                                <span class="fsz-md p-5" title="{{ statusLabel }}">
-                                    <i class="{{ statusIcon }} {{ statusColor }}"></i>
-                                </span>
+                                                        <span class="fsz-md p-5" title="{{ statusLabel }}">
+                                                            <i class="{{ statusIcon }} {{ statusColor }}"></i>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </li>
                                         {% endfor %}
                                     </ul>
                                 </div>
-
                             </div>
                         </div>
                     </div>
@@ -113,7 +101,7 @@
                                     <i class="ti-reload"></i> Veranstaltungen aus WP laden
                                 </button>
 
-                                {# NEU: View Switcher #}
+                                {# View Switcher #}
                                 <div class="btn-group" role="group">
                                     <input type="radio" class="btn-check" name="calendarView" id="viewGlobal" value="global" checked autocomplete="off">
                                     <label class="btn btn-outline-primary btn-sm" for="viewGlobal">
@@ -131,11 +119,6 @@
                                         <input class="form-check-input filter-checkbox" type="checkbox" value="production"
                                                id="filterProduction" checked>
                                         <label class="form-check-label" for="filterProduction">Produktion</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input filter-checkbox" type="checkbox" value="technician"
-                                               id="filterTechnician" checked>
-                                        <label class="form-check-label" for="filterTechnician">Techniker</label>
                                     </div>
                                     <div class="form-check">
                                         <input class="form-check-input filter-checkbox" type="checkbox" value="cleaning"
@@ -157,7 +140,7 @@
                         </div>
                     </div>
 
-                    {# NEU: Globaler Kalender Container #}
+                    {# Globaler Kalender Container #}
                     <div id="globalCalendarContainer">
                         <div class="bgc-white p-15 bd">
                             <div id="global-calendar"></div>
@@ -214,7 +197,6 @@
                                     </select>
                                 </div>
 
-                                {# Benutzer Select #}
                                 <div class="mb-3 borrower-select" id="userSelectDiv" style="display:none;">
                                     <label class="form-label">Benutzer</label>
                                     <select class="form-select" id="userId">
@@ -225,7 +207,6 @@
                                     </select>
                                 </div>
 
-                                {# Techniker Select #}
                                 <div class="mb-3 borrower-select" id="technicianSelectDiv" style="display:none;">
                                     <label class="form-label">Techniker</label>
                                     <select class="form-select" id="technicianId">
@@ -236,43 +217,35 @@
                                     </select>
                                 </div>
 
-                                {# Produktion Select #}
                                 <div class="mb-3 borrower-select" id="productionSelectDiv" style="display:none;">
                                     <label class="form-label">Produktion</label>
                                     <select class="form-select" id="productionId">
                                         <option value="">Wählen...</option>
                                         {% for p in allProductions %}
-                                            <option value="{{ p.id }}">{{ p.displayName }}</option>
+                                            <option value="{{ p.id }}">{{ p.getTitle() }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
 
-                                {# Reinigung Select #}
                                 <div class="mb-3 borrower-select" id="cleaningSelectDiv" style="display:none;">
                                     <label class="form-label">Reinigung</label>
                                     <select class="form-select" id="cleaningId">
                                         <option value="">Wählen...</option>
                                         {% for c in allCleanings %}
-                                            <option value="{{ c.id }}">{{ c.id }}</option>
+                                            <option value="{{ c.id }}">{{ c.name }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label">Ausgabedatum</label>
-                                    <input type="text"
-                                           class="form-control"
-                                           id="keyBorrowDate"
-                                           data-daterangepicker="single-datetime"
-                                           placeholder="Datum und Uhrzeit wählen">
+                                    <input type="text" class="form-control" id="keyBorrowDate"
+                                           data-daterangepicker="single-datetime" placeholder="Datum und Uhrzeit wählen">
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Rückgabedatum (geplant)</label>
-                                    <input type="text"
-                                           class="form-control"
-                                           id="keyReturnDate"
-                                           data-daterangepicker="single-datetime"
-                                           placeholder="Datum und Uhrzeit wählen">
+                                    <input type="text" class="form-control" id="keyReturnDate"
+                                           data-daterangepicker="single-datetime" placeholder="Datum und Uhrzeit wählen">
                                 </div>
                             </div>
                         </form>
@@ -285,7 +258,7 @@
             </div>
         </div>
 
-        {# Modal für Termin erstellen/bearbeiten - unverändert #}
+        {# NEU: Appointment Modal #}
         <div class="modal fade" id="appointmentModal" tabindex="-1" aria-labelledby="appointmentModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
@@ -296,89 +269,59 @@
                     <div class="modal-body">
                         <form id="appointmentForm">
                             <input type="hidden" id="appointmentId">
-                            <input type="hidden" id="appointmentColor" value="#4285f4">
 
+                            {# Art des Termins #}
                             <div class="mb-3">
-                                <label class="form-label d-block">Art des Termins</label>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input type-radio" type="radio" name="appointmentType" id="typePrivate" value="private" checked>
-                                    <label class="form-check-label" for="typePrivate">Privat</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input type-radio" type="radio" name="appointmentType" id="typeCleaning" value="cleaning">
-                                    <label class="form-check-label" for="typeCleaning">Reinigung</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input type-radio" type="radio" name="appointmentType" id="typeTechnician" value="technician">
-                                    <label class="form-check-label" for="typeTechnician">Techniker</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input type-radio" type="radio" name="appointmentType" id="typeProduction" value="production">
-                                    <label class="form-check-label" for="typeProduction">Produktion</label>
+                                <label class="form-label d-block fw-bold">Art des Termins</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check appointment-type-radio" name="appointmentType" id="typePrivate" value="private" checked>
+                                    <label class="btn btn-outline-primary" for="typePrivate">Privat</label>
+
+                                    <input type="radio" class="btn-check appointment-type-radio" name="appointmentType" id="typeProduction" value="production">
+                                    <label class="btn btn-outline-primary" for="typeProduction">Produktion</label>
+
+                                    <input type="radio" class="btn-check appointment-type-radio" name="appointmentType" id="typeClosedEvent" value="closed_event">
+                                    <label class="btn btn-outline-primary" for="typeClosedEvent">Geschl. Veranstaltung</label>
+
+                                    <input type="radio" class="btn-check appointment-type-radio" name="appointmentType" id="typeSchoolEvent" value="school_event">
+                                    <label class="btn btn-outline-primary" for="typeSchoolEvent">Schulveranstaltung</label>
+
+                                    <input type="radio" class="btn-check appointment-type-radio" name="appointmentType" id="typeInternal" value="internal">
+                                    <label class="btn btn-outline-primary" for="typeInternal">Intern</label>
+
+                                    <input type="radio" class="btn-check appointment-type-radio" name="appointmentType" id="typeCleaning" value="cleaning">
+                                    <label class="btn btn-outline-primary" for="typeCleaning">Reinigung</label>
                                 </div>
                             </div>
 
-                            <div class="mb-3" id="titleGroup">
+                            {# Titel #}
+                            <div class="mb-3">
                                 <label for="appointmentTitle" class="form-label">Titel *</label>
-                                <input type="text" class="form-control" id="appointmentTitle">
+                                <input type="text" class="form-control" id="appointmentTitle" required>
                             </div>
 
+                            {# Raum #}
                             <div class="mb-3">
                                 <label for="appointmentRoom" class="form-label">Raum</label>
                                 <select class="form-select" id="appointmentRoom">
                                     <option value="">-- Kein Raum (Global) --</option>
-                                    {% for room in rooms %}
+                                    {% for room in allRooms %}
                                         <option value="{{ room.id }}">{{ room.name }}</option>
                                     {% endfor %}
                                 </select>
-                                <div class="form-text">Raumzuweisung (optional)</div>
                             </div>
 
-                            {# Reinigung Auswahl #}
-                            <div class="mb-3" id="cleaningSelectGroup" style="display:none;">
-                                <label for="appointmentCleaning" class="form-label">Reinigungskraft / Team</label>
-                                <select class="form-select" id="appointmentCleaning">
-                                    <option value="">Bitte wählen...</option>
-                                    {% for c in allCleanings %}
-                                        <option value="{{ c.id }}">Reinigung #{{ c.id }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
-                            {# Techniker Auswahl #}
-                            <div class="mb-3" id="technicianSelectGroup" style="display:none;">
-                                <label for="appointmentTechnician" class="form-label">Techniker</label>
-                                <select class="form-select" id="appointmentTechnician">
-                                    <option value="">Bitte wählen...</option>
-                                    {% for t in allTechnicians %}
-                                        <option value="{{ t.id }}">{{ t.name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
-                            {# Produktion Auswahl hinzufügen nach Techniker #}
-                            <div class="mb-3" id="productionSelectGroup" style="display:none;">
-                                <label for="appointmentProduction" class="form-label">Produktion</label>
-                                <select class="form-select" id="appointmentProduction">
-                                    <option value="">Bitte wählen...</option>
-                                    {% for p in allProductions %}
-                                        <option value="{{ p.id }}">{{ p.title }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-
+                            {# Beschreibung #}
                             <div class="mb-3">
                                 <label for="appointmentDescription" class="form-label">Beschreibung</label>
                                 <textarea class="form-control" id="appointmentDescription" rows="3"></textarea>
                             </div>
 
+                            {# Zeitraum #}
                             <div class="mb-3">
                                 <label for="appointmentDateRange" class="form-label">Zeitraum *</label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="appointmentDateRange"
-                                       data-daterangepicker="datetime-range"
-                                       placeholder="Start - Ende wählen">
+                                <input type="text" class="form-control" id="appointmentDateRange"
+                                       data-daterangepicker="datetime-range" placeholder="Start - Ende wählen">
                             </div>
 
                             <div class="mb-3 form-check">
@@ -386,19 +329,35 @@
                                 <label class="form-check-label" for="appointmentAllDay">Ganztägig</label>
                             </div>
 
-{#                            <div class="mb-3">#}
-{#                                <label class="form-label">Farbe</label>#}
-{#                                <div class="d-flex gap-2 flex-wrap">#}
-{#                                    <div class="color-option selected" data-color="#4285f4" style="width: 40px; height: 40px; background-color: #4285f4; border-radius: 5px; cursor: pointer; border: 3px solid transparent;"></div>#}
-{#                                    <div class="color-option" data-color="#0f9d58" style="width: 40px; height: 40px; background-color: #0f9d58; border-radius: 5px; cursor: pointer; border: 3px solid transparent;"></div>#}
-{#                                    <div class="color-option" data-color="#f4b400" style="width: 40px; height: 40px; background-color: #f4b400; border-radius: 5px; cursor: pointer; border: 3px solid transparent;"></div>#}
-{#                                    <div class="color-option" data-color="#db4437" style="width: 40px; height: 40px; background-color: #db4437; border-radius: 5px; cursor: pointer; border: 3px solid transparent;"></div>#}
-{#                                    <div class="color-option" data-color="#ab47bc" style="width: 40px; height: 40px; background-color: #ab47bc; border-radius: 5px; cursor: pointer; border: 3px solid transparent;"></div>#}
-{#                                    <div class="color-option" data-color="#00acc1" style="width: 40px; height: 40px; background-color: #00acc1; border-radius: 5px; cursor: pointer; border: 3px solid transparent;"></div>#}
-{#                                    <div class="color-option" data-color="#ff7043" style="width: 40px; height: 40px; background-color: #ff7043; border-radius: 5px; cursor: pointer; border: 3px solid transparent;"></div>#}
-{#                                    <div class="color-option" data-color="#9e9e9e" style="width: 40px; height: 40px; background-color: #9e9e9e; border-radius: 5px; cursor: pointer; border: 3px solid transparent;"></div>#}
-{#                                </div>#}
-{#                            </div>#}
+                            {# Wiederholung #}
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="appointmentRecurring">
+                                    <label class="form-check-label" for="appointmentRecurring">Wiederholender Termin</label>
+                                </div>
+                            </div>
+
+                            <div id="recurrenceOptions" style="display: none;">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Wiederholung</label>
+                                        <select class="form-select" id="recurrenceFrequency">
+                                            <option value="daily">Täglich</option>
+                                            <option value="weekly">Wöchentlich</option>
+                                            <option value="monthly">Monatlich</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Enddatum *</label>
+                                        <input type="text" class="form-control" id="recurrenceEndDate"
+                                               data-daterangepicker="single-date" placeholder="Enddatum wählen">
+                                    </div>
+                                </div>
+                            </div>
+
+                            {# Typ-spezifische Felder werden hier dynamisch eingefügt #}
+                            <div id="typeSpecificFields"></div>
+
                         </form>
                     </div>
                     <div class="modal-footer">
@@ -432,5 +391,48 @@
                 </div>
             </div>
         </div>
+
+        {# Delete Appointment Confirmation Modal #}
+        <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Termin löschen</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="deleteConfirmMessage">Möchten Sie diesen Termin wirklich löschen?</p>
+                        <div id="deleteRecurringOptions" style="display: none;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="deleteMode" id="deleteSingle" value="single" checked>
+                                <label class="form-check-label" for="deleteSingle">
+                                    Nur diesen Termin löschen
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="deleteMode" id="deleteSeries" value="series">
+                                <label class="form-check-label" for="deleteSeries">
+                                    Alle Termine dieser Serie löschen
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Löschen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    {# Hidden data for JS #}
+    <script>
+        window.dashboardData = {
+            allTechnicians: {{ techniciansData|json_encode|raw }},
+            allVolunteers: {{ volunteersData|json_encode|raw }},
+            allProductions: {{ productionsData|json_encode|raw }},
+            allCleanings: {{ cleaningsData|json_encode|raw }}
+        };
+    </script>
 {% endblock %}
