@@ -386,28 +386,21 @@ class HomeController extends AbstractController
         foreach ($app->getAppointmentTechnicians() as $appTech) {
             $icon = $appTech->isConfirmed()
                 ? '<i class="ti-check c-green-500"></i>'
-                : '<i class="ti-close c-red-500"></i>';
+                : '<span style="color: red;">?</span>';
             $icons[] = $icon;
         }
 
         // Volunteer Icons
         foreach ($app->getAppointmentVolunteers() as $appVol) {
             $icon = $appVol->isConfirmed()
-                ? '<i class="ti-user c-blue-500"></i>'
-                : '<i class="ti-user c-grey-500"></i>';
+                ? '<i class="ti-thumb-up c-blue-500"></i>'
+                : '<i class="ti-thumb-down c-grey-500"></i>';
             $icons[] = $icon;
         }
 
         $iconString = !empty($icons) ? implode(' ', $icons) . ' ' : '';
 
         $baseTitle = $app->getTitle();
-
-        // Anhängsel für Typ
-        if ($app->getProduction()) {
-            $baseTitle .= ' (' . $app->getProduction()->__toString() . ')';
-        } elseif ($app->getCleaning()) {
-            $baseTitle .= ' (' . $app->getCleaning()->__toString() . ')';
-        }
 
         return $iconString . $baseTitle;
     }
