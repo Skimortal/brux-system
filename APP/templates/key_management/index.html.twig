@@ -27,14 +27,14 @@
                     <table class="mcDataTable table table-striped table-bordered" cellspacing="0" width="100%">
                         <thead>
                         <tr>
-                            <th>{{ 'key_management.room'|trans }}</th>
+                            <th>{{ 'key_management.rooms'|trans }}</th>
                             <th>{{ 'key_management.name'|trans }}</th>
                             <th>{{ 'action'|trans }}</th>
                         </tr>
                         </thead>
                         <tfoot>
                         <tr>
-                            <th>{{ 'key_management.room'|trans }}</th>
+                            <th>{{ 'key_management.rooms'|trans }}</th>
                             <th>{{ 'key_management.name'|trans }}</th>
                             <th>{{ 'action'|trans }}</th>
                         </tr>
@@ -42,7 +42,7 @@
                         <tbody>
                         {% for key in keys %}
                             <tr>
-                                <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">{{ key.room }}</a></td>
+                                <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">{{ key.rooms|map(r => r.name)|join(', ') ?: '-' }}</a></td>
                                 <td><a href="{{ path('app_key_management_edit', { id: key.id }) }}">{{ key.name }}</a></td>
                                 <td class="text-nowrap">
                                     <a href="{{ path('app_key_management_edit', {id: key.id}) }}" title="{{ 'edit'|trans }}">

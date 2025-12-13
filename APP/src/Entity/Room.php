@@ -19,9 +19,8 @@ class Room extends Base
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $showOnDashboard = false;
 
-    #[ORM\OneToMany(mappedBy: 'room', targetEntity: KeyManagement::class)]
+    #[ORM\ManyToMany(targetEntity: KeyManagement::class, mappedBy: 'rooms')]
     private Collection $keys;
-
     public function __construct()
     {
         $this->keys = new ArrayCollection();
@@ -62,7 +61,6 @@ class Room extends Base
 
         return $this;
     }
-
     /**
      * @return Collection<int, KeyManagement>
      */
@@ -75,7 +73,7 @@ class Room extends Base
     {
         if (!$this->keys->contains($key)) {
             $this->keys->add($key);
-            $key->setRoom($this);
+            $key->addRoom($this);
         }
 
         return $this;
@@ -84,14 +82,11 @@ class Room extends Base
     public function removeKey(KeyManagement $key): static
     {
         if ($this->keys->removeElement($key)) {
-            if ($key->getRoom() === $this) {
-                $key->setRoom(null);
-            }
+            $key->removeRoom($this);
         }
 
         return $this;
     }
-
     public function __toString(): string
     {
         return $this->name ?? '';

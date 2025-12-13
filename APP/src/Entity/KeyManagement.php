@@ -4,15 +4,17 @@ namespace App\Entity;
 
 use App\Enum\KeyStatus;
 use App\Repository\KeyManagementRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: KeyManagementRepository::class)]
 class KeyManagement extends Base
 {
-    #[ORM\ManyToOne(inversedBy: 'keys')]
-    #[ORM\JoinColumn(nullable: true)]
-    private ?Room $room = null;
+    #[ORM\ManyToMany(targetEntity: Room::class, inversedBy: 'keys')]
+    #[ORM\JoinTable(name: 'key_management_room')]
+    private Collection $rooms;
 
     #[ORM\Column(length: 255)]
     private ?string $name = null;
@@ -38,15 +40,69 @@ class KeyManagement extends Base
     #[ORM\ManyToOne(targetEntity: Cleaning::class)]
     private ?Cleaning $cleaning = null;
 
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $description = null;
+
+    public function __construct()
+    {
+        $this->rooms = new ArrayCollection();
+    }
+
+    /**
+     * Backward-Compatibility:
+     * Viele Stellen erwarten noch getRoom()/setRoom().
+     * Wir geben dafür einfach "den ersten Raum" zurück.
+     */
     public function getRoom(): ?Room
     {
-        return $this->room;
+        return $this->getPrimaryRoom();
     }
 
     public function setRoom(?Room $room): static
     {
-        $this->room = $room;
+        $this->rooms->clear();
+        if ($room) {
+            $this->rooms->add($room);
+        }
+        return $this;
+    }
 
+    public function getPrimaryRoom(): ?Room
+    {
+        $first = $this->rooms->first();
+        return $first instanceof Room ? $first : null;
+    }
+
+    /**
+     * @return Collection<int, Room>
+     */
+    public function getRooms(): Collection
+    {
+        return $this->rooms;
+    }
+
+    public function addRoom(Room $room): static
+    {
+        if (!$this->rooms->contains($room)) {
+            $this->rooms->add($room);
+        }
+        return $this;
+    }
+
+    public function removeRoom(Room $room): static
+    {
+        $this->rooms->removeElement($room);
+        return $this;
+    }
+
+    public function setRooms(iterable $rooms): static
+    {
+        $this->rooms->clear();
+        foreach ($rooms as $room) {
+            if ($room instanceof Room) {
+                $this->addRoom($room);
+            }
+        }
         return $this;
     }
 

@@ -58,13 +58,14 @@
                                                 data-user-id="{{ key.user ? key.user.id : '' }}"
                                                 data-tech-id="{{ key.technician ? key.technician.id : '' }}"
                                                 data-prod-id="{{ key.production ? key.production.id : '' }}"
-                                                data-clean-id="{{ key.cleaning ? key.cleaning.id : '' }}">
+                                                data-clean-id="{{ key.cleaning ? key.cleaning.id : '' }}"
+                                                data-description="{{ key.description ?? '' }}">
                                                 <div class="td-n p-20 peers fxw-nw me-20 peer-greed c-grey-900">
                                                     <div class="peer mR-15">
                                                         <i class="ti-key {{ statusColor }}"></i>
                                                     </div>
                                                     <div class="peer">
-                                                        <span class="fw-600">{{ key.name }}</span>
+                                                        <span class="fw-600">{{ key.name }} ({{ key.rooms|map(r => r.name)|join(', ') ?: '-' }})</span>
                                                         <div class="c-grey-600">
                                                             {% if key.status.value == 'borrowed' %}
                                                                 <span class="c-grey-700">{{ holderName }}</span>
@@ -235,6 +236,11 @@
                                             <option value="{{ c.id }}">{{ c.name }}</option>
                                         {% endfor %}
                                     </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Beschreibung</label>
+                                    <textarea class="form-control" id="keyDescription" rows="3" placeholder="Optional..."></textarea>
                                 </div>
 
                                 <div class="mb-3">
