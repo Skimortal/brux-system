@@ -24,6 +24,40 @@
                         {% endfor %}
                     {% endfor %}
 
+                    {% form_theme filterForm 'form/adminator_bootstrap_5_layout.html.twig' %}
+                    {% set hasActiveFilters = (filterForm.vars.data.showAll ?? false) %}
+                    <div class="d-flex align-items-center justify-content-between mb-2"
+                         style="border-bottom: 1px solid; padding-bottom: 10px; margin-bottom: 30px !important;">
+                        <h4
+                            class="c-grey-900 mB-20 collapse-toggle {{ hasActiveFilters ? '' : 'collapsed' }}"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#productionFilters"
+                            role="button"
+                            aria-expanded="{{ hasActiveFilters ? 'true' : 'false' }}"
+                            aria-controls="productionFilters"
+                        >
+                            {{ 'filter_title'|trans }}
+                            <i class="ti-filter ms-2 chev"></i>
+                        </h4>
+                    </div>
+
+                    <div id="productionFilters" class="collapse {{ hasActiveFilters ? 'show' }}">
+                        <div class="mb-4">
+                            {{ form_start(filterForm, { method: 'get', attr: { class: 'row g-3 align-items-end' } }) }}
+
+                            <div class="col-12">
+                                {{ form_row(filterForm.showAll) }}
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">{{ 'filter'|trans }}</button>
+                                <a href="{{ path('app_production_index') }}" class="btn btn-warning">{{ 'reset'|trans }}</a>
+                            </div>
+
+                            {{ form_end(filterForm) }}
+                        </div>
+                    </div>
+
                     <table class="mcDataTable table table-striped table-bordered" cellspacing="0" width="100%">
                         <thead>
                         <tr>

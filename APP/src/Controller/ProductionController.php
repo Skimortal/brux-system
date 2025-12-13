@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\DTO\ProductionFilter;
 use App\Entity\Production;
+use App\Form\ProductionFilterType;
 use App\Form\ProductionType;
 use App\Repository\ProductionEventRepository;
 use App\Repository\ProductionRepository;
@@ -21,10 +23,17 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 class ProductionController extends AbstractController
 {
     #[Route('/', name: 'app_production_index', methods: ['GET'])]
-    public function index(ProductionRepository $repository): Response
+    public function index(Request $request, ProductionRepository $repository): Response
     {
+        $filter = new ProductionFilter();
+        $form = $this->createForm(ProductionFilterType::class, $filter);
+        $form->handleRequest($request);
+
+        $productions = $repository->findByFilter($filter);
+
         return $this->render('production/index.html.twig', [
-            'productions' => $repository->findAll(),
+            'productions' => $productions,
+            'filterForm' => $form->createView(),
         ]);
     }
 
@@ -100,7 +109,7 @@ class ProductionController extends AbstractController
             $this->addFlash('warning', $t->trans('production.deleted_successfully'));
             return $this->redirectToRoute('app_production_index', [], Response::HTTP_SEE_OTHER);
         } catch (\Throwable $e) {
-            $this->addFlash('danger', $t->trans('data_save_error').": ".$e->getMessage());
+            $this->addFlash('danger', $t->trans('data_save_error') . ": " . $e->getMessage());
             return $this->redirectToRoute('app_production_edit', ['id' => $production->getId()]);
         }
     }
