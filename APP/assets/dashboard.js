@@ -9,11 +9,6 @@ import { Modal } from 'bootstrap';
 import moment from 'moment';
 import { initDaterangepicker, getPickerInstance, initDaterangepickers } from './daterangepicker-init.js';
 
-var doughnutChart;
-function initDoughnutChart() {
-    // ... chart logic if needed ...
-}
-
 let allEvents = [];
 let currentSelectedDate = new Date();
 let calendarInstances = [];
@@ -58,109 +53,6 @@ function displayDate(date) {
 
     const nameEl = document.getElementById('day-name');
     if(nameEl) nameEl.textContent = dayName.charAt(0).toUpperCase() + dayName.slice(1);
-}
-
-function displayEventsForDate(date, events) {
-    const listEl = document.getElementById('day-events-list');
-    if (!listEl) return;
-
-    const targetDate = new Date(date);
-    targetDate.setHours(0, 0, 0, 0);
-
-    const dayEvents = events.filter(event => {
-        const eventStartDate = new Date(event.start);
-        eventStartDate.setHours(0, 0, 0, 0);
-        const eventEndDate = event.end ? new Date(event.end) : new Date(event.start);
-        eventEndDate.setHours(0, 0, 0, 0);
-        return (eventStartDate.getTime() <= targetDate.getTime() &&
-            eventEndDate.getTime() >= targetDate.getTime());
-    });
-
-    if (dayEvents.length === 0) {
-        listEl.innerHTML = `
-            <li class="bdB peers ai-c jc-sb fxw-nw p-20">
-                <div class="c-grey-600">
-                    <span>Keine Termine an diesem Tag</span>
-                </div>
-            </li>
-        `;
-    } else {
-        const now = new Date();
-        listEl.innerHTML = dayEvents.map(event => {
-            const eventColor = event.color || event.backgroundColor || '#4285f4';
-            const iconClass = colorToIconClass[eventColor] || 'c-blue-500';
-            const eventTime = event.start && !event.allDay ? new Date(event.start).toLocaleTimeString('de-DE', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            }) : '';
-            const dateStr = new Date(event.start).toLocaleDateString('de-DE', {
-                day: '2-digit',
-                month: 'short'
-            });
-
-            const eventEnd = event.end ? new Date(event.end) : new Date(event.start);
-            const isPast = eventEnd < now;
-            const pastClass = isPast ? 'style="opacity: 0.5;"' : '';
-            const pastTextDecoration = isPast ? 'style="text-decoration: line-through;"' : '';
-
-            return `
-                <li class="bdB peers ai-c jc-sb fxw-nw" ${pastClass}>
-                    <a class="td-n p-20 peers fxw-nw mR-20 peer-greed c-grey-900 event-item"
-                       href="javascript:void(0);"
-                       data-event-id="${event.id}">
-                        <div class="peer mR-15">
-                            <i class="fa fa-fw fa-clock-o ${iconClass}"></i>
-                        </div>
-                        <div class="peer">
-                            <span class="fw-600" ${pastTextDecoration}>${event.title}</span>
-                            <div class="c-grey-600">
-                                <span class="c-grey-700">${dateStr}${eventTime ? ' - ' + eventTime + ' Uhr' : ''}</span>
-                                ${event.allDay ? '<i class="mL-5">(Ganztägig)</i>' : ''}
-                                ${event.description ? '<br><i>' + event.description + '</i>' : ''}
-                            </div>
-                        </div>
-                    </a>
-                    ${(event.extendedProps && ['private', 'cleaning', 'production'].includes(event.extendedProps.type)) ? `
-                    <div class="peers mR-15">
-                        <div class="peer">
-                            <a href="javascript:void(0);"
-                               class="td-n c-deep-purple-500 cH-blue-500 fsz-md p-5 edit-event"
-                               data-event-id="${event.id}">
-                                <i class="ti-pencil"></i>
-                            </a>
-                        </div>
-                        <div class="peer">
-                            <a href="javascript:void(0);"
-                               class="td-n c-red-500 cH-blue-500 fsz-md p-5 delete-event"
-                               data-event-id="${event.id}">
-                                <i class="ti-trash"></i>
-                            </a>
-                        </div>
-                    </div>` : ''}
-                </li>
-            `;
-        }).join('');
-
-        listEl.querySelectorAll('.event-item, .edit-event').forEach(el => {
-            el.addEventListener('click', function(e) {
-                e.preventDefault();
-                const eventId = this.getAttribute('data-event-id');
-                const event = allEvents.find(evt => evt.id == eventId);
-                if (event) {
-                    openAppointmentModal(null, event);
-                }
-            });
-        });
-
-        listEl.querySelectorAll('.delete-event').forEach(el => {
-            el.addEventListener('click', function(e) {
-                e.preventDefault();
-                const eventId = this.getAttribute('data-event-id');
-                showDeleteConfirmation(eventId);
-            });
-        });
-    }
 }
 
 var appointmentModal;
@@ -226,7 +118,6 @@ function initCalendar() {
         .then(data => {
             allEvents = data;
             displayDate(currentSelectedDate);
-            displayEventsForDate(currentSelectedDate, data);
         })
         .catch(e => console.error(e));
 
@@ -274,7 +165,6 @@ function triggerApiSync() {
                     .then(r => r.json())
                     .then(events => {
                         allEvents = events;
-                        displayEventsForDate(currentSelectedDate, events);
                     });
             } else {
                 showToast('error', data.message || 'Fehler bei der Synchronisation');
@@ -334,6 +224,16 @@ function initGlobalCalendar(isMobile) {
             meridiem: false
         },
         eventDisplay: 'block',
+
+        // Icons/Titel als HTML rendern (statt Klartext)
+        eventContent: function(arg) {
+            const titleHtml = arg.event.title || '';
+            const wrapper = document.createElement('div');
+            wrapper.className = 'fc-event-title-container';
+            wrapper.innerHTML = titleHtml; // bewusst: Titel kommt aus unserem Backend/Icons
+            return { domNodes: [wrapper] };
+        },
+
         events: function(info, successCallback, failureCallback) {
             const activeFilters = Array.from(document.querySelectorAll('.filter-checkbox:checked'))
                 .map(cb => cb.value)
@@ -421,6 +321,16 @@ function createRoomCalendar(calendarEl, isMobile) {
             meridiem: false
         },
         eventDisplay: 'block',
+
+        // Icons/Titel als HTML rendern (statt Klartext)
+        eventContent: function(arg) {
+            const titleHtml = arg.event.title || '';
+            const wrapper = document.createElement('div');
+            wrapper.className = 'fc-event-title-container';
+            wrapper.innerHTML = titleHtml;
+            return { domNodes: [wrapper] };
+        },
+
         events: function(info, successCallback, failureCallback) {
             const activeFilters = Array.from(document.querySelectorAll('.filter-checkbox:checked'))
                 .map(cb => cb.value)
@@ -810,13 +720,22 @@ function setupModalListeners() {
 
 function toggleRecurrence(e) {
     const recurrenceOptions = document.getElementById('recurrenceOptions');
+    const endDateInput = document.getElementById('recurrenceEndDate');
+
     if (recurrenceOptions) {
         recurrenceOptions.style.display = e.target.checked ? 'block' : 'none';
     }
+
+    // Fix: Picker initialisieren sobald sichtbar (sonst übernimmt Klick kein Datum)
+    if (e.target.checked && endDateInput) {
+        initDaterangepicker(endDateInput, 'singleDate');
+    }
+
+    // Optional: Beim Ausschalten Wert/Picker zurücksetzen
+    if (!e.target.checked && endDateInput) {
+        endDateInput.value = '';
+    }
 }
-
-
-// ... Vorheriger Code bleibt gleich bis "// Fortsetzung folgt im nächsten Teil..."
 
 function updateTypeSpecificFields() {
     const selectedType = document.querySelector('input[name="appointmentType"]:checked');
@@ -828,9 +747,11 @@ function updateTypeSpecificFields() {
 
     container.innerHTML = '';
 
+    // Title Feld abhängig vom Typ steuern
+    toggleTitleVisibilityByType(type);
+
     switch(type) {
         case 'private':
-            // Privat: Keine zusätzlichen Felder
             break;
 
         case 'production':
@@ -839,22 +760,106 @@ function updateTypeSpecificFields() {
             break;
 
         case 'closed_event':
-            container.innerHTML = buildClosedEventFields();
-            initializeClosedEventFieldListeners();
+            // Geschl. Veranstaltung: Ereignisart/Status/Interne Techniker AUSBLENDEN,
+            // aber Techniker/Volunteers zuweisen wie bei Produktion
+            container.innerHTML = buildAssignmentsOnlyFields('Veranstaltungs-Details');
+            initializeProductionFieldListeners();
             break;
 
         case 'school_event':
-            // Schulveranstaltung: wie Privat, keine zusätzlichen Felder
+            // Schulveranstaltung: Techniker/Volunteer Zuordnung einblenden
+            container.innerHTML = buildAssignmentsOnlyFields('Schulveranstaltung');
+            initializeProductionFieldListeners();
             break;
 
         case 'internal':
-            // Intern: keine zusätzlichen Felder
+            // Intern: Techniker/Volunteer Zuordnung einblenden
+            container.innerHTML = buildAssignmentsOnlyFields('Interner Termin');
+            initializeProductionFieldListeners();
             break;
 
         case 'cleaning':
             container.innerHTML = buildCleaningFields();
             break;
     }
+}
+
+function toggleTitleVisibilityByType(type) {
+    const titleInput = document.getElementById('appointmentTitle');
+    if (!titleInput) return;
+
+    const titleWrapper = titleInput.closest('.mb-3'); // aus Twig: Titel steckt in .mb-3
+    const hideTitle = (type === 'production' || type === 'cleaning');
+
+    if (titleWrapper) {
+        titleWrapper.style.display = hideTitle ? 'none' : 'block';
+    }
+
+    titleInput.required = !hideTitle;
+
+    if (hideTitle) {
+        // Leeren Titel erlauben, wir setzen später automatisch einen sinnvollen Default
+        titleInput.value = '';
+    }
+}
+
+function buildAssignmentsOnlyFields(headline) {
+    return `
+        <div class="border-top pt-3 mt-3">
+            <h6 class="fw-bold mb-3">${headline}</h6>
+
+            <div class="mb-3">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="assignTechniciansCheckbox">
+                    <label class="form-check-label fw-bold" for="assignTechniciansCheckbox">
+                        Techniker zuweisen
+                    </label>
+                </div>
+            </div>
+
+            <div id="techniciansContainer" style="display: none;">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th style="width: 50%;">Techniker</th>
+                            <th style="width: 25%;">Bestätigt</th>
+                            <th style="width: 25%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="techniciansList"></tbody>
+                </table>
+                <button type="button" class="btn btn-sm btn-success" id="addTechnicianBtn">
+                    <i class="ti-plus"></i> Techniker hinzufügen
+                </button>
+            </div>
+
+            <div class="mb-3 mt-3">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="assignVolunteersCheckbox">
+                    <label class="form-check-label fw-bold" for="assignVolunteersCheckbox">
+                        Volunteers zuweisen
+                    </label>
+                </div>
+            </div>
+
+            <div id="volunteersContainer" style="display: none;">
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">Volunteer</th>
+                            <th style="width: 20%;">Bestätigt</th>
+                            <th style="width: 35%;">Aufgaben</th>
+                            <th style="width: 10%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="volunteersList"></tbody>
+                </table>
+                <button type="button" class="btn btn-sm btn-success" id="addVolunteerBtn">
+                    <i class="ti-plus"></i> Volunteer hinzufügen
+                </button>
+            </div>
+        </div>
+    `;
 }
 
 function buildProductionFields() {
@@ -1428,7 +1433,25 @@ function saveAppointment() {
     const selectedRadio = document.querySelector('input[name="appointmentType"]:checked');
     const type = selectedRadio ? selectedRadio.value : 'private';
 
-    if (!title) {
+    // Titel für Produktion/Reinigung automatisch setzen (Title ist dort ausgeblendet)
+    if (!title && (type === 'production' || type === 'cleaning')) {
+        if (type === 'production') {
+            const prodSelect = document.getElementById('productionSelect');
+            const selectedText = prodSelect && prodSelect.selectedOptions && prodSelect.selectedOptions[0]
+                ? prodSelect.selectedOptions[0].textContent.trim()
+                : '';
+            title = selectedText || 'Produktion';
+        } else if (type === 'cleaning') {
+            const cleanSelect = document.getElementById('cleaningSelect');
+            const selectedText = cleanSelect && cleanSelect.selectedOptions && cleanSelect.selectedOptions[0]
+                ? cleanSelect.selectedOptions[0].textContent.trim()
+                : '';
+            title = selectedText || 'Reinigung';
+        }
+    }
+
+    // Nur bei Typen wo Titel sichtbar ist, hart validieren
+    if (!title && !(type === 'production' || type === 'cleaning')) {
         alert('Bitte geben Sie einen Titel ein.');
         return;
     }
@@ -1480,24 +1503,18 @@ function saveAppointment() {
         const internalTechCheckbox = document.getElementById('internalTechniciansAttending');
         data.internalTechniciansAttending = internalTechCheckbox ? internalTechCheckbox.checked : false;
 
-        // Techniker sammeln
-        data.technicians = collectTechnicians();
-
-        // Volunteers sammeln
-        data.volunteers = collectVolunteers();
-
-    } else if (type === 'closed_event') {
-        const eventTypeRadio = document.querySelector('input[name="eventType"]:checked');
-        data.eventType = eventTypeRadio ? eventTypeRadio.value : null;
-
-        const statusRadio = document.querySelector('input[name="appointmentStatus"]:checked');
-        data.status = statusRadio ? statusRadio.value : null;
-
-        const internalTechCheckbox = document.getElementById('internalTechniciansAttending');
-        data.internalTechniciansAttending = internalTechCheckbox ? internalTechCheckbox.checked : false;
-
         data.technicians = collectTechnicians();
         data.volunteers = collectVolunteers();
+
+    } else if (type === 'closed_event' || type === 'school_event' || type === 'internal') {
+        // Hier nur Zuordnungen (Felder sind ausgeblendet)
+        data.technicians = collectTechnicians();
+        data.volunteers = collectVolunteers();
+
+        // sicherheitshalber leer setzen
+        data.eventType = null;
+        data.status = null;
+        data.internalTechniciansAttending = false;
 
     } else if (type === 'cleaning') {
         const cleanSelect = document.getElementById('cleaningSelect');
@@ -1515,7 +1532,8 @@ function saveAppointment() {
         }
 
         if (endDateInput) {
-            const endPicker = getPickerInstance(endDateInput);
+            // Fix: Enddatum-Picker ist singleDate → startDate verwenden
+            const endPicker = getPickerInstance(endDateInput) || initDaterangepicker(endDateInput, 'singleDate');
             if (endPicker && endPicker.startDate) {
                 data.recurrenceEndDate = endPicker.startDate.format('YYYY-MM-DD');
             }
@@ -1542,7 +1560,6 @@ function saveAppointment() {
                 refreshAllCalendars();
                 fetch('/appointments/all').then(r=>r.json()).then(d => {
                     allEvents = d;
-                    displayEventsForDate(currentSelectedDate, d);
                 });
                 showToast('success', 'Termin erfolgreich gespeichert');
             } else {
@@ -1644,7 +1661,6 @@ function confirmDelete() {
                 refreshAllCalendars();
                 fetch('/appointments/all').then(r=>r.json()).then(d => {
                     allEvents = d;
-                    displayEventsForDate(currentSelectedDate, d);
                 });
                 showToast('success', 'Termin erfolgreich gelöscht');
             } else {
