@@ -39,7 +39,9 @@ class ProductionEventController extends AbstractController
             }
         }
 
-        $form = $this->createForm(ProductionEventType::class, $productionEvent);
+        $form = $this->createForm(ProductionEventType::class, $productionEvent, [
+            'production' => $productionEvent->getProduction(),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -68,7 +70,9 @@ class ProductionEventController extends AbstractController
     #[Route('/{id}/edit', name: 'app_production_event_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, ProductionEvent $productionEvent, EntityManagerInterface $entityManager, TranslatorInterface $t): Response
     {
-        $form = $this->createForm(ProductionEventType::class, $productionEvent);
+        $form = $this->createForm(ProductionEventType::class, $productionEvent, [
+            'production' => $productionEvent->getProduction(),
+        ]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

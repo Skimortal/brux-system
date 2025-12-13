@@ -4,10 +4,12 @@ namespace App\Form;
 
 use App\Entity\EventCategory;
 use App\Entity\Production;
+use App\Entity\ProductionContactPerson;
 use App\Entity\ProductionEvent;
 use App\Entity\Room;
 use App\Enum\EventReservationStatus;
 use App\Enum\EventStatus;
+use App\Repository\ProductionContactPersonRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -22,6 +24,9 @@ class ProductionEventType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        /** @var Production|null $production */
+        $production = $options['production'] ?? null;
+
         $builder
             ->add('production', EntityType::class, [
                 'label' => 'production_event.production',
@@ -71,6 +76,37 @@ class ProductionEventType extends AbstractType
                 },
                 'required' => false,
                 'disabled' => true,
+            ])
+            ->add('contactPersons', EntityType::class, [
+                'label' => 'production_event.contact_persons',
+                'class' => ProductionContactPerson::class,
+                'multiple' => true,
+                'required' => false,
+                'choice_label' => function (ProductionContactPerson $cp): string {
+                    $parts = [$cp->getName()];
+                    if ($cp->getEmail()) $parts[] = $cp->getEmail();
+                    if ($cp->getPhone()) $parts[] = $cp->getPhone();
+                    return implode(' • ', $parts);
+                },
+                'query_builder' => function (ProductionContactPersonRepository $repo) use ($production) {
+                    $qb = $repo->createQueryBuilder('cp')
+                        ->orderBy('cp.hauptansprechperson', 'DESC')
+                        ->addOrderBy('cp.name', 'ASC');
+
+                    if ($production) {
+                        $qb->andWhere('cp.production = :p')->setParameter('p', $production);
+                    } else {
+                        // Keine Produktion => keine Optionen anzeigen
+                        $qb->andWhere('1 = 0');
+                    }
+
+                    return $qb;
+                },
+                'attr' => [
+                    'class' => 'tom-select',
+                    'data-placeholder' => 'Bitte auswählen',
+                ],
+                'disabled' => $production === null,
             ])
             ->add('reservationStatus', ChoiceType::class, [
                 'label' => 'production_event.reservation_status',
@@ -124,6 +160,9 @@ class ProductionEventType extends AbstractType
     {
         $resolver->setDefaults([
             'data_class' => ProductionEvent::class,
+            'production' => null,
         ]);
+
+        $resolver->setAllowedTypes('production', [Production::class, 'null']);
     }
 }

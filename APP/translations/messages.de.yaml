@@ -277,3 +277,6 @@ production_contact_person.hauptansprechperson: 'Hauptansprechperson'
 add_contact_person: 'Ansprechperson hinzufügen'
 
 production.events_calendar: 'Veranstaltungskalender'
+
+production_event:
+    contact_persons: Ansprechpartner

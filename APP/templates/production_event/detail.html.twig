@@ -39,10 +39,13 @@
 
         {{ form_row(form.reservationNote) }}
         {{ form_row(form.categories) }}
+        {{ form_row(form.contactPersons) }}
 
         <div class="mb-3 row mt-4">
             <div class="col-sm-8">
-                <a href="{{ path('app_production_event_index') }}" class="btn btn-secondary">{{ 'back_to_list'|trans }}</a>
+                {% set backUrl = production_event.production ? path('app_production_edit', { id: production_event.production.id }) : path('app_production_event_index') %}
+                {% set backUrlString = 'back_to_list' %}
+                <a href="{{ backUrl }}" class="btn btn-secondary">{{ backUrlString|trans }}</a>
                 <button type="submit" class="btn btn-primary">{{ 'save'|trans }}</button>
             </div>
             <div class="col-sm-4" style="text-align: right;">
