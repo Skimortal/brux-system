@@ -32,6 +32,9 @@ function initTomSelect() {
         });
     });
 }
+
+window.initTomSelect = initTomSelect;
+
 function initProductionTypeToggle() {
     const typeSelect = document.querySelector('#production_type');
     const groupFields = document.getElementById('group-fields');

@@ -7,6 +7,8 @@ use App\Entity\Appointment;
 use App\Entity\AppointmentTechnician;
 use App\Entity\AppointmentVolunteer;
 use App\Entity\KeyManagement;
+use App\Entity\ProductionContactPerson;
+use App\Entity\ProductionEvent;
 use App\Enum\AppointmentStatusEnum;
 use App\Enum\AppointmentTypeEnum;
 use App\Enum\EventTypeEnum;
@@ -14,6 +16,7 @@ use App\Enum\KeyStatus;
 use App\Repository\AppointmentRepository;
 use App\Repository\CleaningRepository;
 use App\Repository\KeyManagementRepository;
+use App\Repository\ProductionContactPersonRepository;
 use App\Repository\ProductionEventRepository;
 use App\Repository\ProductionRepository;
 use App\Repository\RoomRepository;
@@ -23,7 +26,6 @@ use App\Service\BruxApiSyncService;
 use App\Service\CalendarColorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\ErrorHandler\Debug;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -425,6 +427,24 @@ class HomeController extends AbstractController
 
         $production = $event->getProduction();
 
+        $productionContactPersons = [];
+        if ($production) {
+            foreach ($production->getContactPersons() as $cp) {
+                $productionContactPersons[] = [
+                    'id' => $cp->getId(),
+                    'name' => $cp->getName(),
+                    'email' => $cp->getEmail(),
+                    'phone' => $cp->getPhone(),
+                    'hauptansprechperson' => $cp->isHauptansprechperson(),
+                ];
+            }
+        }
+
+        $assignedContactPersonIds = array_map(
+            static fn(ProductionContactPerson $cp) => $cp->getId(),
+            $event->getContactPersons()->toArray()
+        );
+
         $data = [
             'event' => [
                 'id' => $event->getId(),
@@ -449,6 +469,8 @@ class HomeController extends AbstractController
                     'reservedSeats' => $price->getReservedSeats(),
                     'incomingReservations' => $price->getIncomingReservations()
                 ], $event->getPriceList()->toArray()),
+                'productionContactPersons' => $productionContactPersons,
+                'assignedContactPersonIds' => $assignedContactPersonIds,
             ],
             'production' => $production ? [
                 'id' => $production->getId(),
@@ -461,6 +483,43 @@ class HomeController extends AbstractController
         ];
 
         return $this->json($data);
+    }
+
+    #[Route('/dashboard/production-event/{id}/contact-persons', name: 'app_dashboard_production_event_contact_persons_update', methods: ['POST'])]
+    public function updateProductionEventContactPersons(
+        ProductionEvent $event,
+        Request $request,
+        EntityManagerInterface $em,
+        ProductionContactPersonRepository $contactPersonRepo
+    ): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        $ids = $data['contactPersonIds'] ?? [];
+        if (!is_array($ids)) {
+            return $this->json(['success' => false, 'message' => 'Invalid payload'], 400);
+        }
+
+        // Reset
+        foreach ($event->getContactPersons()->toArray() as $existing) {
+            $event->removeContactPerson($existing);
+        }
+
+        // Add selected (nur gültige IDs)
+        foreach ($ids as $id) {
+            if (!$id) continue;
+            $cp = $contactPersonRepo->find((int)$id);
+            if ($cp) {
+                // Optional harte Absicherung: Ansprechpartner muss zur Produktion gehören
+                if ($cp->getProduction() && $event->getProduction() && $cp->getProduction()->getId() === $event->getProduction()->getId()) {
+                    $event->addContactPerson($cp);
+                }
+            }
+        }
+
+        $em->flush();
+
+        return $this->json(['success' => true]);
     }
 
     #[Route('/dashboard/key/{id}/update', name: 'app_dashboard_key_update', methods: ['POST'])]

@@ -61,10 +61,15 @@ class ProductionEvent extends Base
     #[ORM\OneToMany(targetEntity: EventPrice::class, mappedBy: 'event', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $priceList;
 
+    #[ORM\ManyToMany(targetEntity: ProductionContactPerson::class)]
+    #[ORM\JoinTable(name: 'production_event_contact_person')]
+    private Collection $contactPersons;
+
     public function __construct()
     {
         $this->categories = new ArrayCollection();
         $this->priceList = new ArrayCollection();
+        $this->contactPersons = new ArrayCollection();
     }
 
     public function getEventIndex(): ?int
@@ -272,6 +277,30 @@ class ProductionEvent extends Base
                 $priceList->setEvent(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductionContactPerson>
+     */
+    public function getContactPersons(): Collection
+    {
+        return $this->contactPersons;
+    }
+
+    public function addContactPerson(ProductionContactPerson $contactPerson): static
+    {
+        if (!$this->contactPersons->contains($contactPerson)) {
+            $this->contactPersons->add($contactPerson);
+        }
+
+        return $this;
+    }
+
+    public function removeContactPerson(ProductionContactPerson $contactPerson): static
+    {
+        $this->contactPersons->removeElement($contactPerson);
 
         return $this;
     }

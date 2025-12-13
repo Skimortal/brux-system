@@ -529,6 +529,45 @@ function openProductionEventModal(eventId) {
                 `;
             }
 
+            // NEU: Ansprechpartner-Mehrfachauswahl (aus übergeordneter Produktion)
+            const cps = Array.isArray(event.productionContactPersons) ? event.productionContactPersons : [];
+            const assignedIds = Array.isArray(event.assignedContactPersonIds) ? event.assignedContactPersonIds : [];
+
+            if (cps.length > 0) {
+                const optionsHtml = cps.map(cp => {
+                    const labelParts = [cp.name];
+                    if (cp.email) labelParts.push(cp.email);
+                    if (cp.phone) labelParts.push(cp.phone);
+                    const label = labelParts.join(' • ');
+                    const selected = assignedIds.includes(cp.id) ? 'selected' : '';
+                    return `<option value="${cp.id}" ${selected}>${label}</option>`;
+                }).join('');
+
+                html += `
+                    <div class="mb-2">
+                        <strong>Ansprechpartner:</strong>
+                        <select
+                            id="productionEventContactPersons"
+                            class="form-select tom-select"
+                            multiple
+                            data-placeholder="Bitte auswählen"
+                        >
+                            ${optionsHtml}
+                        </select>
+                        <small class="text-muted d-block mt-1">
+                            Zuordnung gilt für dieses Event.
+                        </small>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="mb-2">
+                        <strong>Ansprechpartner:</strong>
+                        <div class="text-muted">Keine Ansprechpartner in der Produktion hinterlegt.</div>
+                    </div>
+                `;
+            }
+
             html += `</div>`;
             html += `<div class="col-md-6">`;
             html += `<h6 class="text-muted mb-3">Plätze & Reservierungen</h6>`;
@@ -651,6 +690,37 @@ function openProductionEventModal(eventId) {
             }
 
             modalBody.innerHTML = html;
+
+            // TomSelect nachträglich initialisieren (weil HTML dynamisch kommt)
+            if (window.initTomSelect) {
+                window.initTomSelect();
+            }
+
+            // Change-Handler: sofort speichern
+            const cpSelect = document.getElementById('productionEventContactPersons');
+            if (cpSelect) {
+                cpSelect.addEventListener('change', () => {
+                    const selected = Array.from(cpSelect.selectedOptions).map(o => o.value);
+
+                    fetch(`/dashboard/production-event/${event.id}/contact-persons`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contactPersonIds: selected })
+                    })
+                        .then(r => r.json())
+                        .then(result => {
+                            if (result && result.success) {
+                                showToast('success', 'Ansprechpartner gespeichert');
+                            } else {
+                                showToast('error', (result && result.message) ? result.message : 'Speichern fehlgeschlagen');
+                            }
+                        })
+                        .catch(() => {
+                            showToast('error', 'Netzwerkfehler beim Speichern');
+                        });
+                });
+            }
+
         })
         .catch(error => {
             console.error('Error loading event details:', error);
