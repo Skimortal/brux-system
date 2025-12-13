@@ -20,7 +20,6 @@ final class Version20251213165021 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('DROP INDEX IDX_BBE3CBF054177093 ON key_management');
         $this->addSql('ALTER TABLE key_management ADD description LONGTEXT DEFAULT NULL, DROP room_id');
         $this->addSql('ALTER TABLE key_management_room RENAME INDEX idx_f15e8c3a31a580d TO IDX_6A570150C2880B1C');
         $this->addSql('ALTER TABLE key_management_room RENAME INDEX idx_f15e8c3541a5a TO IDX_6A57015054177093');
