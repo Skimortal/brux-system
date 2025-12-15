@@ -60,6 +60,7 @@ var productionEventModal;
 var keyModal;
 var deleteConfirmModal;
 let currentDeleteAppointmentId = null;
+let lastOpenedAppointmentEvent = null;
 
 function initCalendar() {
     const modalEl = document.getElementById('appointmentModal');
@@ -740,6 +741,17 @@ function setupModalListeners() {
         newBtn.addEventListener('click', saveAppointment);
     }
 
+    const duplicateBtn = document.getElementById('duplicateAppointmentBtn');
+    if (duplicateBtn) {
+        const newBtn = duplicateBtn.cloneNode(true);
+        duplicateBtn.parentNode.replaceChild(newBtn, duplicateBtn);
+        newBtn.addEventListener('click', function() {
+            if (!lastOpenedAppointmentEvent) return;
+            // Modal erneut öffnen, aber als "duplicate" (neuer Termin, keine ID)
+            openAppointmentModal(null, lastOpenedAppointmentEvent, null, null, 'duplicate');
+        });
+    }
+
     const deleteBtn = document.getElementById('deleteAppointmentBtn');
     if (deleteBtn) {
         const newBtn = deleteBtn.cloneNode(true);
@@ -786,6 +798,13 @@ function setupModalListeners() {
             openAppointmentModal(dateStr);
         });
     }
+}
+
+function buildDuplicateTitle(originalTitle) {
+    const title = (originalTitle || '').trim();
+    if (!title) return '';
+    if (title.endsWith(' (Kopie)')) return title;
+    return `${title} (Kopie)`;
 }
 
 function toggleRecurrence(e) {
@@ -1291,9 +1310,10 @@ function addVolunteerRow(volunteerData = null) {
     });
 }
 
-function openAppointmentModal(dateStr = null, event = null, clickedDateTime = null, roomId = null) {
+function openAppointmentModal(dateStr = null, event = null, clickedDateTime = null, roomId = null, mode = 'edit') {
     const modalTitle = document.getElementById('appointmentModalLabel');
     const deleteBtn = document.getElementById('deleteAppointmentBtn');
+    const duplicateBtn = document.getElementById('duplicateAppointmentBtn');
     const roomSelect = document.getElementById('appointmentRoom');
     const titleInput = document.getElementById('appointmentTitle');
     const descInput = document.getElementById('appointmentDescription');
@@ -1302,16 +1322,21 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
     const recurringCheckbox = document.getElementById('appointmentRecurring');
 
     // Reset
-    if(roomSelect) roomSelect.value = '';
-    if(titleInput) titleInput.value = '';
-    if(descInput) descInput.value = '';
-    if(allDayCheckbox) allDayCheckbox.checked = false;
-    if(recurringCheckbox) recurringCheckbox.checked = false;
+    lastOpenedAppointmentEvent = null;
+
+    if (roomSelect) roomSelect.value = '';
+    if (titleInput) titleInput.value = '';
+    if (descInput) descInput.value = '';
+    if (allDayCheckbox) allDayCheckbox.checked = false;
+    if (recurringCheckbox) recurringCheckbox.checked = false;
     document.getElementById('recurrenceOptions').style.display = 'none';
+
+    // Duplizieren-Button default aus
+    if (duplicateBtn) duplicateBtn.style.display = 'none';
 
     // Reset Type to Private
     const privateRadio = document.getElementById('typePrivate');
-    if(privateRadio) {
+    if (privateRadio) {
         privateRadio.checked = true;
         updateTypeSpecificFields();
     }
@@ -1319,20 +1344,34 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
     const picker = initDaterangepicker(dateRangeInput, 'dateTimeRange');
 
     if (event) {
-        // BEARBEITEN
-        modalTitle.textContent = 'Termin bearbeiten';
-        deleteBtn.style.display = 'inline-block';
+        // BEARBEITEN oder DUPLIZIEREN
+        lastOpenedAppointmentEvent = event;
+
+        const isDuplicate = (mode === 'duplicate');
+
+        if (isDuplicate) {
+            modalTitle.textContent = 'Termin duplizieren';
+            if (deleteBtn) deleteBtn.style.display = 'none';
+        } else {
+            modalTitle.textContent = 'Termin bearbeiten';
+            if (deleteBtn) deleteBtn.style.display = 'inline-block';
+            if (duplicateBtn) duplicateBtn.style.display = 'inline-block';
+        }
 
         const rawId = String(event.id);
         let cleanId = rawId;
-        if(rawId.includes('_')) {
+        if (rawId.includes('_')) {
             cleanId = rawId.split('_')[1];
         }
-        document.getElementById('appointmentId').value = cleanId;
+
+        // WICHTIG: beim Duplizieren keine ID setzen => create statt edit
+        document.getElementById('appointmentId').value = isDuplicate ? '' : cleanId;
 
         const originalTitle = event.extendedProps?.originalTitle || event.title;
-        if(titleInput) titleInput.value = originalTitle;
-        if(descInput) descInput.value = event.extendedProps?.description || '';
+        if (titleInput) {
+            titleInput.value = isDuplicate ? buildDuplicateTitle(originalTitle) : originalTitle;
+        }
+        if (descInput) descInput.value = event.extendedProps?.description || '';
 
         if (event.extendedProps && event.extendedProps.roomId && roomSelect) {
             roomSelect.value = event.extendedProps.roomId;
@@ -1341,7 +1380,7 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         // Type setzen
         const appointmentType = event.extendedProps?.appointmentType || 'private';
         const typeRadio = document.querySelector(`input[name="appointmentType"][value="${appointmentType}"]`);
-        if(typeRadio) {
+        if (typeRadio) {
             typeRadio.checked = true;
             updateTypeSpecificFields();
         }
@@ -1357,8 +1396,8 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         picker.setStartDate(startDate);
         picker.setEndDate(endDate);
 
-        if(allDayCheckbox) allDayCheckbox.checked = event.allDay;
-        toggleAllDay({target: {checked: event.allDay}});
+        if (allDayCheckbox) allDayCheckbox.checked = event.allDay;
+        toggleAllDay({ target: { checked: event.allDay } });
 
         // Typ-spezifische Daten laden
         setTimeout(() => {
@@ -1368,10 +1407,10 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
     } else {
         // NEU ERSTELLEN
         modalTitle.textContent = 'Neuer Termin';
-        deleteBtn.style.display = 'none';
+        if (deleteBtn) deleteBtn.style.display = 'none';
         document.getElementById('appointmentId').value = '';
 
-        if(roomId && roomSelect) {
+        if (roomId && roomSelect) {
             roomSelect.value = roomId;
         }
 
@@ -1379,25 +1418,25 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         if (clickedDateTime) {
             startDate = moment(clickedDateTime);
             endDate = moment(clickedDateTime).add(1, 'hours');
-            if(allDayCheckbox) allDayCheckbox.checked = false;
+            if (allDayCheckbox) allDayCheckbox.checked = false;
         } else {
-            if(dateStr) {
+            if (dateStr) {
                 startDate = moment(dateStr);
             } else {
                 startDate = moment();
             }
             startDate.hours(9).minutes(0).seconds(0);
             endDate = moment(startDate).add(1, 'hours');
-            if(allDayCheckbox) allDayCheckbox.checked = false;
+            if (allDayCheckbox) allDayCheckbox.checked = false;
         }
 
         picker.setStartDate(startDate);
         picker.setEndDate(endDate);
 
-        toggleAllDay({target: {checked: false}});
+        toggleAllDay({ target: { checked: false } });
     }
 
-    if(appointmentModal) appointmentModal.show();
+    if (appointmentModal) appointmentModal.show();
 }
 
 // Ersetze die loadTypeSpecificData Funktion mit dieser erweiterten Version:
