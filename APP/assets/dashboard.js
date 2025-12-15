@@ -1963,7 +1963,18 @@ function bootDashboard() {
     initKeyManagement();
 }
 
-document.addEventListener('DOMContentLoaded', bootDashboard);
-document.addEventListener('turbo:load', bootDashboard);
-document.addEventListener('turbo:render', bootDashboard);
-document.addEventListener('turbo:visit', bootDashboard);
+// Export für Lazy-Import aus app.js
+export { bootDashboard };
+
+// Doppelte Bindings vermeiden (Turbo feuert Events mehrfach)
+function bindDashboardOnce() {
+    if (window.__dashboardBound) return;
+    window.__dashboardBound = true;
+
+    document.addEventListener('DOMContentLoaded', bootDashboard);
+    document.addEventListener('turbo:load', bootDashboard);
+    document.addEventListener('turbo:render', bootDashboard);
+    document.addEventListener('turbo:visit', bootDashboard);
+}
+
+bindDashboardOnce();

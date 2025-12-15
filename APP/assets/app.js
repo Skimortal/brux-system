@@ -77,6 +77,23 @@ function initBody() {
     }
 }
 
+function hasDashboardCalendarOnPage() {
+    return !!document.getElementById('global-calendar') || document.querySelectorAll('.room-calendar').length > 0;
+}
+
+async function bootDashboardIfPresent() {
+    if (!hasDashboardCalendarOnPage()) return;
+
+    // verhindert mehrfaches Import/Boot bei Turbo-Events
+    if (window.__dashboardBootedOnce) return;
+    window.__dashboardBootedOnce = true;
+
+    const mod = await import('./dashboard.js');
+    if (mod && typeof mod.bootDashboard === 'function') {
+        mod.bootDashboard();
+    }
+}
+
 function boot() {
     initTomSelect();
     initAdminator();
@@ -89,6 +106,7 @@ function bootAlways() {
     initProductionTypeToggle();
     initDaterangepickers();
     initBody();
+    bootDashboardIfPresent();
 }
 
 document.addEventListener('DOMContentLoaded', bootAlways);
