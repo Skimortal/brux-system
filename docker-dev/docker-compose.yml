@@ -1,4 +1,4 @@
-# docker-compose.yml
+name: brux_system
 version: '3.8'
 
 services:
