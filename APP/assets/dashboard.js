@@ -7,6 +7,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import deLocale from '@fullcalendar/core/locales/de';
 import { Modal } from 'bootstrap';
 import moment from 'moment';
+import 'moment-timezone';
 import { initDaterangepicker, getPickerInstance, initDaterangepickers } from './daterangepicker-init.js';
 
 let allEvents = [];
@@ -1002,7 +1003,7 @@ function buildProductionFields() {
             <div class="mb-3 form-check">
                 <input type="checkbox" class="form-check-input" id="internalTechniciansAttending">
                 <label class="form-check-label" for="internalTechniciansAttending">
-                    Interne Techniker kommen
+                    Externe Techniker kommen
                 </label>
             </div>
 
@@ -1104,7 +1105,7 @@ function buildClosedEventFields() {
             <div class="mb-3 form-check">
                 <input type="checkbox" class="form-check-input" id="internalTechniciansAttending">
                 <label class="form-check-label" for="internalTechniciansAttending">
-                    Interne Techniker kommen
+                    Externe Techniker kommen
                 </label>
             </div>
 
@@ -1386,8 +1387,8 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
         }
 
         // Datum setzen
-        let startDate = moment(event.start);
-        let endDate = moment(event.end || event.start);
+        let startDate = moment(event.startStr);
+        let endDate = moment(event.endStr || event.startStr);
 
         if (event.allDay) {
             endDate.subtract(1, 'days');
