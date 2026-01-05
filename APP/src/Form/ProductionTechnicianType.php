@@ -20,7 +20,7 @@ class ProductionTechnicianType extends AbstractType
             ])
             ->add('email', EmailType::class, [
                 'label' => 'production_technician.email',
-                'required' => true,
+                'required' => false,
             ])
             ->add('phone', TextType::class, [
                 'label' => 'production_technician.phone',
