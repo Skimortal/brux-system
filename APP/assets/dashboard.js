@@ -261,16 +261,17 @@ function initGlobalCalendar(isMobile) {
             const now = new Date();
             const eventEnd = info.event.end || info.event.start;
             const isKey = info.event.extendedProps.type === 'key';
-            info.el.style.opacity = '0.5';
             if (isKey) {
                 // Schlüssel-Logik: Rot unterlegen wenn überfällig, niemals durchstreichen
                 if (info.event.extendedProps.isOverdue) {
                     info.el.style.backgroundColor = '#dc3545'; // Rot
                     info.el.style.borderColor = '#bd2130';
+                    info.el.style.opacity = '0.5';
                 }
             } else if (eventEnd < now) {
                 // Standard-Logik für andere Events: Durchstreichen wenn vergangen
                 info.el.style.textDecoration = 'line-through';
+                info.el.style.opacity = '0.5';
             }
         },
         editable: false
@@ -366,14 +367,15 @@ function createRoomCalendar(calendarEl, isMobile) {
             const now = new Date();
             const eventEnd = info.event.end || info.event.start;
             const isKey = info.event.extendedProps.type === 'key';
-            info.el.style.opacity = '0.5';
             if (isKey) {
                 if (info.event.extendedProps.isOverdue) {
                     info.el.style.backgroundColor = '#dc3545';
                     info.el.style.borderColor = '#bd2130';
+                    info.el.style.opacity = '0.5';
                 }
             } else if (eventEnd < now) {
                 info.el.style.textDecoration = 'line-through';
+                info.el.style.opacity = '0.5';
             }
         },
         editable: false,
@@ -983,6 +985,12 @@ function buildProductionFields() {
                 </select>
             </div>
 
+            <div id="productionRequirementsInfo" class="mb-3" style="display:none;">
+                <div class="alert alert-info py-2 px-3 small mb-0">
+                    <strong>Produktion benötigt:</strong> <span id="reqFlagsList"></span>
+                </div>
+            </div>
+
             <div class="mb-3">
                 <label class="form-label d-block">Ereignisart</label>
                 <div class="btn-group w-100" role="group">
@@ -1198,6 +1206,13 @@ function buildCleaningFields() {
 }
 
 function initializeProductionFieldListeners() {
+    const prodSelect = document.getElementById('productionSelect');
+    if (prodSelect) {
+        prodSelect.addEventListener('change', function() {
+            updateProductionRequirementsInfo(this.value);
+        });
+    }
+
     const assignTechCheckbox = document.getElementById('assignTechniciansCheckbox');
     const techContainer = document.getElementById('techniciansContainer');
     const addTechBtn = document.getElementById('addTechnicianBtn');
@@ -1227,6 +1242,39 @@ function initializeProductionFieldListeners() {
     }
 }
 
+function updateProductionRequirementsInfo(productionId) {
+    const infoDiv = document.getElementById('productionRequirementsInfo');
+    const listSpan = document.getElementById('reqFlagsList');
+    const productions = window.dashboardData.allProductions || [];
+    const prod = productions.find(p => p.id == productionId);
+
+    if (!prod || (!prod.needsLighting && !prod.needsSound && !prod.needsSetup)) {
+        if (infoDiv) infoDiv.style.display = 'none';
+    } else {
+        const reqs = [];
+        if (prod.needsLighting) reqs.push('Licht');
+        if (prod.needsSound) reqs.push('Ton');
+        if (prod.needsSetup) reqs.push('Aufbau');
+        if (listSpan) listSpan.textContent = reqs.join(', ');
+        if (infoDiv) infoDiv.style.display = 'block';
+    }
+
+    // Update existing rows
+    document.querySelectorAll('#techniciansList tr').forEach(row => {
+        updateTechnicianRowVisibility(row, prod);
+    });
+}
+
+function updateTechnicianRowVisibility(row, prod) {
+    const lWrap = row.querySelector('.lighting-wrap');
+    const sWrap = row.querySelector('.sound-wrap');
+    const aWrap = row.querySelector('.setup-wrap');
+
+    if (lWrap) lWrap.style.display = (prod && prod.needsLighting) ? 'inline-block' : 'none';
+    if (sWrap) sWrap.style.display = (prod && prod.needsSound) ? 'inline-block' : 'none';
+    if (aWrap) aWrap.style.display = (prod && prod.needsSetup) ? 'inline-block' : 'none';
+}
+
 function initializeClosedEventFieldListeners() {
     initializeProductionFieldListeners(); // Gleiche Logik
 }
@@ -1236,34 +1284,53 @@ function addTechnicianRow(technicianData = null) {
     const list = document.getElementById('techniciansList');
     if (!list) return;
 
+    const prodSelect = document.getElementById('productionSelect');
+    const currentProdId = prodSelect ? prodSelect.value : null;
+    const productions = window.dashboardData.allProductions || [];
+    const prod = productions.find(p => p.id == currentProdId);
+
     const row = document.createElement('tr');
     const rowId = 'tech_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     row.dataset.rowId = rowId;
 
     row.innerHTML = `
-        <td>
-            <select class="form-select form-select-sm technician-select" data-row-id="${rowId}">
-                <option value="">Wählen...</option>
-                ${technicians.map(t => `
-                    <option value="${t.id}" ${technicianData && technicianData.id == t.id ? 'selected' : ''}>
-                        ${t.name}
-                    </option>
-                `).join('')}
-            </select>
-        </td>
-        <td class="text-center">
-            <input type="checkbox" class="form-check-input technician-confirmed"
-                   data-row-id="${rowId}"
-                   ${technicianData && technicianData.confirmed ? 'checked' : ''}>
-        </td>
-        <td class="text-center">
-            <button type="button" class="btn btn-sm btn-danger remove-technician-btn" data-row-id="${rowId}">
-                <i class="ti-trash"></i>
-            </button>
-        </td>
-    `;
+            <td>
+                <select class="form-select form-select-sm technician-select" data-row-id="${rowId}">
+                    <option value="">Wählen...</option>
+                    ${technicians.map(t => `
+                        <option value="${t.id}" ${technicianData && technicianData.id == t.id ? 'selected' : ''}>
+                            ${t.name}
+                        </option>
+                    `).join('')}
+                </select>
+            </td>
+            <td>
+                <div class="form-check form-check-inline">
+                    <input type="checkbox" class="form-check-input technician-confirmed" data-row-id="${rowId}" ${technicianData && technicianData.confirmed ? 'checked' : ''}>
+                    <label class="form-check-label small">Bestätigt</label>
+                </div>
+                <div class="form-check form-check-inline lighting-wrap" style="display:none;">
+                    <input type="checkbox" class="form-check-input technician-lighting" data-row-id="${rowId}" ${technicianData && technicianData.lighting ? 'checked' : ''}>
+                    <label class="form-check-label small"><i class="ti-light-bulb" title="Licht"></i></label>
+                </div>
+                <div class="form-check form-check-inline sound-wrap" style="display:none;">
+                    <input type="checkbox" class="form-check-input technician-sound" data-row-id="${rowId}" ${technicianData && technicianData.sound ? 'checked' : ''}>
+                    <label class="form-check-label small"><i class="ti-announcement" title="Ton"></i></label>
+                </div>
+                <div class="form-check form-check-inline setup-wrap" style="display:none;">
+                    <input type="checkbox" class="form-check-input technician-setup" data-row-id="${rowId}" ${technicianData && technicianData.setup ? 'checked' : ''}>
+                    <label class="form-check-label small"><i class="ti-settings" title="Aufbau"></i></label>
+                </div>
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-danger remove-technician-btn" data-row-id="${rowId}">
+                    <i class="ti-trash"></i>
+                </button>
+            </td>
+        `;
 
     list.appendChild(row);
+    updateTechnicianRowVisibility(row, prod);
 
     row.querySelector('.remove-technician-btn').addEventListener('click', function() {
         row.remove();
@@ -1706,11 +1773,17 @@ function collectTechnicians() {
         const rowId = row.dataset.rowId;
         const select = row.querySelector(`.technician-select[data-row-id="${rowId}"]`);
         const confirmedCheckbox = row.querySelector(`.technician-confirmed[data-row-id="${rowId}"]`);
+        const lightingCheckbox = row.querySelector(`.technician-lighting[data-row-id="${rowId}"]`);
+        const soundCheckbox = row.querySelector(`.technician-sound[data-row-id="${rowId}"]`);
+        const setupCheckbox = row.querySelector(`.technician-setup[data-row-id="${rowId}"]`);
 
         if (select && select.value) {
             technicians.push({
                 id: select.value,
-                confirmed: confirmedCheckbox ? confirmedCheckbox.checked : false
+                confirmed: confirmedCheckbox ? confirmedCheckbox.checked : false,
+                lighting: lightingCheckbox ? lightingCheckbox.checked : false,
+                sound: soundCheckbox ? soundCheckbox.checked : false,
+                setup: setupCheckbox ? setupCheckbox.checked : false
             });
         }
     });

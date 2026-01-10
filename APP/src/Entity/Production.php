@@ -29,6 +29,15 @@ class Production extends Base
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $excerptHtml = null;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $needsLightingTechnician = false;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $needsSoundTechnician = false;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $needsSetupTechnician = false;
+
     #[ORM\OneToMany(targetEntity: ProductionTechnician::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $technicians;
 
@@ -117,6 +126,42 @@ class Production extends Base
     public function setExcerptHtml(?string $excerptHtml): static
     {
         $this->excerptHtml = $excerptHtml;
+
+        return $this;
+    }
+
+    public function isNeedsLightingTechnician(): bool
+    {
+        return $this->needsLightingTechnician;
+    }
+
+    public function setNeedsLightingTechnician(bool $needsLightingTechnician): static
+    {
+        $this->needsLightingTechnician = $needsLightingTechnician;
+
+        return $this;
+    }
+
+    public function isNeedsSoundTechnician(): bool
+    {
+        return $this->needsSoundTechnician;
+    }
+
+    public function setNeedsSoundTechnician(bool $needsSoundTechnician): static
+    {
+        $this->needsSoundTechnician = $needsSoundTechnician;
+
+        return $this;
+    }
+
+    public function isNeedsSetupTechnician(): bool
+    {
+        return $this->needsSetupTechnician;
+    }
+
+    public function setNeedsSetupTechnician(bool $needsSetupTechnician): static
+    {
+        $this->needsSetupTechnician = $needsSetupTechnician;
 
         return $this;
     }

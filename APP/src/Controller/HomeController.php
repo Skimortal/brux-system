@@ -92,7 +92,10 @@ class HomeController extends AbstractController
             return [
                 'id' => $prod->getId(),
                 'title' => $prod->getTitle(),
-                'displayName' => $prod->getDisplayName()
+                'displayName' => $prod->getDisplayName(),
+                'needsLighting' => $prod->isNeedsLightingTechnician(),
+                'needsSound' => $prod->isNeedsSoundTechnician(),
+                'needsSetup' => $prod->isNeedsSetupTechnician(),
             ];
         }, $prodRepo->findAll());
 
@@ -195,7 +198,10 @@ class HomeController extends AbstractController
                 return [
                     'id' => $appTech->getTechnician()->getId(),
                     'name' => $appTech->getTechnician()->getName(),
-                    'confirmed' => $appTech->isConfirmed()
+                    'confirmed' => $appTech->isConfirmed(),
+                    'lighting' => $appTech->isLighting(),
+                    'sound' => $appTech->isSound(),
+                    'setup' => $appTech->isSetup(),
                 ];
             }, $app->getAppointmentTechnicians()->toArray());
 
@@ -382,6 +388,29 @@ class HomeController extends AbstractController
         // Event Type Icons
         if ($app->getEventType()) {
             $icons[] = '<i class="' . $app->getEventType()->getIcon() . '"></i>';
+        }
+
+        // Production Requirement Icons
+        if ($app->getType() === AppointmentTypeEnum::PRODUCTION && $prod = $app->getProduction()) {
+            $hasLight = false; $hasSound = false; $hasSetup = false;
+            foreach ($app->getAppointmentTechnicians() as $at) {
+                if ($at->isLighting()) $hasLight = true;
+                if ($at->isSound()) $hasSound = true;
+                if ($at->isSetup()) $hasSetup = true;
+            }
+
+            if ($prod->isNeedsLightingTechnician()) {
+                $colorClass = $hasLight ? 'c-green-500' : 'text-muted';
+                $icons[] = '<i class="ti-light-bulb ' . $colorClass . '" title="Licht"></i>';
+            }
+            if ($prod->isNeedsSoundTechnician()) {
+                $colorClass = $hasSound ? 'c-green-500' : 'text-muted';
+                $icons[] = '<i class="ti-announcement ' . $colorClass . '" title="Ton"></i>';
+            }
+            if ($prod->isNeedsSetupTechnician()) {
+                $colorClass = $hasSetup ? 'c-green-500' : 'text-muted';
+                $icons[] = '<i class="ti-settings ' . $colorClass . '" title="Aufbau"></i>';
+            }
         }
 
         // Techniker Icons
@@ -669,6 +698,9 @@ class HomeController extends AbstractController
                     $appTech = new AppointmentTechnician();
                     $appTech->setTechnician($tech);
                     $appTech->setConfirmed($techData['confirmed'] ?? false);
+                    $appTech->setLighting($techData['lighting'] ?? false);
+                    $appTech->setSound($techData['sound'] ?? false);
+                    $appTech->setSetup($techData['setup'] ?? false);
                     $appointment->addAppointmentTechnician($appTech);
                 }
             }
@@ -780,6 +812,9 @@ class HomeController extends AbstractController
                 $newAppTech = new AppointmentTechnician();
                 $newAppTech->setTechnician($appTech->getTechnician());
                 $newAppTech->setConfirmed($appTech->isConfirmed());
+                $newAppTech->setLighting($appTech->isLighting());
+                $newAppTech->setSound($appTech->isSound());
+                $newAppTech->setSetup($appTech->isSetup());
                 $newAppointment->addAppointmentTechnician($newAppTech);
             }
 
@@ -919,6 +954,9 @@ class HomeController extends AbstractController
                     $appTech = new AppointmentTechnician();
                     $appTech->setTechnician($tech);
                     $appTech->setConfirmed($techData['confirmed'] ?? false);
+                    $appTech->setLighting($techData['lighting'] ?? false);
+                    $appTech->setSound($techData['sound'] ?? false);
+                    $appTech->setSetup($techData['setup'] ?? false);
                     $appointment->addAppointmentTechnician($appTech);
                 }
             }

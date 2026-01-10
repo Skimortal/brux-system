@@ -48,6 +48,18 @@ class ProductionType extends AbstractType
                 'attr' => ['rows' => 5],
                 'disabled' => true,
             ])
+            ->add('needsLightingTechnician', null, [
+                'label' => 'Lichttechniker benötigt',
+                'required' => false,
+            ])
+            ->add('needsSoundTechnician', null, [
+                'label' => 'Tontechniker benötigt',
+                'required' => false,
+            ])
+            ->add('needsSetupTechnician', null, [
+                'label' => 'Aufbautechniker benötigt',
+                'required' => false,
+            ])
             ->add('technicians', CollectionType::class, [
                 'entry_type' => ProductionTechnicianType::class,
                 'entry_options' => [

@@ -2,10 +2,10 @@
   "entrypoints": {
     "app": {
       "js": [
-        "/build/runtime.ad27ec54.js",
+        "/build/runtime.3876dc01.js",
         "/build/576.a09cd1ee.js",
         "/build/915.e8769170.js",
-        "/build/app.5e477ccd.js"
+        "/build/app.8212546e.js"
       ],
       "css": [
         "/build/915.09ff731b.css",
@@ -14,11 +14,11 @@
     },
     "dashboard": {
       "js": [
-        "/build/runtime.ad27ec54.js",
+        "/build/runtime.3876dc01.js",
         "/build/576.a09cd1ee.js",
-        "/build/296.c7f375aa.js",
-        "/build/1.83f1f871.js",
-        "/build/dashboard.5e784aca.js"
+        "/build/977.c61ad9bd.js",
+        "/build/1.d52b1039.js",
+        "/build/dashboard.c38fbc5b.js"
       ],
       "css": [
         "/build/dashboard.bf678ff3.css"
