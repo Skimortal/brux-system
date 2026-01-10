@@ -1191,18 +1191,46 @@ function buildCleaningFields() {
     const cleanings = window.dashboardData.allCleanings || [];
 
     return `
-        <div class="border-top pt-3 mt-3">
-            <h6 class="fw-bold mb-3">Reinigungs-Details</h6>
+            <div class="border-top pt-3 mt-3">
+                <h6 class="fw-bold mb-3">Reinigungs-Details</h6>
 
-            <div class="mb-3">
-                <label for="cleaningSelect" class="form-label">Reinigung</label>
-                <select class="form-select" id="cleaningSelect">
-                    <option value="">Bitte wählen...</option>
-                    ${cleanings.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-                </select>
+                <div class="mb-3">
+                    <label for="cleaningSelect" class="form-label">Reinigung</label>
+                    <select class="form-select" id="cleaningSelect">
+                        <option value="">Bitte wählen...</option>
+                        ${cleanings.map((c, index) => `<option value="${c.id}" ${index === 0 ? 'selected' : ''}>${c.name}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label d-block">Zusatzoptionen</label>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input cleaning-option" type="checkbox" id="cleanDaily" value="daily">
+                        <label class="form-check-label" for="cleanDaily">Tägliche Reinigung</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input cleaning-option" type="checkbox" id="cleanBlack" value="black">
+                        <label class="form-check-label" for="cleanBlack">Raum Schwarz</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input cleaning-option" type="checkbox" id="cleanWhite" value="white">
+                        <label class="form-check-label" for="cleanWhite">Raum Weiss</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input cleaning-option" type="checkbox" id="cleanWardrobe" value="wardrobe">
+                        <label class="form-check-label" for="cleanWardrobe">Künstlerinnengarderobe</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input cleaning-option" type="checkbox" id="cleanToilet" value="toilet">
+                        <label class="form-check-label" for="cleanToilet">Publikumstoilette</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input cleaning-option" type="checkbox" id="cleanOffice" value="office">
+                        <label class="form-check-label" for="cleanOffice">Büro</label>
+                    </div>
+                </div>
             </div>
-        </div>
-    `;
+        `;
 }
 
 function initializeProductionFieldListeners() {
@@ -1593,6 +1621,12 @@ function loadTypeSpecificData(event) {
             const cleanSelect = document.getElementById('cleaningSelect');
             if (cleanSelect) cleanSelect.value = event.extendedProps.cleaningId;
         }
+        if (event.extendedProps?.cleaningOptions) {
+            event.extendedProps.cleaningOptions.forEach(opt => {
+                const cb = document.querySelector(`.cleaning-option[value="${opt}"]`);
+                if (cb) cb.checked = true;
+            });
+        }
     }
 }
 
@@ -1719,6 +1753,7 @@ function saveAppointment() {
     } else if (type === 'cleaning') {
         const cleanSelect = document.getElementById('cleaningSelect');
         data.cleaningId = cleanSelect ? cleanSelect.value : null;
+        data.cleaningOptions = Array.from(document.querySelectorAll('.cleaning-option:checked')).map(cb => cb.value);
     }
 
     // Wiederholung

@@ -62,6 +62,9 @@ class Appointment
     #[ORM\Column]
     private bool $internalTechniciansAttending = false;
 
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $cleaningOptions = [];
+
     #[ORM\OneToMany(targetEntity: AppointmentTechnician::class, mappedBy: 'appointment', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $appointmentTechnicians;
 
@@ -242,6 +245,17 @@ class Appointment
     public function setInternalTechniciansAttending(bool $internalTechniciansAttending): static
     {
         $this->internalTechniciansAttending = $internalTechniciansAttending;
+        return $this;
+    }
+
+    public function getCleaningOptions(): ?array
+    {
+        return $this->cleaningOptions;
+    }
+
+    public function setCleaningOptions(?array $cleaningOptions): static
+    {
+        $this->cleaningOptions = $cleaningOptions;
         return $this;
     }
 

@@ -231,6 +231,7 @@ class HomeController extends AbstractController
             $eventData['extendedProps']['eventType'] = $app->getEventType()?->value;
             $eventData['extendedProps']['status'] = $app->getStatus()?->value;
             $eventData['extendedProps']['internalTechniciansAttending'] = $app->isInternalTechniciansAttending();
+            $eventData['extendedProps']['cleaningOptions'] = $app->getCleaningOptions() ?? [];
 
             $events[] = $eventData;
         }
@@ -440,6 +441,24 @@ class HomeController extends AbstractController
         $iconString = !empty($icons) ? implode(' ', $icons) . ' ' : '';
 
         $baseTitle = $app->getTitle();
+
+        if ($app->getType() === AppointmentTypeEnum::CLEANING && !empty($app->getCleaningOptions())) {
+            $labels = [
+                'daily' => 'Täglich',
+                'black' => 'Schwarz',
+                'white' => 'Weiss',
+                'wardrobe' => 'Garderobe',
+                'toilet' => 'Toilette',
+                'office' => 'Büro'
+            ];
+            $selected = [];
+            foreach ($app->getCleaningOptions() as $opt) {
+                if (isset($labels[$opt])) $selected[] = $labels[$opt];
+            }
+            if (!empty($selected)) {
+                $baseTitle .= ' (' . implode(', ', $selected) . ')';
+            }
+        }
 
         return $iconString . $baseTitle;
     }
@@ -677,6 +696,9 @@ class HomeController extends AbstractController
         if (!empty($data['cleaningId'])) {
             $appointment->setCleaning($cleanRepo->find($data['cleaningId']));
         }
+        if (!empty($data['cleaningOptions'])) {
+            $appointment->setCleaningOptions($data['cleaningOptions']);
+        }
         if (!empty($data['productionId'])) {
             $appointment->setProduction($productionRepo->find($data['productionId']));
         }
@@ -804,6 +826,7 @@ class HomeController extends AbstractController
             $newAppointment->setEventType($baseAppointment->getEventType());
             $newAppointment->setStatus($baseAppointment->getStatus());
             $newAppointment->setInternalTechniciansAttending($baseAppointment->isInternalTechniciansAttending());
+            $newAppointment->setCleaningOptions($baseAppointment->getCleaningOptions());
             $newAppointment->setRoom($baseAppointment->getRoom());
             $newAppointment->setCleaning($baseAppointment->getCleaning());
             $newAppointment->setProduction($baseAppointment->getProduction());
@@ -909,6 +932,9 @@ class HomeController extends AbstractController
         // Relationen
         if (array_key_exists('cleaningId', $data)) {
             $appointment->setCleaning(!empty($data['cleaningId']) ? $cleanRepo->find($data['cleaningId']) : null);
+        }
+        if (array_key_exists('cleaningOptions', $data)) {
+            $appointment->setCleaningOptions($data['cleaningOptions'] ?? []);
         }
         if (array_key_exists('productionId', $data)) {
             $appointment->setProduction(!empty($data['productionId']) ? $productionRepo->find($data['productionId']) : null);
