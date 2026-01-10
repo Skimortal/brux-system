@@ -38,6 +38,9 @@ class Production extends Base
     #[ORM\Column(options: ['default' => false])]
     private bool $needsSetupTechnician = false;
 
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $grandstand = null;
+
     #[ORM\OneToMany(targetEntity: ProductionTechnician::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $technicians;
 
@@ -162,6 +165,18 @@ class Production extends Base
     public function setNeedsSetupTechnician(bool $needsSetupTechnician): static
     {
         $this->needsSetupTechnician = $needsSetupTechnician;
+
+        return $this;
+    }
+
+    public function getGrandstand(): ?string
+    {
+        return $this->grandstand;
+    }
+
+    public function setGrandstand(?string $grandstand): static
+    {
+        $this->grandstand = $grandstand;
 
         return $this;
     }

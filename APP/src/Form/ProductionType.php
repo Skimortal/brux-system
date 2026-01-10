@@ -4,6 +4,7 @@ namespace App\Form;
 
 use App\Entity\Production;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -58,6 +59,17 @@ class ProductionType extends AbstractType
             ])
             ->add('needsSetupTechnician', null, [
                 'label' => 'Aufbautechniker benötigt',
+                'required' => false,
+            ])
+            ->add('grandstand', ChoiceType::class, [
+                'label' => 'Tribüne',
+                'choices' => [
+                    'mit Tribüne' => 'with_grandstand',
+                    'ohne Tribüne' => 'without_grandstand',
+                    'Bühne' => 'stage',
+                ],
+                'expanded' => true,
+                'multiple' => false,
                 'required' => false,
             ])
             ->add('technicians', CollectionType::class, [

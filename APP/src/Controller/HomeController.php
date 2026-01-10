@@ -89,6 +89,13 @@ class HomeController extends AbstractController
         }, $volunteerRepo->findAll());
 
         $productionsData = array_map(function($prod) {
+            $grandstandLabel = match($prod->getGrandstand()) {
+                'with_grandstand' => 'mit Tribüne',
+                'without_grandstand' => 'ohne Tribüne',
+                'stage' => 'Bühne',
+                default => null
+            };
+
             return [
                 'id' => $prod->getId(),
                 'title' => $prod->getTitle(),
@@ -96,6 +103,7 @@ class HomeController extends AbstractController
                 'needsLighting' => $prod->isNeedsLightingTechnician(),
                 'needsSound' => $prod->isNeedsSoundTechnician(),
                 'needsSetup' => $prod->isNeedsSetupTechnician(),
+                'grandstand' => $grandstandLabel,
             ];
         }, $prodRepo->findAll());
 

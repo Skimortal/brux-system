@@ -1248,14 +1248,20 @@ function updateProductionRequirementsInfo(productionId) {
     const productions = window.dashboardData.allProductions || [];
     const prod = productions.find(p => p.id == productionId);
 
-    if (!prod || (!prod.needsLighting && !prod.needsSound && !prod.needsSetup)) {
+    if (!prod || (!prod.needsLighting && !prod.needsSound && !prod.needsSetup && !prod.grandstand)) {
         if (infoDiv) infoDiv.style.display = 'none';
     } else {
         const reqs = [];
         if (prod.needsLighting) reqs.push('Licht');
         if (prod.needsSound) reqs.push('Ton');
         if (prod.needsSetup) reqs.push('Aufbau');
-        if (listSpan) listSpan.textContent = reqs.join(', ');
+
+        let text = reqs.join(', ');
+        if (prod.grandstand) {
+            text += (text ? ' | ' : '') + prod.grandstand;
+        }
+
+        if (listSpan) listSpan.textContent = text;
         if (infoDiv) infoDiv.style.display = 'block';
     }
 
@@ -1531,6 +1537,7 @@ function loadTypeSpecificData(event) {
         if (type === 'production' && event.extendedProps?.productionId) {
             const prodSelect = document.getElementById('productionSelect');
             if (prodSelect) prodSelect.value = event.extendedProps.productionId;
+            updateProductionRequirementsInfo(event.extendedProps.productionId);
         }
 
         // Event Type
