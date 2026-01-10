@@ -2,7 +2,7 @@
   "entrypoints": {
     "app": {
       "js": [
-        "/build/runtime.98f03be0.js",
+        "/build/runtime.ad27ec54.js",
         "/build/576.a09cd1ee.js",
         "/build/915.e8769170.js",
         "/build/app.5e477ccd.js"
@@ -14,10 +14,10 @@
     },
     "dashboard": {
       "js": [
-        "/build/runtime.98f03be0.js",
+        "/build/runtime.ad27ec54.js",
         "/build/576.a09cd1ee.js",
         "/build/296.c7f375aa.js",
-        "/build/1.ac585b74.js",
+        "/build/1.83f1f871.js",
         "/build/dashboard.5e784aca.js"
       ],
       "css": [

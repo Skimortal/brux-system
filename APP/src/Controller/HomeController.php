@@ -318,6 +318,7 @@ class HomeController extends AbstractController
                 $eventEnd = $returnDate ? clone $returnDate : clone $end;
                 $eventEnd->setTime(23, 59, 59);
 
+                $isOverdue = $returnDate && $returnDate < new \DateTime();
                 $holderName = $key->getCurrentHolderName();
                 $title = '🔑 ' . $key->getName() . ' (' . $holderName . ')';
 
@@ -333,6 +334,7 @@ class HomeController extends AbstractController
                     'extendedProps' => [
                         'type' => 'key',
                         'keyId' => $key->getId(),
+                        'isOverdue' => $isOverdue,
                         'roomId' => $keyRoom ? $keyRoom->getId() : null,
                         'description' => sprintf(
                             'Schlüssel: %s | Verliehen an: %s | Rückgabe: %s',

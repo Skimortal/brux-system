@@ -260,8 +260,16 @@ function initGlobalCalendar(isMobile) {
         eventDidMount: function(info) {
             const now = new Date();
             const eventEnd = info.event.end || info.event.start;
-            if (eventEnd < now) {
-                info.el.style.opacity = '0.5';
+            const isKey = info.event.extendedProps.type === 'key';
+            info.el.style.opacity = '0.5';
+            if (isKey) {
+                // Schlüssel-Logik: Rot unterlegen wenn überfällig, niemals durchstreichen
+                if (info.event.extendedProps.isOverdue) {
+                    info.el.style.backgroundColor = '#dc3545'; // Rot
+                    info.el.style.borderColor = '#bd2130';
+                }
+            } else if (eventEnd < now) {
+                // Standard-Logik für andere Events: Durchstreichen wenn vergangen
                 info.el.style.textDecoration = 'line-through';
             }
         },
@@ -357,8 +365,14 @@ function createRoomCalendar(calendarEl, isMobile) {
         eventDidMount: function(info) {
             const now = new Date();
             const eventEnd = info.event.end || info.event.start;
-            if (eventEnd < now) {
-                info.el.style.opacity = '0.5';
+            const isKey = info.event.extendedProps.type === 'key';
+            info.el.style.opacity = '0.5';
+            if (isKey) {
+                if (info.event.extendedProps.isOverdue) {
+                    info.el.style.backgroundColor = '#dc3545';
+                    info.el.style.borderColor = '#bd2130';
+                }
+            } else if (eventEnd < now) {
                 info.el.style.textDecoration = 'line-through';
             }
         },
@@ -1445,7 +1459,7 @@ function openAppointmentModal(dateStr = null, event = null, clickedDateTime = nu
 function loadTypeSpecificData(event) {
     const type = event.extendedProps?.appointmentType;
 
-    if (type === 'production' || type === 'closed_event') {
+    if (type === 'production' || type === 'closed_event' || type === 'school_event' || type === 'internal') {
         // Production setzen
         if (type === 'production' && event.extendedProps?.productionId) {
             const prodSelect = document.getElementById('productionSelect');
@@ -1616,10 +1630,12 @@ function saveAppointment() {
         data.technicians = collectTechnicians();
         data.volunteers = collectVolunteers();
 
-    } else if (type === 'closed_event' || type === 'school_event' || type === 'internal') {
-        // Hier nur Zuordnungen (Felder sind ausgeblendet)
-        data.technicians = collectTechnicians();
-        data.volunteers = collectVolunteers();
+    } else if (['closed_event', 'school_event', 'internal', 'private'].includes(type)) {
+        const assignTechCheckbox = document.getElementById('assignTechniciansCheckbox');
+        const assignVolCheckbox = document.getElementById('assignVolunteersCheckbox');
+
+        data.technicians = (assignTechCheckbox && assignTechCheckbox.checked) ? collectTechnicians() : [];
+        data.volunteers = (assignVolCheckbox && assignVolCheckbox.checked) ? collectVolunteers() : [];
 
         // sicherheitshalber leer setzen
         data.eventType = null;
