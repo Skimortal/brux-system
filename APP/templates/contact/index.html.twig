@@ -31,41 +31,45 @@
                 <h6 class="c-grey-900">{{ categoryName }} <span class="badge bg-secondary">{{ contacts|length }}</span></h6>
                 <div class="mT-30">
                     {% if contacts|length > 0 %}
-                    {% for contact in contacts %}
-                        <div class="card" style="width:18rem">
-                            <div class="card-body">
-                                <h5 class="card-title">{{ contact.name }}</h5>
-                                <p class="card-text">
-                                    {% if contact.company %}
-                                    <i class="ti-briefcase"></i> {{ contact.company }}<br/>
-                                    {% endif %}
-                                    {% if contact.email %}
-                                        <i class="ti-email text-info"></i>
-                                        <a href="mailto:{{ contact.email }}">{{ contact.email }}</a><br/>
-                                    {% endif %}
+                        <div class="row">
+                            {% for contact in contacts %}
+                                <div class="col-sm-3">
+                                    <div class="card" style="width:18rem">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ contact.name }}</h5>
+                                            <p class="card-text">
+                                                {% if contact.company %}
+                                                    <i class="ti-briefcase"></i> {{ contact.company }}<br/>
+                                                {% endif %}
+                                                {% if contact.email %}
+                                                    <i class="ti-email text-info"></i>
+                                                    <a href="mailto:{{ contact.email }}">{{ contact.email }}</a><br/>
+                                                {% endif %}
 
-                                    {% if contact.phone %}
-                                        <i class="ti-mobile text-success"></i>
-                                        <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a><br/>
-                                    {% endif %}
+                                                {% if contact.phone %}
+                                                    <i class="ti-mobile text-success"></i>
+                                                    <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a><br/>
+                                                {% endif %}
 
-                                    {% if contact.notes %}
-                                        <i class="ti-notepad"></i> {{ contact.notes|slice(0, 50) }}{% if contact.notes|length > 50 %}...{% endif %}
-                                    {% endif %}
-                                </p>
+                                                {% if contact.notes %}
+                                                    <i class="ti-notepad"></i> {{ contact.notes|slice(0, 50) }}{% if contact.notes|length > 50 %}...{% endif %}
+                                                {% endif %}
+                                            </p>
 
 
-                                <a href="{{ path('app_contact_edit', {id: contact.id}) }}" title="{{ 'edit'|trans }}">
-                                    <span class="badge bg-info"><i class="ti-pencil-alt"></i></span>
-                                </a>
-                                {% if is_granted('ROLE_ADMIN') %}
-                                    <a href="{{ path('app_contact_delete', {id: contact.id}) }}" class="confirmRemoveItem float-end" title="{{ 'delete'|trans }}" role="button" data-confirm="{}" data-confirm-message="{{ 'confirm_remove'|trans }}">
-                                        <span class="badge bg-danger"><i class="ti-trash"></i></span>
-                                    </a>
-                                {% endif %}
-                            </div>
+                                            <a href="{{ path('app_contact_edit', {id: contact.id}) }}" title="{{ 'edit'|trans }}">
+                                                <span class="badge bg-info"><i class="ti-pencil-alt"></i></span>
+                                            </a>
+                                            {% if is_granted('ROLE_ADMIN') %}
+                                                <a href="{{ path('app_contact_delete', {id: contact.id}) }}" class="confirmRemoveItem float-end" title="{{ 'delete'|trans }}" role="button" data-confirm="{}" data-confirm-message="{{ 'confirm_remove'|trans }}">
+                                                    <span class="badge bg-danger"><i class="ti-trash"></i></span>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
                         </div>
-                    {% endfor %}
                 {% else %}
                     <div class="alert alert-info">
                         {{ 'contact.no_contacts'|trans }}
