@@ -34,6 +34,10 @@ class ContactController extends AbstractController
             $groupedContacts[$categoryName][] = $contact;
         }
 
+        uasort($groupedContacts, function (array $a, array $b) {
+            return count($b) <=> count($a);
+        });
+
         return $this->render('contact/index.html.twig', [
             'contact_categories' => $contact_categories,
             'grouped_contacts' => $groupedContacts,
