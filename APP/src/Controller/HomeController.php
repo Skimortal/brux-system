@@ -9,6 +9,7 @@ use App\Entity\AppointmentVolunteer;
 use App\Entity\KeyManagement;
 use App\Entity\ProductionContactPerson;
 use App\Entity\ProductionEvent;
+use App\Entity\Room;
 use App\Enum\AppointmentStatusEnum;
 use App\Enum\AppointmentTypeEnum;
 use App\Enum\EventTypeEnum;
@@ -301,6 +302,7 @@ class HomeController extends AbstractController
             }
         }
 
+
         // 3. Verliehene Schlüssel laden
         if (in_array('keys', $filters)) {
             $borrowedKeys = $keyManagementRepo->createQueryBuilder('k')
@@ -327,21 +329,19 @@ class HomeController extends AbstractController
                     continue;
                 }
 
-                $eventStart = clone $borrowDate;
-                $eventStart->setTime(0, 0, 0);
-
-                $eventEnd = $returnDate ? clone $returnDate : clone $end;
-                $eventEnd->setTime(23, 59, 59);
-
-                $isOverdue = $returnDate && $returnDate < new \DateTime();
                 $holderName = $key->getCurrentHolderName();
-                $title = '🔑 ' . $key->getName() . ' (' . $holderName . ')';
+
+                // EVENT 1: Ausgabetermin (Borrowing Event)
+                $borrowStartDate = clone $borrowDate;
+                $borrowStartDate->setTime(0, 0, 0);
+                $borrowEndDate = clone $borrowStartDate;
+                $borrowEndDate->setTime(23, 59, 59);
 
                 $events[] = [
-                    'id' => 'key_' . $key->getId(),
-                    'title' => $title,
-                    'start' => $eventStart->format('c'),
-                    'end' => $eventEnd->format('c'),
+                    'id' => 'key_borrow_' . $key->getId(),
+                    'title' => '🔑 ' . $key->getName() . ' (' . $holderName . ') - AUSGABE',
+                    'start' => $borrowStartDate->format('c'),
+                    'end' => $borrowEndDate->format('c'),
                     'allDay' => true,
                     'color' => '#FF9800',
                     'backgroundColor' => '#FF9800',
@@ -349,16 +349,54 @@ class HomeController extends AbstractController
                     'extendedProps' => [
                         'type' => 'key',
                         'keyId' => $key->getId(),
-                        'isOverdue' => $isOverdue,
+                        'keyEventType' => 'borrow',
+                        'isOverdue' => false,
                         'roomId' => $keyRoom ? $keyRoom->getId() : null,
                         'description' => sprintf(
-                            'Schlüssel: %s | Verliehen an: %s | Rückgabe: %s',
+                            'Schlüssel: %s | Verliehen an: %s | Ausgabe am: %s',
                             $key->getName(),
                             $holderName,
-                            $returnDate ? $returnDate->format('d.m.Y') : 'Offen'
+                            $borrowDate->format('d.m.Y')
                         ),
                     ]
                 ];
+
+                // EVENT 2: Rückgabetermin (Return Event) - nur wenn Rückgabedatum vorhanden
+                if ($returnDate) {
+                    $isOverdue = $returnDate < new \DateTime();
+                    $returnStartDate = clone $returnDate;
+                    $returnStartDate->setTime(0, 0, 0);
+                    $returnEndDate = clone $returnStartDate;
+                    $returnEndDate->setTime(23, 59, 59);
+
+                    $backgroundColor = $isOverdue ? '#dc3545' : '#FF9800';
+                    $borderColor = $isOverdue ? '#bd2130' : '#F57C00';
+
+                    $events[] = [
+                        'id' => 'key_return_' . $key->getId(),
+                        'title' => '🔑 ' . $key->getName() . ' (' . $holderName . ') - RÜCKGABE' . ($isOverdue ? ' ⚠️ ÜBERFÄLLIG' : ''),
+                        'start' => $returnStartDate->format('c'),
+                        'end' => $returnEndDate->format('c'),
+                        'allDay' => true,
+                        'color' => $backgroundColor,
+                        'backgroundColor' => $backgroundColor,
+                        'borderColor' => $borderColor,
+                        'extendedProps' => [
+                            'type' => 'key',
+                            'keyId' => $key->getId(),
+                            'keyEventType' => 'return',
+                            'isOverdue' => $isOverdue,
+                            'roomId' => $keyRoom ? $keyRoom->getId() : null,
+                            'description' => sprintf(
+                                'Schlüssel: %s | Verliehen an: %s | Rückgabe fällig: %s %s',
+                                $key->getName(),
+                                $holderName,
+                                $returnDate->format('d.m.Y'),
+                                $isOverdue ? '(ÜBERFÄLLIG)' : ''
+                            ),
+                        ]
+                    ];
+                }
             }
         }
 
@@ -1105,5 +1143,32 @@ class HomeController extends AbstractController
         }, $appointments);
 
         return $this->json($events);
+    }
+
+    #[Route('/dashboard/all-keys', name: 'app_dashboard_all_keys', methods: ['GET'])]
+    public function getAllKeys(KeyManagementRepository $keyRepository): JsonResponse
+    {
+        $allKeys = $keyRepository->findAll();
+
+        $keysData = array_map(function(KeyManagement $key) {
+            return [
+                'id' => $key->getId(),
+                'name' => $key->getName(),
+                'status' => $key->getStatus()->value,
+                'borrowDate' => $key->getBorrowDate() ? $key->getBorrowDate()->format('Y-m-d') : null,
+                'returnDate' => $key->getReturnDate() ? $key->getReturnDate()->format('Y-m-d') : null,
+                'currentHolderName' => $key->getCurrentHolderName(),
+                'rooms' => array_map(function(Room $room) {
+                    return ['id' => $room->getId(), 'name' => $room->getName()];
+                }, $key->getRooms()->toArray()),
+                'user' => $key->getUser() ? ['id' => $key->getUser()->getId()] : null,
+                'technician' => $key->getTechnician() ? ['id' => $key->getTechnician()->getId()] : null,
+                'production' => $key->getProduction() ? ['id' => $key->getProduction()->getId()] : null,
+                'cleaning' => $key->getCleaning() ? ['id' => $key->getCleaning()->getId()] : null,
+                'description' => $key->getDescription(),
+            ];
+        }, $allKeys);
+
+        return $this->json($keysData);
     }
 }

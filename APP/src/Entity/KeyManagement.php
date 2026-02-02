@@ -206,4 +206,14 @@ class KeyManagement extends Base
         if ($this->cleaning) return 'Reinigung';
         return 'Unbekannt';
     }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): void
+    {
+        $this->description = $description;
+    }
 }

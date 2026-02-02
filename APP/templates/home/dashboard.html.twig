@@ -28,63 +28,39 @@
                             <h4 class="c-white m-0">Schlüsselübersicht</h4>
                         </div>
 
+                        {# Filter ganz oben #}
+                        <div class="p-15 border-bottom bg-light">
+                            <label class="form-label fw-bold mb-2">Filter:</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <div class="form-check key-form-check">
+                                    <input class="form-check-input key-filter-checkbox" type="checkbox"
+                                           value="borrowed" id="filterKeyBorrowed" checked>
+                                    <label class="form-check-label" for="filterKeyBorrowed">
+                                        <i class="ti-export c-amber-500"></i> Verliehen
+                                    </label>
+                                </div>
+                                <div class="form-check key-form-check">
+                                    <input class="form-check-input key-filter-checkbox" type="checkbox"
+                                           value="available" id="filterKeyAvailable" checked>
+                                    <label class="form-check-label" for="filterKeyAvailable">
+                                        <i class="ti-check c-green-500"></i> Verfügbar
+                                    </label>
+                                </div>
+                                <div class="form-check key-form-check">
+                                    <input class="form-check-input key-filter-checkbox" type="checkbox"
+                                           value="lost" id="filterKeyLost" checked>
+                                    <label class="form-check-label" for="filterKeyLost">
+                                        <i class="ti-close c-red-500"></i> Verloren
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="p-0">
                             <div class="layer w-100" style="max-height: 80vh; overflow-y: auto;">
                                 <div class="pos-r">
                                     <ul class="m-0 p-0 mT-10" id="day-events-list">
-                                        {% for key in allKeysFlat %}
-                                            {% set statusColor = 'c-green-500' %}
-                                            {% set statusIcon = 'ti-check' %}
-                                            {% set statusLabel = 'Verfügbar' %}
-
-                                            {% if key.status.value == 'borrowed' %}
-                                                {% set statusColor = 'c-amber-500' %}
-                                                {% set statusIcon = 'ti-export' %}
-                                                {% set statusLabel = 'Verliehen' %}
-                                            {% elseif key.status.value == 'lost' %}
-                                                {% set statusColor = 'c-red-500' %}
-                                                {% set statusIcon = 'ti-close' %}
-                                                {% set statusLabel = 'Verloren' %}
-                                            {% endif %}
-
-                                            {% set holderName = key.currentHolderName ?? '' %}
-
-                                            <li class="bdB peers ai-c jc-sb fxw-nw key-item-btn" style="cursor: pointer;"
-                                                data-key-id="{{ key.id }}"
-                                                data-key-name="{{ key.name }}"
-                                                data-key-status="{{ key.status.value }}"
-                                                data-borrow-date="{{ key.borrowDate ? key.borrowDate|date('Y-m-d') : '' }}"
-                                                data-return-date="{{ key.returnDate ? key.returnDate|date('Y-m-d') : '' }}"
-                                                data-user-id="{{ key.user ? key.user.id : '' }}"
-                                                data-tech-id="{{ key.technician ? key.technician.id : '' }}"
-                                                data-prod-id="{{ key.production ? key.production.id : '' }}"
-                                                data-clean-id="{{ key.cleaning ? key.cleaning.id : '' }}"
-                                                data-description="{{ key.description ?? '' }}">
-                                                <div class="td-n p-20 peers fxw-nw me-20 peer-greed c-grey-900">
-                                                    <div class="peer mR-15">
-                                                        <i class="ti-key {{ statusColor }}"></i>
-                                                    </div>
-                                                    <div class="peer">
-                                                        <span class="fw-600">{{ key.name }} ({{ key.rooms|map(r => r.name)|join(', ') ?: '-' }})</span>
-                                                        <div class="c-grey-600">
-                                                            {% if key.status.value == 'borrowed' %}
-                                                                <span class="c-grey-700">{{ holderName }}</span>
-                                                            {% else %}
-                                                                <span class="c-grey-700">&nbsp;</span>
-                                                            {% endif %}
-                                                            <i>{{ statusLabel }}</i>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="peers mR-15">
-                                                    <div class="peer">
-                                                        <span class="fsz-md p-5" title="{{ statusLabel }}">
-                                                            <i class="{{ statusIcon }} {{ statusColor }}"></i>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                        {% endfor %}
+                                        {# Wird dynamisch durch JavaScript gefüllt #}
                                     </ul>
                                 </div>
                             </div>

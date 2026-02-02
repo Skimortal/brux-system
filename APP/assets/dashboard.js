@@ -37,6 +37,12 @@ const volunteerTaskLabels = {
     'other': 'Anderes'
 };
 
+let keyFilterState = {
+    borrowed: true,
+    available: true,
+    lost: true
+};
+
 function displayDate(date) {
     currentSelectedDate = new Date(date);
     const formattedDate = date.toLocaleDateString('de-DE', {
@@ -124,6 +130,112 @@ function initCalendar() {
         .catch(e => console.error(e));
 
     setupModalListeners();
+}
+
+
+function setupKeyFilters() {
+    renderKeyList();
+    const filterCheckboxes = document.querySelectorAll('.key-filter-checkbox');
+    filterCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            keyFilterState[this.value] = this.checked;
+            renderKeyList();
+        });
+    });
+}
+
+function renderKeyList() {
+    const dayEventsList = document.getElementById('day-events-list');
+    if (!dayEventsList) return;
+
+    // Sammle alle Keys aus den Dashboard-Daten
+    let allKeysFlat = [];
+
+    // Wenn wir die Keys noch nicht haben, müssen wir sie vom Backend laden
+    // Falls das Template sie als Daten hat, können wir sie hier nutzen
+    // Sonst über fetch laden
+
+    fetch('/dashboard/all-keys')
+        .then(response => response.json())
+        .then(keys => {
+            // Filter anwenden
+            const filteredKeys = keys.filter(key => {
+                return keyFilterState[key.status];
+            });
+
+            // Sortierung: verliehen → verfügbar → verloren
+            const sortedKeys = filteredKeys.sort((a, b) => {
+                const statusOrder = { borrowed: 0, available: 1, lost: 2 };
+                return statusOrder[a.status] - statusOrder[b.status];
+            });
+
+            // HTML generieren
+            dayEventsList.innerHTML = '';
+
+            sortedKeys.forEach(key => {
+                let statusColor = 'c-green-500';
+                let statusIcon = 'ti-check';
+                let statusLabel = 'Verfügbar';
+
+                if (key.status === 'borrowed') {
+                    statusColor = 'c-amber-500';
+                    statusIcon = 'ti-export';
+                    statusLabel = 'Verliehen';
+                } else if (key.status === 'lost') {
+                    statusColor = 'c-red-500';
+                    statusIcon = 'ti-close';
+                    statusLabel = 'Verloren';
+                }
+
+                const holderName = key.currentHolderName || '';
+                const roomNames = key.rooms && key.rooms.length > 0
+                    ? key.rooms.map(r => r.name).join(', ')
+                    : '-';
+
+                const li = document.createElement('li');
+                li.className = 'bdB peers ai-c jc-sb fxw-nw key-item-btn';
+                li.style.cursor = 'pointer';
+                li.dataset.keyId = key.id;
+                li.dataset.keyName = key.name;
+                li.dataset.keyStatus = key.status;
+                li.dataset.borrowDate = key.borrowDate || '';
+                li.dataset.returnDate = key.returnDate || '';
+                li.dataset.userId = key.user ? key.user.id : '';
+                li.dataset.techId = key.technician ? key.technician.id : '';
+                li.dataset.prodId = key.production ? key.production.id : '';
+                li.dataset.cleanId = key.cleaning ? key.cleaning.id : '';
+                li.dataset.description = key.description || '';
+
+                li.innerHTML = `
+                    <div class="td-n p-20 peers fxw-nw me-20 peer-greed c-grey-900">
+                        <div class="peer mR-15">
+                            <i class="ti-key ${statusColor}"></i>
+                        </div>
+                        <div class="peer">
+                            <span class="fw-600">${key.name} (${roomNames})</span>
+                            <div class="c-grey-600">
+                                ${key.status === 'borrowed' ? `<span class="c-grey-700">${holderName}</span>` : `<span class="c-grey-700">&nbsp;</span>`}
+                                <i>${statusLabel}</i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="peers mR-15">
+                        <div class="peer">
+                            <span class="fsz-md p-5" title="${statusLabel}">
+                                <i class="${statusIcon} ${statusColor}"></i>
+                            </span>
+                        </div>
+                    </div>
+                `;
+
+                li.addEventListener('click', () => {
+                    openKeyModal(key.id);
+                });
+
+                dayEventsList.appendChild(li);
+            });
+        })
+        .catch(e => console.error('Error loading keys:', e));
 }
 
 function triggerApiSync() {
@@ -1915,6 +2027,8 @@ function confirmDelete() {
 }
 
 function initKeyManagement() {
+    setupKeyFilters();
+
     const modalEl = document.getElementById('keyManagementModal');
     if (!modalEl) return;
 
