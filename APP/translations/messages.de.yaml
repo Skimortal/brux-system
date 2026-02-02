@@ -281,3 +281,34 @@ production.events_calendar: 'Veranstaltungskalender'
 
 production_event:
     contact_persons: Ansprechpartner
+
+# Contact Category
+contact_categories: 'Kontaktkategorien'
+contact_category.list: 'Kontaktkategorien'
+contact_category.detail_title: 'Kontaktkategorie Details'
+contact_category.add_new: 'Neue Kontaktkategorie'
+contact_category.name: 'Name'
+contact_category.created_successfully: 'Kontaktkategorie erfolgreich erstellt'
+contact_category.updated_successfully: 'Kontaktkategorie erfolgreich aktualisiert'
+contact_category.deleted_successfully: 'Kontaktkategorie erfolgreich gelöscht'
+
+# Contact
+contact.main_menu: 'Kontakt'
+contact.list: 'Kontaktliste'
+contact.detail_title: 'Kontakt Details'
+contact.edit_title: 'Kontakt bearbeiten'
+contact.add_new: 'Neuer Kontakt'
+contact.first_name: 'Vorname'
+contact.last_name: 'Nachname'
+contact.email: 'E-Mail'
+contact.phone: 'Telefon'
+contact.company: 'Unternehmen'
+contact.notes: 'Notizen'
+contact.category: 'Kategorie'
+contact.no_contacts: 'Keine Kontakte in dieser Kategorie vorhanden'
+contact.no_contacts_found: 'Keine Kontakte vorhanden'
+contact.created_successfully: 'Kontakt erfolgreich erstellt'
+contact.updated_successfully: 'Kontakt erfolgreich aktualisiert'
+contact.deleted_successfully: 'Kontakt erfolgreich gelöscht'
+
+loading: 'Lädt...'

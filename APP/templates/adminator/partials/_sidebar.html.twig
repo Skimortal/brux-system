@@ -17,10 +17,22 @@
             </div>
         </div><!-- ### $Sidebar Menu ### -->
 
+        {# Kontakt-Submenu #}
+        {% set contactChildren = [
+            { route: 'app_contact_category_index', icon: 'ti-list c-indigo-500', label: 'contact_categories', roles: ['ROLE_USER'] },
+            { route: 'app_contact_index', icon: 'ti-location-pin c-pink-500', label: 'contact.list', roles: ['ROLE_USER'] },
+        ] %}
+
         {# --- Top-Level Menüpunkte --- #}
         {% set menu = [
             { route: 'app_dashboard', icon: 'ti-home c-blue-500', label: 'dashboard', roles: ['ROLE_USER'] },
             { route: 'app_room_index', icon: 'ti-layout c-indigo-500', label: 'room.list', roles: ['ROLE_USER'] },
+            {
+                label: 'contact.main_menu',
+                icon: 'ti-mobile c-teal-500',
+                roles: ['ROLE_USER'],
+                children: contactChildren
+            },
             { route: 'app_production_index', icon: 'ti-video-camera c-pink-500', label: 'production.list', roles: ['ROLE_USER'] },
             { route: 'app_technician_index', icon: 'ti-settings c-orange-500', label: 'technician.list', roles: ['ROLE_USER'] },
             { route: 'app_cleaning_index', icon: 'ti-spray c-green-500', label: 'cleaning.list', roles: ['ROLE_USER'] },
