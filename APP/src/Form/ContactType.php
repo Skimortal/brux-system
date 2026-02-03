@@ -16,6 +16,12 @@ class ContactType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
+            ->add('category', EntityType::class, [
+                'class' => ContactCategory::class,
+                'choice_label' => 'name',
+                'required' => true,
+                'label' => 'contact.category',
+            ])
             ->add('name', TextType::class, [
                 'required' => true,
                 'label' => 'contact.first_name',
@@ -35,12 +41,6 @@ class ContactType extends AbstractType
             ->add('notes', TextareaType::class, [
                 'required' => false,
                 'label' => 'contact.notes',
-            ])
-            ->add('category', EntityType::class, [
-                'class' => ContactCategory::class,
-                'choice_label' => 'name',
-                'required' => true,
-                'label' => 'contact.category',
             ])
         ;
     }
