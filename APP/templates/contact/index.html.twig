@@ -22,69 +22,30 @@
         {% endfor %}
     {% endfor %}
 
-    <div class="row gap-20 masonry pos-r">
-        <div class="masonry-sizer col-md-6"></div>
-
-        {% for categoryName, contacts in grouped_contacts %}
-        <div class="masonry-item col-md-6">
-            <div class="bgc-white p-20 bd">
-                <h6 class="c-grey-900">{{ categoryName }} <span class="badge bg-secondary">{{ contacts|length }}</span></h6>
-                <div class="mT-30">
-                    {% if contacts|length > 0 %}
-                        <div class="row">
-                            {% for contact in contacts %}
-                                <div class="col-sm-3">
-                                    <div class="card" style="width:100%; min-height: 200px; margin-bottom: 15px;">
-                                        <div class="card-body">
-                                            <h5 class="card-title">{{ contact.name }}</h5>
-                                            <p class="card-text">
-                                                {% if contact.company %}
-                                                    <i class="ti-briefcase"></i> {{ contact.company }}<br/>
-                                                {% endif %}
-                                                {% if contact.email %}
-                                                    <i class="ti-email text-info"></i>
-                                                    <a href="mailto:{{ contact.email }}">{{ contact.email }}</a><br/>
-                                                {% endif %}
-
-                                                {% if contact.phone %}
-                                                    <i class="ti-mobile text-success"></i>
-                                                    <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a><br/>
-                                                {% endif %}
-
-                                                {% if contact.notes %}
-                                                    <i class="ti-notepad"></i> {{ contact.notes|slice(0, 50) }}{% if contact.notes|length > 50 %}...{% endif %}
-                                                {% endif %}
-                                            </p>
-
-
-                                            <a href="{{ path('app_contact_edit', {id: contact.id}) }}" title="{{ 'edit'|trans }}">
-                                                <span class="badge bg-info"><i class="ti-pencil-alt"></i></span>
-                                            </a>
-                                            {% if is_granted('ROLE_ADMIN') %}
-                                                <a href="{{ path('app_contact_delete', {id: contact.id}) }}" class="confirmRemoveItem float-end" title="{{ 'delete'|trans }}" role="button" data-confirm="{}" data-confirm-message="{{ 'confirm_remove'|trans }}">
-                                                    <span class="badge bg-danger"><i class="ti-trash"></i></span>
-                                                </a>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                {% else %}
-                    <div class="alert alert-info">
-                        {{ 'contact.no_contacts'|trans }}
-                    </div>
+    <!-- Filter Block -->
+    <div class="bgc-white p-20 bd mb-3" id="contact-filter-block">
+        <div class="d-flex align-items-center gap-3">
+            <label class="mb-0 fw-bold">{{ 'contact.filter_by_category'|trans|default('Filter nach Kategorie:') }}</label>
+            <div class="d-flex gap-2 flex-wrap" id="category-filter-buttons">
+                {% for category in contact_categories %}
+                    <button
+                        type="button"
+                        class="btn btn-outline-primary category-filter-btn"
+                        data-category-id="{{ category.id }}"
+                        {% if category.id in selected_category_ids %}data-selected="1"{% endif %}
+                    >
+                        {{ category.name }}
+                    </button>
+                {% endfor %}
+                {% if contact_categories|length > 0 %}
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="clear-filters">
+                        {{ 'clear'|trans|default('Alle anzeigen') }}
+                    </button>
                 {% endif %}
-                </div>
             </div>
         </div>
-        {% endfor %}
     </div>
 
-    {% if grouped_contacts|length == 0 %}
-        <div class="alert alert-warning">
-            {{ 'contact.no_contacts_found'|trans }}
-        </div>
-    {% endif %}
+    {% include 'contact/_contacts_list.html.twig' %}
 
 {% endblock %}

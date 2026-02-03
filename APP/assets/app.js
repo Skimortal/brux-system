@@ -94,6 +94,76 @@ async function bootDashboardIfPresent() {
     }
 }
 
+function initContactCategoryFilter() {
+    const filterButtons = document.querySelectorAll('.category-filter-btn');
+    const clearButton = document.getElementById('clear-filters');
+    const filterBlock = document.getElementById('contact-filter-block');
+
+    if (filterButtons.length === 0 || !filterBlock) return;
+
+    // Setze initialen Status der Buttons basierend auf data-selected
+    filterButtons.forEach(btn => {
+        if (btn.dataset.selected === '1') {
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-primary');
+        }
+    });
+
+    function applyFilter() {
+        const selectedIds = Array.from(filterButtons)
+            .filter(btn => btn.classList.contains('btn-primary'))
+            .map(btn => btn.dataset.categoryId);
+
+        const queryString = selectedIds.length > 0 ? `?categories=${selectedIds.join(',')}` : '';
+
+        // AJAX-Request
+        fetch(`/contact${queryString}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        })
+            .then(response => response.text())
+            .then(html => {
+                const contactsContainer = document.getElementById('contacts-container');
+                if (contactsContainer) {
+                    contactsContainer.outerHTML = html;
+
+                    if (window.AdminatorApp && typeof window.AdminatorApp.masonryInit === 'function') {
+                        window.AdminatorApp.masonryInit();
+                    }
+                }
+            })
+            .catch(error => console.error('Filter error:', error));
+    }
+
+    // Guard: Eventlistener nur einmal hinzufügen
+    if (filterBlock.dataset.filterInitialized === '1') return;
+    filterBlock.dataset.filterInitialized = '1';
+
+    // Eventlistener für Filter-Buttons
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('btn-outline-primary');
+            btn.classList.toggle('btn-primary');
+            applyFilter();
+        });
+    });
+
+    // Clear Button
+    if (clearButton) {
+        clearButton.addEventListener('click', () => {
+            filterButtons.forEach(btn => {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-outline-primary');
+                btn.dataset.selected = '0';
+            });
+            applyFilter();
+        });
+    }
+}
+
+window.initContactCategoryFilter = initContactCategoryFilter;
+
 function boot() {
     initTomSelect();
     initAdminator();
@@ -106,6 +176,7 @@ function bootAlways() {
     initProductionTypeToggle();
     initDaterangepickers();
     initBody();
+    initContactCategoryFilter();
     bootDashboardIfPresent();
 }
 

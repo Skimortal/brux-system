@@ -18,15 +18,31 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 #[IsGranted('ROLE_USER')]
 class ContactController extends AbstractController
 {
+
     #[Route('/', name: 'app_contact_index', methods: ['GET'])]
-    public function index(ContactRepository $repository, ContactCategoryRepository $contactCategoryRepository): Response
+    public function index(
+        ContactRepository $repository,
+        ContactCategoryRepository $contactCategoryRepository,
+        Request $request
+    ): Response
     {
         $contacts = $repository->findGroupedByCategory();
         $contact_categories = $contactCategoryRepository->findAll();
 
+        // Selected categories from query parameter
+        $selectedCategoryIds = [];
+        if ($request->query->has('categories')) {
+            $selectedCategoryIds = array_map('intval', explode(',', $request->query->get('categories', '')));
+        }
+
         // Group contacts by category
         $groupedContacts = [];
         foreach ($contacts as $contact) {
+            // Wenn Kategorien gefiltert werden und diese Kategorie nicht dabei ist, überspringen
+            if (!empty($selectedCategoryIds) && !in_array($contact->getCategory()?->getId(), $selectedCategoryIds)) {
+                continue;
+            }
+
             $categoryName = $contact->getCategory()?->getName() ?? 'Uncategorized';
             if (!isset($groupedContacts[$categoryName])) {
                 $groupedContacts[$categoryName] = [];
@@ -38,9 +54,17 @@ class ContactController extends AbstractController
             return count($b) <=> count($a);
         });
 
+        // Für AJAX-Requests: nur die Kontakte zurückgeben
+        if ($request->isXmlHttpRequest()) {
+            return $this->render('contact/_contacts_list.html.twig', [
+                'grouped_contacts' => $groupedContacts,
+            ]);
+        }
+
         return $this->render('contact/index.html.twig', [
             'contact_categories' => $contact_categories,
             'grouped_contacts' => $groupedContacts,
+            'selected_category_ids' => $selectedCategoryIds,
         ]);
     }
 
