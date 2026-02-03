@@ -6,6 +6,7 @@ import 'adminator-admin-dashboard/src/assets/scripts/app.js';
 import './datatables.js';
 import TomSelect from 'tom-select';
 import 'tom-select/dist/css/tom-select.css';
+import Masonry from 'masonry-layout';
 import { initDaterangepickers, destroyDaterangepickers } from './daterangepicker-init.js';
 import { initProductionCalendar } from './production-calendar.js';
 
@@ -128,8 +129,13 @@ function initContactCategoryFilter() {
                 if (contactsContainer) {
                     contactsContainer.outerHTML = html;
 
-                    if (window.AdminatorApp && typeof window.AdminatorApp.masonryInit === 'function') {
-                        window.AdminatorApp.masonryInit();
+                    const masonryElement = document.querySelector('.masonry');
+                    if (masonryElement) {
+                        new Masonry(masonryElement, {
+                            itemSelector: '.masonry-item',
+                            columnWidth: '.masonry-sizer',
+                            percentPosition: true,
+                        });
                     }
                 }
             })
