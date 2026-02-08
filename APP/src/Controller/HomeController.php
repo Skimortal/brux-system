@@ -10,6 +10,7 @@ use App\Entity\KeyManagement;
 use App\Entity\ProductionContactPerson;
 use App\Entity\ProductionEvent;
 use App\Entity\Room;
+use App\Entity\Todo;
 use App\Enum\AppointmentStatusEnum;
 use App\Enum\AppointmentTypeEnum;
 use App\Enum\EventTypeEnum;
@@ -22,10 +23,12 @@ use App\Repository\ProductionEventRepository;
 use App\Repository\ProductionRepository;
 use App\Repository\RoomRepository;
 use App\Repository\TechnicianRepository;
+use App\Repository\TodoRepository;
 use App\Repository\VolunteerRepository;
 use App\Service\BruxApiSyncService;
 use App\Service\CalendarColorService;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -49,6 +52,7 @@ class HomeController extends AbstractController
     public function dashboard(
         RoomRepository $roomRepository,
         KeyManagementRepository $keyRepository,
+        TodoRepository $todoRepository,
         \App\Repository\UserRepository $userRepo,
         \App\Repository\TechnicianRepository $techRepo,
         \App\Repository\ProductionRepository $prodRepo,
@@ -58,6 +62,7 @@ class HomeController extends AbstractController
     {
         $rooms = $roomRepository->findBy(['showOnDashboard' => true]);
         $allKeys = $keyRepository->findAll();
+        $todos = $todoRepository->findBy(['done' => false]);
 
         $keysByRoom = [];
         $keysWithoutRoom = [];
@@ -118,6 +123,7 @@ class HomeController extends AbstractController
         return $this->render('home/dashboard.html.twig', [
             'user' => $this->getUser(),
             'rooms' => $rooms,
+            'todos' => $todos,
             'allRooms' => $roomRepository->findAll(),
             'keysByRoom' => $keysByRoom,
             'keysWithoutRoom' => $keysWithoutRoom,
@@ -650,6 +656,52 @@ class HomeController extends AbstractController
         return $this->json(['success' => true]);
     }
 
+    #[Route('/dashboard/todo/{id}/update', name: 'app_dashboard_todo_update', methods: ['POST'])]
+    public function updateTodo(
+        Todo                   $todo,
+        Request                $request,
+        EntityManagerInterface $em,
+    ): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        if (isset($data['description'])) {
+            $todo->setDescription($data['description']);
+        }
+
+        if (isset($data['done'])) {
+            $todo->setDone($data['done']);
+        }
+
+        $em->flush();
+
+        return $this->json(['success' => true]);
+    }
+
+    #[Route('/dashboard/todo/create', name: 'app_dashboard_todo_create', methods: ['POST'])]
+    public function createTodo(
+        Request                $request,
+        EntityManagerInterface $em,
+    ): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+
+        $todo = new Todo();
+
+        if (isset($data['description'])) {
+            $todo->setDescription($data['description']);
+        }
+
+        try {
+            $em->persist($todo);
+            $em->flush();
+        } catch (Exception $e) {
+            return $this->json(['success' => false, 'message' => 'Fehler beim Speichern: ' . $e->getMessage()], 500);
+        }
+
+        return $this->json(['success' => true]);
+    }
+
     #[Route('/dashboard/sync-api', name: 'app_dashboard_sync_api', methods: ['POST'])]
     public function syncBruxApi(BruxApiSyncService $syncService): JsonResponse
     {
@@ -1170,5 +1222,20 @@ class HomeController extends AbstractController
         }, $allKeys);
 
         return $this->json($keysData);
+    }
+
+    #[Route('/dashboard/all-todos', name: 'app_dashboard_all_todos', methods: ['GET'])]
+    public function getAllTodos(TodoRepository $todoRepository): JsonResponse
+    {
+        $allTodos = $todoRepository->findBy(['done' => false]);
+
+        $todoData = array_map(function(Todo $todo) {
+            return [
+                'id' => $todo->getId(),
+                'description' => $todo->getDescription(),
+            ];
+        }, $allTodos);
+
+        return $this->json($todoData);
     }
 }

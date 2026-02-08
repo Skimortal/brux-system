@@ -93,6 +93,11 @@ async function bootDashboardIfPresent() {
     if (mod && typeof mod.bootDashboard === 'function') {
         mod.bootDashboard();
     }
+
+    const modTodo = await import('./todo.js');
+    if (mod && typeof mod.bootTodo === 'function') {
+        mod.bootTodo();
+    }
 }
 
 function initContactCategoryFilter() {
