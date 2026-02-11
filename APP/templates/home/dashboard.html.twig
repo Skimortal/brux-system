@@ -467,7 +467,10 @@
             allTechnicians: {{ techniciansData|json_encode|raw }},
             allVolunteers: {{ volunteersData|json_encode|raw }},
             allProductions: {{ productionsData|json_encode|raw }},
-            allCleanings: {{ cleaningsData|json_encode|raw }}
+            allCleanings: {{ cleaningsData|json_encode|raw }},
+            technicianContacts: {{ technicianContactsData|json_encode|raw }},
+            volunteerContacts: {{ volunteerContactsData|json_encode|raw }},
+            cleaningContacts: {{ cleaningContactsData|json_encode|raw }}
         };
     </script>
 {% endblock %}

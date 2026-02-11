@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-use App\Enum\VolunteerTaskEnum;
 use App\Repository\AppointmentVolunteerRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -15,13 +14,13 @@ class AppointmentVolunteer
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Appointment::class, inversedBy: 'appointmentVolunteers')]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(inversedBy: 'appointmentVolunteers')]
+    #[ORM\JoinColumn(nullable: false)]
     private ?Appointment $appointment = null;
 
-    #[ORM\ManyToOne(targetEntity: Volunteer::class)]
+    #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Volunteer $volunteer = null;
+    private ?Contact $contact = null;
 
     #[ORM\Column]
     private bool $confirmed = false;
@@ -45,14 +44,14 @@ class AppointmentVolunteer
         return $this;
     }
 
-    public function getVolunteer(): ?Volunteer
+    public function getContact(): ?Contact
     {
-        return $this->volunteer;
+        return $this->contact;
     }
 
-    public function setVolunteer(?Volunteer $volunteer): static
+    public function setContact(?Contact $contact): static
     {
-        $this->volunteer = $volunteer;
+        $this->contact = $contact;
         return $this;
     }
 
@@ -75,30 +74,6 @@ class AppointmentVolunteer
     public function setTasks(?array $tasks): static
     {
         $this->tasks = $tasks;
-        return $this;
-    }
-
-    /**
-     * @return VolunteerTaskEnum[]
-     */
-    public function getTasksAsEnums(): array
-    {
-        if (!$this->tasks) {
-            return [];
-        }
-
-        return array_map(
-            fn($task) => VolunteerTaskEnum::from($task),
-            $this->tasks
-        );
-    }
-
-    public function setTasksFromEnums(array $enums): static
-    {
-        $this->tasks = array_map(
-            fn(VolunteerTaskEnum $enum) => $enum->value,
-            $enums
-        );
         return $this;
     }
 }

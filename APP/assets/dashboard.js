@@ -1022,295 +1022,200 @@ function toggleTitleVisibilityByType(type) {
 }
 
 function buildAssignmentsOnlyFields(headline) {
+    const technicianContacts = window.dashboardData.technicianContacts || [];
+    const volunteerContacts = window.dashboardData.volunteerContacts || [];
+
     return `
-        <div class="border-top pt-3 mt-3">
-            <h6 class="fw-bold mb-3">${headline}</h6>
+            <div class="border-top pt-3 mt-3">
+                <h6 class="fw-bold mb-3">${headline}</h6>
 
-            <div class="mb-3">
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="assignTechniciansCheckbox">
-                    <label class="form-check-label fw-bold" for="assignTechniciansCheckbox">
-                        Techniker zuweisen
-                    </label>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="assignTechniciansCheckbox">
+                        <label class="form-check-label fw-bold" for="assignTechniciansCheckbox">
+                            Techniker zuweisen
+                        </label>
+                    </div>
+                </div>
+
+                <div id="techniciansContainer" style="display: none;">
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%;">Techniker</th>
+                                <th style="width: 25%;">Bestätigt</th>
+                                <th style="width: 25%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="techniciansList"></tbody>
+                    </table>
+                    <button type="button" class="btn btn-sm btn-success" id="addTechnicianBtn">
+                        <i class="ti-plus"></i> Techniker hinzufügen
+                    </button>
+                </div>
+
+                <div class="mb-3 mt-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="assignVolunteersCheckbox">
+                        <label class="form-check-label fw-bold" for="assignVolunteersCheckbox">
+                            Volunteers zuweisen
+                        </label>
+                    </div>
+                </div>
+
+                <div id="volunteersContainer" style="display: none;">
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th style="width: 35%;">Volunteer</th>
+                                <th style="width: 20%;">Bestätigt</th>
+                                <th style="width: 35%;">Aufgaben</th>
+                                <th style="width: 10%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="volunteersList"></tbody>
+                    </table>
+                    <button type="button" class="btn btn-sm btn-success" id="addVolunteerBtn">
+                        <i class="ti-plus"></i> Volunteer hinzufügen
+                    </button>
                 </div>
             </div>
-
-            <div id="techniciansContainer" style="display: none;">
-                <table class="table table-bordered table-sm">
-                    <thead>
-                        <tr>
-                            <th style="width: 50%;">Techniker</th>
-                            <th style="width: 25%;">Bestätigt</th>
-                            <th style="width: 25%;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="techniciansList"></tbody>
-                </table>
-                <button type="button" class="btn btn-sm btn-success" id="addTechnicianBtn">
-                    <i class="ti-plus"></i> Techniker hinzufügen
-                </button>
-            </div>
-
-            <div class="mb-3 mt-3">
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="assignVolunteersCheckbox">
-                    <label class="form-check-label fw-bold" for="assignVolunteersCheckbox">
-                        Volunteers zuweisen
-                    </label>
-                </div>
-            </div>
-
-            <div id="volunteersContainer" style="display: none;">
-                <table class="table table-bordered table-sm">
-                    <thead>
-                        <tr>
-                            <th style="width: 35%;">Volunteer</th>
-                            <th style="width: 20%;">Bestätigt</th>
-                            <th style="width: 35%;">Aufgaben</th>
-                            <th style="width: 10%;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="volunteersList"></tbody>
-                </table>
-                <button type="button" class="btn btn-sm btn-success" id="addVolunteerBtn">
-                    <i class="ti-plus"></i> Volunteer hinzufügen
-                </button>
-            </div>
-        </div>
-    `;
+        `;
 }
 
 function buildProductionFields() {
     const productions = window.dashboardData.allProductions || [];
-    const technicians = window.dashboardData.allTechnicians || [];
-    const volunteers = window.dashboardData.allVolunteers || [];
+    const technicianContacts = window.dashboardData.technicianContacts || [];
+    const volunteerContacts = window.dashboardData.volunteerContacts || [];
 
     return `
-        <div class="border-top pt-3 mt-3">
-            <h6 class="fw-bold mb-3">Produktions-Details</h6>
+            <div class="border-top pt-3 mt-3">
+                <h6 class="fw-bold mb-3">Produktions-Details</h6>
 
-            <div class="mb-3">
-                <label for="productionSelect" class="form-label">Produktion</label>
-                <select class="form-select" id="productionSelect">
-                    <option value="">Bitte wählen...</option>
-                    ${productions.map(p => `<option value="${p.id}">${p.title || p.displayName}</option>`).join('')}
-                </select>
-            </div>
-
-            <div id="productionRequirementsInfo" class="mb-3" style="display:none;">
-                <div class="alert alert-info py-2 px-3 small mb-0">
-                    <strong>Produktion benötigt:</strong> <span id="reqFlagsList"></span>
+                <div class="mb-3">
+                    <label for="productionSelect" class="form-label">Produktion</label>
+                    <select class="form-select" id="productionSelect">
+                        <option value="">Bitte wählen...</option>
+                        ${productions.map(p => `<option value="${p.id}">${p.title || p.displayName}</option>`).join('')}
+                    </select>
                 </div>
-            </div>
 
-            <div class="mb-3">
-                <label class="form-label d-block">Ereignisart</label>
-                <div class="btn-group w-100" role="group">
-                    <input type="radio" class="btn-check" name="eventType" id="eventTypeRehearsal" value="rehearsal">
-                    <label class="btn btn-outline-secondary" for="eventTypeRehearsal">
-                        <i class="ti-music-alt"></i> Probe
-                    </label>
-
-                    <input type="radio" class="btn-check" name="eventType" id="eventTypeSetup" value="setup_teardown">
-                    <label class="btn btn-outline-secondary" for="eventTypeSetup">
-                        <i class="ti-package"></i> Aufbau/Abbau
-                    </label>
-
-                    <input type="radio" class="btn-check" name="eventType" id="eventTypeEvent" value="event">
-                    <label class="btn btn-outline-secondary" for="eventTypeEvent">
-                        <i class="ti-flag-alt"></i> Veranstaltung
-                    </label>
+                <div id="productionRequirementsInfo" class="mb-3" style="display:none;">
+                    <div class="alert alert-info py-2 px-3 small mb-0">
+                        <strong>Produktion benötigt:</strong> <span id="reqFlagsList"></span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="mb-3">
-                <label class="form-label">Status</label>
-                <div class="btn-group w-100" role="group">
-                    <input type="radio" class="btn-check" name="appointmentStatus" id="statusReserved" value="reserved">
-                    <label class="btn btn-outline-warning" for="statusReserved">Reserviert</label>
+                <div class="mb-3">
+                    <label class="form-label d-block">Ereignisart</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="eventType" id="eventTypeRehearsal" value="rehearsal">
+                        <label class="btn btn-outline-secondary" for="eventTypeRehearsal">
+                            <i class="ti-music-alt"></i> Probe
+                        </label>
 
-                    <input type="radio" class="btn-check" name="appointmentStatus" id="statusConfirmed" value="confirmed">
-                    <label class="btn btn-outline-success" for="statusConfirmed">Fix</label>
+                        <input type="radio" class="btn-check" name="eventType" id="eventTypeSetup" value="setup_teardown">
+                        <label class="btn btn-outline-secondary" for="eventTypeSetup">
+                            <i class="ti-package"></i> Aufbau/Abbau
+                        </label>
+
+                        <input type="radio" class="btn-check" name="eventType" id="eventTypeEvent" value="event">
+                        <label class="btn btn-outline-secondary" for="eventTypeEvent">
+                            <i class="ti-flag-alt"></i> Veranstaltung
+                        </label>
+                    </div>
                 </div>
-            </div>
 
-            <div class="mb-3 form-check">
-                <input type="checkbox" class="form-check-input" id="internalTechniciansAttending">
-                <label class="form-check-label" for="internalTechniciansAttending">
-                    Externe Techniker kommen
-                </label>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label">Status</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="appointmentStatus" id="statusReserved" value="reserved">
+                        <label class="btn btn-outline-warning" for="statusReserved">Reserviert</label>
 
-            <div class="mb-3">
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="assignTechniciansCheckbox">
-                    <label class="form-check-label fw-bold" for="assignTechniciansCheckbox">
-                        Techniker zuweisen
+                        <input type="radio" class="btn-check" name="appointmentStatus" id="statusConfirmed" value="confirmed">
+                        <label class="btn btn-outline-success" for="statusConfirmed">Fix</label>
+                    </div>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="internalTechniciansAttending">
+                    <label class="form-check-label" for="internalTechniciansAttending">
+                        Externe Techniker kommen
                     </label>
                 </div>
-            </div>
 
-            <div id="techniciansContainer" style="display: none;">
-                <table class="table table-bordered table-sm">
-                    <thead>
-                        <tr>
-                            <th style="width: 50%;">Techniker</th>
-                            <th style="width: 25%;">Bestätigt</th>
-                            <th style="width: 25%;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="techniciansList">
-                    </tbody>
-                </table>
-                <button type="button" class="btn btn-sm btn-success" id="addTechnicianBtn">
-                    <i class="ti-plus"></i> Techniker hinzufügen
-                </button>
-            </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="assignTechniciansCheckbox">
+                        <label class="form-check-label fw-bold" for="assignTechniciansCheckbox">
+                            Techniker zuweisen
+                        </label>
+                    </div>
+                </div>
 
-            <div class="mb-3 mt-3">
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="assignVolunteersCheckbox">
-                    <label class="form-check-label fw-bold" for="assignVolunteersCheckbox">
-                        Volunteers zuweisen
-                    </label>
+                <div id="techniciansContainer" style="display: none;">
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%;">Techniker</th>
+                                <th style="width: 25%;">Bestätigt</th>
+                                <th style="width: 25%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="techniciansList">
+                        </tbody>
+                    </table>
+                    <button type="button" class="btn btn-sm btn-success" id="addTechnicianBtn">
+                        <i class="ti-plus"></i> Techniker hinzufügen
+                    </button>
+                </div>
+
+                <div class="mb-3 mt-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="assignVolunteersCheckbox">
+                        <label class="form-check-label fw-bold" for="assignVolunteersCheckbox">
+                            Volunteers zuweisen
+                        </label>
+                    </div>
+                </div>
+
+                <div id="volunteersContainer" style="display: none;">
+                    <table class="table table-bordered table-sm">
+                        <thead>
+                            <tr>
+                                <th style="width: 35%;">Volunteer</th>
+                                <th style="width: 20%;">Bestätigt</th>
+                                <th style="width: 35%;">Aufgaben</th>
+                                <th style="width: 10%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="volunteersList">
+                        </tbody>
+                    </table>
+                    <button type="button" class="btn btn-sm btn-success" id="addVolunteerBtn">
+                        <i class="ti-plus"></i> Volunteer hinzufügen
+                    </button>
                 </div>
             </div>
-
-            <div id="volunteersContainer" style="display: none;">
-                <table class="table table-bordered table-sm">
-                    <thead>
-                        <tr>
-                            <th style="width: 35%;">Volunteer</th>
-                            <th style="width: 20%;">Bestätigt</th>
-                            <th style="width: 35%;">Aufgaben</th>
-                            <th style="width: 10%;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="volunteersList">
-                    </tbody>
-                </table>
-                <button type="button" class="btn btn-sm btn-success" id="addVolunteerBtn">
-                    <i class="ti-plus"></i> Volunteer hinzufügen
-                </button>
-            </div>
-        </div>
-    `;
+        `;
 }
 
-function buildClosedEventFields() {
-    const technicians = window.dashboardData.allTechnicians || [];
-    const volunteers = window.dashboardData.allVolunteers || [];
-
-    return `
-        <div class="border-top pt-3 mt-3">
-            <h6 class="fw-bold mb-3">Veranstaltungs-Details</h6>
-
-            <div class="mb-3">
-                <label class="form-label d-block">Ereignisart</label>
-                <div class="btn-group w-100" role="group">
-                    <input type="radio" class="btn-check" name="eventType" id="eventTypeRehearsal" value="rehearsal">
-                    <label class="btn btn-outline-secondary" for="eventTypeRehearsal">
-                        <i class="ti-music-alt"></i> Probe
-                    </label>
-
-                    <input type="radio" class="btn-check" name="eventType" id="eventTypeSetup" value="setup_teardown">
-                    <label class="btn btn-outline-secondary" for="eventTypeSetup">
-                        <i class="ti-package"></i> Aufbau/Abbau
-                    </label>
-
-                    <input type="radio" class="btn-check" name="eventType" id="eventTypeEvent" value="event">
-                    <label class="btn btn-outline-secondary" for="eventTypeEvent">
-                        <i class="ti-flag-alt"></i> Veranstaltung
-                    </label>
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Status</label>
-                <div class="btn-group w-100" role="group">
-                    <input type="radio" class="btn-check" name="appointmentStatus" id="statusReserved" value="reserved">
-                    <label class="btn btn-outline-warning" for="statusReserved">Reserviert</label>
-
-                    <input type="radio" class="btn-check" name="appointmentStatus" id="statusConfirmed" value="confirmed">
-                    <label class="btn btn-outline-success" for="statusConfirmed">Fix</label>
-                </div>
-            </div>
-
-            <div class="mb-3 form-check">
-                <input type="checkbox" class="form-check-input" id="internalTechniciansAttending">
-                <label class="form-check-label" for="internalTechniciansAttending">
-                    Externe Techniker kommen
-                </label>
-            </div>
-
-            <div class="mb-3">
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="assignTechniciansCheckbox">
-                    <label class="form-check-label fw-bold" for="assignTechniciansCheckbox">
-                        Techniker zuweisen
-                    </label>
-                </div>
-            </div>
-
-            <div id="techniciansContainer" style="display: none;">
-                <table class="table table-bordered table-sm">
-                    <thead>
-                        <tr>
-                            <th style="width: 50%;">Techniker</th>
-                            <th style="width: 25%;">Bestätigt</th>
-                            <th style="width: 25%;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="techniciansList">
-                    </tbody>
-                </table>
-                <button type="button" class="btn btn-sm btn-success" id="addTechnicianBtn">
-                    <i class="ti-plus"></i> Techniker hinzufügen
-                </button>
-            </div>
-
-            <div class="mb-3 mt-3">
-                <div class="form-check">
-                    <input type="checkbox" class="form-check-input" id="assignVolunteersCheckbox">
-                    <label class="form-check-label fw-bold" for="assignVolunteersCheckbox">
-                        Volunteers zuweisen
-                    </label>
-                </div>
-            </div>
-
-            <div id="volunteersContainer" style="display: none;">
-                <table class="table table-bordered table-sm">
-                    <thead>
-                        <tr>
-                            <th style="width: 35%;">Volunteer</th>
-                            <th style="width: 20%;">Bestätigt</th>
-                            <th style="width: 35%;">Aufgaben</th>
-                            <th style="width: 10%;"></th>
-                        </tr>
-                    </thead>
-                    <tbody id="volunteersList">
-                    </tbody>
-                </table>
-                <button type="button" class="btn btn-sm btn-success" id="addVolunteerBtn">
-                    <i class="ti-plus"></i> Volunteer hinzufügen
-                </button>
-            </div>
-        </div>
-    `;
-}
 
 function buildCleaningFields() {
     const cleanings = window.dashboardData.allCleanings || [];
+    const cleaningContacts = window.dashboardData.cleaningContacts || [];
+
+    // Erste Cleaning Contact als Default
+    const defaultContactId = cleaningContacts.length > 0 ? cleaningContacts[0].id : '';
 
     return `
             <div class="border-top pt-3 mt-3">
                 <h6 class="fw-bold mb-3">Reinigungs-Details</h6>
 
                 <div class="mb-3">
-                    <label for="cleaningSelect" class="form-label">Reinigung</label>
-                    <select class="form-select" id="cleaningSelect">
-                        <option value="">Bitte wählen...</option>
-                        ${cleanings.map((c, index) => `<option value="${c.id}" ${index === 0 ? 'selected' : ''}>${c.name}</option>`).join('')}
+                    <label for="cleaningContactSelect" class="form-label">Reinigung</label>
+                    <select class="form-select" id="cleaningContactSelect">
+                        ${cleaningContacts.map((c) => `<option value="${c.id}" ${c.id == defaultContactId ? 'selected' : ''}>${c.name}${c.company ? ' (' + c.company + ')' : ''}</option>`).join('')}
                     </select>
                 </div>
 
@@ -1426,57 +1331,39 @@ function initializeClosedEventFieldListeners() {
 }
 
 function addTechnicianRow(technicianData = null) {
-    const technicians = window.dashboardData.allTechnicians || [];
+    const technicianContacts = window.dashboardData.technicianContacts || [];
     const list = document.getElementById('techniciansList');
     if (!list) return;
-
-    const prodSelect = document.getElementById('productionSelect');
-    const currentProdId = prodSelect ? prodSelect.value : null;
-    const productions = window.dashboardData.allProductions || [];
-    const prod = productions.find(p => p.id == currentProdId);
 
     const row = document.createElement('tr');
     const rowId = 'tech_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     row.dataset.rowId = rowId;
 
     row.innerHTML = `
-            <td>
-                <select class="form-select form-select-sm technician-select" data-row-id="${rowId}">
-                    <option value="">Wählen...</option>
-                    ${technicians.map(t => `
-                        <option value="${t.id}" ${technicianData && technicianData.id == t.id ? 'selected' : ''}>
-                            ${t.name}
-                        </option>
-                    `).join('')}
-                </select>
-            </td>
-            <td>
-                <div class="form-check form-check-inline">
-                    <input type="checkbox" class="form-check-input technician-confirmed" data-row-id="${rowId}" ${technicianData && technicianData.confirmed ? 'checked' : ''}>
-                    <label class="form-check-label small">Bestätigt</label>
-                </div>
-                <div class="form-check form-check-inline lighting-wrap" style="display:none;">
-                    <input type="checkbox" class="form-check-input technician-lighting" data-row-id="${rowId}" ${technicianData && technicianData.lighting ? 'checked' : ''}>
-                    <label class="form-check-label small"><i class="ti-light-bulb" title="Licht"></i></label>
-                </div>
-                <div class="form-check form-check-inline sound-wrap" style="display:none;">
-                    <input type="checkbox" class="form-check-input technician-sound" data-row-id="${rowId}" ${technicianData && technicianData.sound ? 'checked' : ''}>
-                    <label class="form-check-label small"><i class="ti-announcement" title="Ton"></i></label>
-                </div>
-                <div class="form-check form-check-inline setup-wrap" style="display:none;">
-                    <input type="checkbox" class="form-check-input technician-setup" data-row-id="${rowId}" ${technicianData && technicianData.setup ? 'checked' : ''}>
-                    <label class="form-check-label small"><i class="ti-settings" title="Aufbau"></i></label>
-                </div>
-            </td>
-            <td class="text-center">
-                <button type="button" class="btn btn-sm btn-danger remove-technician-btn" data-row-id="${rowId}">
-                    <i class="ti-trash"></i>
-                </button>
-            </td>
-        `;
+                <td>
+                    <select class="form-select form-select-sm technician-select" data-row-id="${rowId}">
+                        <option value="">Wählen...</option>
+                        ${technicianContacts.map(t => `
+                            <option value="${t.id}" ${technicianData && technicianData.id == t.id ? 'selected' : ''}>
+                                ${t.name}${t.company ? ' (' + t.company + ')' : ''}
+                            </option>
+                        `).join('')}
+                    </select>
+                </td>
+                <td>
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" class="form-check-input technician-confirmed" data-row-id="${rowId}" ${technicianData && technicianData.confirmed ? 'checked' : ''}>
+                        <label class="form-check-label small">Bestätigt</label>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-danger remove-technician-btn" data-row-id="${rowId}">
+                        <i class="ti-trash"></i>
+                    </button>
+                </td>
+            `;
 
     list.appendChild(row);
-    updateTechnicianRowVisibility(row, prod);
 
     row.querySelector('.remove-technician-btn').addEventListener('click', function() {
         row.remove();
@@ -1484,7 +1371,7 @@ function addTechnicianRow(technicianData = null) {
 }
 
 function addVolunteerRow(volunteerData = null) {
-    const volunteers = window.dashboardData.allVolunteers || [];
+    const volunteerContacts = window.dashboardData.volunteerContacts || [];
     const list = document.getElementById('volunteersList');
     if (!list) return;
 
@@ -1495,41 +1382,41 @@ function addVolunteerRow(volunteerData = null) {
     const tasksHtml = Object.entries(volunteerTaskLabels).map(([value, label]) => {
         const checked = volunteerData && volunteerData.tasks && volunteerData.tasks.includes(value) ? 'checked' : '';
         return `
-            <div class="form-check form-check-inline">
-                <input class="form-check-input volunteer-task" type="checkbox"
-                       value="${value}"
-                       data-row-id="${rowId}"
-                       ${checked}>
-                <label class="form-check-label" style="font-size: 0.85rem;">${label}</label>
-            </div>
-        `;
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input volunteer-task" type="checkbox"
+                           value="${value}"
+                           data-row-id="${rowId}"
+                           ${checked}>
+                    <label class="form-check-label" style="font-size: 0.85rem;">${label}</label>
+                </div>
+            `;
     }).join('');
 
     row.innerHTML = `
-        <td>
-            <select class="form-select form-select-sm volunteer-select" data-row-id="${rowId}">
-                <option value="">Wählen...</option>
-                ${volunteers.map(v => `
-                    <option value="${v.id}" ${volunteerData && volunteerData.id == v.id ? 'selected' : ''}>
-                        ${v.name}
-                    </option>
-                `).join('')}
-            </select>
-        </td>
-        <td class="text-center">
-            <input type="checkbox" class="form-check-input volunteer-confirmed"
-                   data-row-id="${rowId}"
-                   ${volunteerData && volunteerData.confirmed ? 'checked' : ''}>
-        </td>
-        <td>
-            ${tasksHtml}
-        </td>
-        <td class="text-center">
-            <button type="button" class="btn btn-sm btn-danger remove-volunteer-btn" data-row-id="${rowId}">
-                <i class="ti-trash"></i>
-            </button>
-        </td>
-    `;
+            <td>
+                <select class="form-select form-select-sm volunteer-select" data-row-id="${rowId}">
+                    <option value="">Wählen...</option>
+                    ${volunteerContacts.map(v => `
+                        <option value="${v.id}" ${volunteerData && volunteerData.id == v.id ? 'selected' : ''}>
+                            ${v.name}${v.company ? ' (' + v.company + ')' : ''}
+                        </option>
+                    `).join('')}
+                </select>
+            </td>
+            <td class="text-center">
+                <input type="checkbox" class="form-check-input volunteer-confirmed"
+                       data-row-id="${rowId}"
+                       ${volunteerData && volunteerData.confirmed ? 'checked' : ''}>
+            </td>
+            <td>
+                ${tasksHtml}
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-danger remove-volunteer-btn" data-row-id="${rowId}">
+                    <i class="ti-trash"></i>
+                </button>
+            </td>
+        `;
 
     list.appendChild(row);
 
@@ -1729,10 +1616,14 @@ function loadTypeSpecificData(event) {
         }
 
     } else if (type === 'cleaning') {
-        if (event.extendedProps?.cleaningId) {
-            const cleanSelect = document.getElementById('cleaningSelect');
-            if (cleanSelect) cleanSelect.value = event.extendedProps.cleaningId;
+        // Cleaning Contact aus AppointmentTechnicians laden (erste Entry)
+        if (event.extendedProps?.technicians && event.extendedProps.technicians.length > 0) {
+            const cleaningContactSelect = document.getElementById('cleaningContactSelect');
+            if (cleaningContactSelect) {
+                cleaningContactSelect.value = event.extendedProps.technicians[0].id;
+            }
         }
+
         if (event.extendedProps?.cleaningOptions) {
             event.extendedProps.cleaningOptions.forEach(opt => {
                 const cb = document.querySelector(`.cleaning-option[value="${opt}"]`);
@@ -1786,7 +1677,7 @@ function saveAppointment() {
                 : '';
             title = selectedText || 'Produktion';
         } else if (type === 'cleaning') {
-            const cleanSelect = document.getElementById('cleaningSelect');
+            const cleanSelect = document.getElementById('cleaningContactSelect');
             const selectedText = cleanSelect && cleanSelect.selectedOptions && cleanSelect.selectedOptions[0]
                 ? cleanSelect.selectedOptions[0].textContent.trim()
                 : '';
@@ -1863,7 +1754,7 @@ function saveAppointment() {
         data.internalTechniciansAttending = false;
 
     } else if (type === 'cleaning') {
-        const cleanSelect = document.getElementById('cleaningSelect');
+        const cleanSelect = document.getElementById('cleaningContactSelect');
         data.cleaningId = cleanSelect ? cleanSelect.value : null;
         data.cleaningOptions = Array.from(document.querySelectorAll('.cleaning-option:checked')).map(cb => cb.value);
     }

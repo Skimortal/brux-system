@@ -65,6 +65,10 @@ class Appointment
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $cleaningOptions = [];
 
+    #[ORM\ManyToOne(targetEntity: Contact::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Contact $cleaningContact = null;
+
     #[ORM\OneToMany(targetEntity: AppointmentTechnician::class, mappedBy: 'appointment', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $appointmentTechnicians;
 
@@ -350,4 +354,16 @@ class Appointment
     {
         return $this->recurrenceFrequency !== null;
     }
+
+    public function getCleaningContact(): ?Contact
+    {
+        return $this->cleaningContact;
+    }
+
+    public function setCleaningContact(?Contact $cleaningContact): static
+    {
+        $this->cleaningContact = $cleaningContact;
+        return $this;
+    }
+
 }

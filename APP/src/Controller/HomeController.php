@@ -17,6 +17,8 @@ use App\Enum\EventTypeEnum;
 use App\Enum\KeyStatus;
 use App\Repository\AppointmentRepository;
 use App\Repository\CleaningRepository;
+use App\Repository\ContactCategoryRepository;
+use App\Repository\ContactRepository;
 use App\Repository\KeyManagementRepository;
 use App\Repository\ProductionContactPersonRepository;
 use App\Repository\ProductionEventRepository;
@@ -57,7 +59,9 @@ class HomeController extends AbstractController
         \App\Repository\TechnicianRepository $techRepo,
         \App\Repository\ProductionRepository $prodRepo,
         \App\Repository\CleaningRepository $cleanRepo,
-        VolunteerRepository $volunteerRepo
+        VolunteerRepository $volunteerRepo,
+        ContactRepository $contactRepo,
+        ContactCategoryRepository $contactCategoryRepo
     ): Response
     {
         $rooms = $roomRepository->findBy(['showOnDashboard' => true]);
@@ -120,6 +124,46 @@ class HomeController extends AbstractController
             ];
         }, $cleanRepo->findAll());
 
+        // Kontakte nach Kategorien laden
+        $techniciansCategory = $contactCategoryRepo->find(1); // Techniker
+        $volunteersCategory = $contactCategoryRepo->find(3);  // Freiwillige
+        $cleaningCategory = $contactCategoryRepo->find(2);    // Reinigung
+
+        $technicianContacts = $techniciansCategory ? $techniciansCategory->getContacts()->toArray() : [];
+        $volunteerContacts = $volunteersCategory ? $volunteersCategory->getContacts()->toArray() : [];
+        $cleaningContacts = $cleaningCategory ? $cleaningCategory->getContacts()->toArray() : [];
+
+        // Für JavaScript aufbereiten
+        $technicianContactsData = array_map(function($contact) {
+            return [
+                'id' => $contact->getId(),
+                'name' => $contact->getName(),
+                'email' => $contact->getEmail(),
+                'phone' => $contact->getPhone(),
+                'company' => $contact->getCompany()
+            ];
+        }, $technicianContacts);
+
+        $volunteerContactsData = array_map(function($contact) {
+            return [
+                'id' => $contact->getId(),
+                'name' => $contact->getName(),
+                'email' => $contact->getEmail(),
+                'phone' => $contact->getPhone(),
+                'company' => $contact->getCompany()
+            ];
+        }, $volunteerContacts);
+
+        $cleaningContactsData = array_map(function($contact) {
+            return [
+                'id' => $contact->getId(),
+                'name' => $contact->getName(),
+                'email' => $contact->getEmail(),
+                'phone' => $contact->getPhone(),
+                'company' => $contact->getCompany()
+            ];
+        }, $cleaningContacts);
+
         return $this->render('home/dashboard.html.twig', [
             'user' => $this->getUser(),
             'rooms' => $rooms,
@@ -137,6 +181,9 @@ class HomeController extends AbstractController
             'volunteersData' => $volunteersData,
             'productionsData' => $productionsData,
             'cleaningsData' => $cleaningsData,
+            'technicianContactsData' => $technicianContactsData,
+            'volunteerContactsData' => $volunteerContactsData,
+            'cleaningContactsData' => $cleaningContactsData,
         ]);
     }
 
@@ -211,8 +258,8 @@ class HomeController extends AbstractController
 
             $eventData['extendedProps']['technicians'] = array_map(function($appTech) {
                 return [
-                    'id' => $appTech->getTechnician()->getId(),
-                    'name' => $appTech->getTechnician()->getName(),
+                    'id' => $appTech->getContact()->getId(),
+                    'name' => $appTech->getContact()->getName(),
                     'confirmed' => $appTech->isConfirmed(),
                     'lighting' => $appTech->isLighting(),
                     'sound' => $appTech->isSound(),
@@ -222,8 +269,8 @@ class HomeController extends AbstractController
 
             $eventData['extendedProps']['volunteers'] = array_map(function($appVol) {
                 return [
-                    'id' => $appVol->getVolunteer()->getId(),
-                    'name' => $appVol->getVolunteer()->getName(),
+                    'id' => $appVol->getContact()->getId(),
+                    'name' => $appVol->getContact()->getName(),
                     'confirmed' => $appVol->isConfirmed(),
                     'tasks' => $appVol->getTasks()
                 ];
@@ -231,6 +278,7 @@ class HomeController extends AbstractController
 
             $eventData['extendedProps']['roomId'] = $appRoom ? $appRoom->getId() : null;
             $eventData['extendedProps']['cleaningId'] = $app->getCleaning() ? $app->getCleaning()->getId() : null;
+            $eventData['extendedProps']['cleaningContactId'] = $app->getCleaningContact() ? $app->getCleaningContact()->getId() : null;
             $eventData['extendedProps']['productionId'] = $app->getProduction() ? $app->getProduction()->getId() : null;
             $eventData['extendedProps']['type'] = $typeFilter;
             $eventData['extendedProps']['originalTitle'] = $app->getTitle();
@@ -734,8 +782,7 @@ class HomeController extends AbstractController
         RoomRepository $roomRepository,
         CleaningRepository $cleanRepo,
         ProductionRepository $productionRepo,
-        TechnicianRepository $technicianRepo,
-        VolunteerRepository $volunteerRepo,
+        ContactRepository $contactRepo,
         CalendarColorService $colorService
     ): JsonResponse
     {
@@ -810,13 +857,13 @@ class HomeController extends AbstractController
         $color = $this->getAppointmentColor($appointment, $colorService);
         $appointment->setColor($color);
 
-        // Techniker hinzufügen
+        // Techniker (aus Contacts) hinzufügen
         if (!empty($data['technicians']) && is_array($data['technicians'])) {
             foreach ($data['technicians'] as $techData) {
-                $tech = $technicianRepo->find($techData['id']);
-                if ($tech) {
+                $contact = $contactRepo->find($techData['id']);
+                if ($contact) {
                     $appTech = new AppointmentTechnician();
-                    $appTech->setTechnician($tech);
+                    $appTech->setContact($contact);
                     $appTech->setConfirmed($techData['confirmed'] ?? false);
                     $appTech->setLighting($techData['lighting'] ?? false);
                     $appTech->setSound($techData['sound'] ?? false);
@@ -826,17 +873,25 @@ class HomeController extends AbstractController
             }
         }
 
-        // Volunteers hinzufügen
+        // Volunteers (aus Contacts) hinzufügen
         if (!empty($data['volunteers']) && is_array($data['volunteers'])) {
             foreach ($data['volunteers'] as $volData) {
-                $vol = $volunteerRepo->find($volData['id']);
-                if ($vol) {
+                $contact = $contactRepo->find($volData['id']);
+                if ($contact) {
                     $appVol = new AppointmentVolunteer();
-                    $appVol->setVolunteer($vol);
+                    $appVol->setContact($contact);
                     $appVol->setConfirmed($volData['confirmed'] ?? false);
                     $appVol->setTasks($volData['tasks'] ?? []);
                     $appointment->addAppointmentVolunteer($appVol);
                 }
+            }
+        }
+
+        // Cleaning Contact speichern (als AppointmentTechnician)
+        if (!empty($data['cleaningContactId'])) {
+            $cleaningContact = $contactRepo->find($data['cleaningContactId']);
+            if ($cleaningContact) {
+                $appointment->setCleaningContact($cleaningContact);
             }
         }
 
@@ -854,8 +909,7 @@ class HomeController extends AbstractController
                     $roomRepository,
                     $cleanRepo,
                     $productionRepo,
-                    $technicianRepo,
-                    $volunteerRepo,
+                    $contactRepo,
                     $colorService
                 );
             } catch (\Exception $e) {
@@ -879,8 +933,7 @@ class HomeController extends AbstractController
         RoomRepository $roomRepository,
         CleaningRepository $cleanRepo,
         ProductionRepository $productionRepo,
-        TechnicianRepository $technicianRepo,
-        VolunteerRepository $volunteerRepo,
+        ContactRepository $contactRepo,
         CalendarColorService $colorService
     ): void
     {
@@ -931,7 +984,7 @@ class HomeController extends AbstractController
             // Techniker kopieren
             foreach ($baseAppointment->getAppointmentTechnicians() as $appTech) {
                 $newAppTech = new AppointmentTechnician();
-                $newAppTech->setTechnician($appTech->getTechnician());
+                $newAppTech->setContact($appTech->getContact());
                 $newAppTech->setConfirmed($appTech->isConfirmed());
                 $newAppTech->setLighting($appTech->isLighting());
                 $newAppTech->setSound($appTech->isSound());
@@ -942,7 +995,7 @@ class HomeController extends AbstractController
             // Volunteers kopieren
             foreach ($baseAppointment->getAppointmentVolunteers() as $appVol) {
                 $newAppVol = new AppointmentVolunteer();
-                $newAppVol->setVolunteer($appVol->getVolunteer());
+                $newAppVol->setContact($appVol->getContact());
                 $newAppVol->setConfirmed($appVol->isConfirmed());
                 $newAppVol->setTasks($appVol->getTasks());
                 $newAppointment->addAppointmentVolunteer($newAppVol);
@@ -960,8 +1013,7 @@ class HomeController extends AbstractController
         RoomRepository $roomRepository,
         CleaningRepository $cleanRepo,
         ProductionRepository $productionRepo,
-        TechnicianRepository $technicianRepo,
-        VolunteerRepository $volunteerRepo,
+        ContactRepository $contactRepo,
         CalendarColorService $colorService
     ): JsonResponse
     {
@@ -1064,7 +1116,7 @@ class HomeController extends AbstractController
             $appointment->setAllDay($newAllDay);
         }
 
-        // Techniker aktualisieren
+        // Techniker aktualisieren (aus Contacts)
         if (isset($data['technicians']) && is_array($data['technicians'])) {
             // Alle vorhandenen entfernen
             foreach ($appointment->getAppointmentTechnicians() as $appTech) {
@@ -1073,10 +1125,10 @@ class HomeController extends AbstractController
 
             // Neue hinzufügen
             foreach ($data['technicians'] as $techData) {
-                $tech = $technicianRepo->find($techData['id']);
-                if ($tech) {
+                $contact = $contactRepo->find($techData['id']);
+                if ($contact) {
                     $appTech = new AppointmentTechnician();
-                    $appTech->setTechnician($tech);
+                    $appTech->setContact($contact);
                     $appTech->setConfirmed($techData['confirmed'] ?? false);
                     $appTech->setLighting($techData['lighting'] ?? false);
                     $appTech->setSound($techData['sound'] ?? false);
@@ -1086,7 +1138,7 @@ class HomeController extends AbstractController
             }
         }
 
-        // Volunteers aktualisieren
+        // Volunteers aktualisieren (aus Contacts)
         if (isset($data['volunteers']) && is_array($data['volunteers'])) {
             // Alle vorhandenen entfernen
             foreach ($appointment->getAppointmentVolunteers() as $appVol) {
@@ -1095,15 +1147,19 @@ class HomeController extends AbstractController
 
             // Neue hinzufügen
             foreach ($data['volunteers'] as $volData) {
-                $vol = $volunteerRepo->find($volData['id']);
-                if ($vol) {
+                $contact = $contactRepo->find($volData['id']);
+                if ($contact) {
                     $appVol = new AppointmentVolunteer();
-                    $appVol->setVolunteer($vol);
+                    $appVol->setContact($contact);
                     $appVol->setConfirmed($volData['confirmed'] ?? false);
                     $appVol->setTasks($volData['tasks'] ?? []);
                     $appointment->addAppointmentVolunteer($appVol);
                 }
             }
+        }
+
+        if (array_key_exists('cleaningContactId', $data)) {
+            $appointment->setCleaningContact(!empty($data['cleaningContactId']) ? $contactRepo->find($data['cleaningContactId']) : null);
         }
 
         // Farbe neu setzen

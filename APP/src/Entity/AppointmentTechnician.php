@@ -13,23 +13,26 @@ class AppointmentTechnician
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Appointment::class, inversedBy: 'appointmentTechnicians')]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private ?Appointment $appointment = null;
-    #[ORM\ManyToOne(targetEntity: Technician::class)]
+    #[ORM\ManyToOne(inversedBy: 'appointmentTechnicians')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Technician $technician = null;
+    private ?Appointment $appointment = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Contact $contact = null;
+
     #[ORM\Column]
     private bool $confirmed = false;
 
-    #[ORM\Column(options: ['default' => false])]
+    #[ORM\Column]
     private bool $lighting = false;
 
-    #[ORM\Column(options: ['default' => false])]
+    #[ORM\Column]
     private bool $sound = false;
 
-    #[ORM\Column(options: ['default' => false])]
+    #[ORM\Column]
     private bool $setup = false;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -46,14 +49,14 @@ class AppointmentTechnician
         return $this;
     }
 
-    public function getTechnician(): ?Technician
+    public function getContact(): ?Contact
     {
-        return $this->technician;
+        return $this->contact;
     }
 
-    public function setTechnician(?Technician $technician): static
+    public function setContact(?Contact $contact): static
     {
-        $this->technician = $technician;
+        $this->contact = $contact;
         return $this;
     }
 
@@ -76,7 +79,6 @@ class AppointmentTechnician
     public function setLighting(bool $lighting): static
     {
         $this->lighting = $lighting;
-
         return $this;
     }
 
@@ -88,7 +90,6 @@ class AppointmentTechnician
     public function setSound(bool $sound): static
     {
         $this->sound = $sound;
-
         return $this;
     }
 
@@ -100,7 +101,6 @@ class AppointmentTechnician
     public function setSetup(bool $setup): static
     {
         $this->setup = $setup;
-
         return $this;
     }
 }

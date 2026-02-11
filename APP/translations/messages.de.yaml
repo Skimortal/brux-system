@@ -293,7 +293,7 @@ contact_category.updated_successfully: 'Kontaktkategorie erfolgreich aktualisier
 contact_category.deleted_successfully: 'Kontaktkategorie erfolgreich gelöscht'
 
 # Contact
-contact.main_menu: 'Kontakt'
+contact.main_menu: 'Kontakte'
 contact.list: 'Kontaktliste'
 contact.detail_title: 'Kontakt Details'
 contact.edit_title: 'Kontakt bearbeiten'
