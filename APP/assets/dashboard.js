@@ -204,6 +204,7 @@ function renderKeyList() {
                 li.dataset.techId = key.technician ? key.technician.id : '';
                 li.dataset.prodId = key.production ? key.production.id : '';
                 li.dataset.cleanId = key.cleaning ? key.cleaning.id : '';
+                li.dataset.contactId = key.contact ? key.contact.id : '';
                 li.dataset.description = key.description || '';
 
                 li.innerHTML = `
@@ -1958,7 +1959,7 @@ function initKeyManagement() {
             if (this.value) {
                 const targetId = this.value + 'SelectDiv';
                 const target = document.getElementById(targetId);
-                if(target) target.style.display = 'block';
+                if (target) target.style.display = 'block';
             }
         });
     }
@@ -2017,6 +2018,7 @@ function openKeyModal(keyId) {
     const tId = btn.dataset.techId;
     const pId = btn.dataset.prodId;
     const cId = btn.dataset.cleanId;
+    const contactId = btn.dataset.contactId;
 
     const typeSelect = document.getElementById('borrowerType');
     if(typeSelect) {
@@ -2024,12 +2026,16 @@ function openKeyModal(keyId) {
         const tEl = document.getElementById('technicianId'); if(tEl) tEl.value = '';
         const pEl = document.getElementById('productionId'); if(pEl) pEl.value = '';
         const cEl = document.getElementById('cleaningId'); if(cEl) cEl.value = '';
+        const contactEl = document.getElementById('contactId'); if(contactEl) contactEl.value = '';
 
+        typeSelect.value = '';
         if (uId && uEl) { typeSelect.value = 'user'; uEl.value = uId; }
-        else if (tId && tEl) { typeSelect.value = 'technician'; tEl.value = tId; }
-        else if (pId && pEl) { typeSelect.value = 'production'; pEl.value = pId; }
-        else if (cId && cEl) { typeSelect.value = 'cleaning'; cEl.value = cId; }
-        else { typeSelect.value = ''; }
+        if (tId && tEl) { typeSelect.value = 'technician'; tEl.value = tId; }
+        if (pId && pEl) { typeSelect.value = 'production'; pEl.value = pId; }
+        if (cId && cEl) { typeSelect.value = 'cleaning'; cEl.value = cId; }
+        if (contactId && contactEl) {
+            typeSelect.value = 'contact'; contactEl.value = contactId;
+        }
 
         typeSelect.dispatchEvent(new Event('change'));
     }
@@ -2074,9 +2080,11 @@ function saveKeyData() {
     const data = {
         status: status,
         userId: getVal('userId'),
+        borrowerType: getVal('borrowerType'),
         technicianId: getVal('technicianId'),
         productionId: getVal('productionId'),
         cleaningId: getVal('cleaningId'),
+        contactId: getVal('contactId'),
         borrowDate: borrowDate,
         returnDate: returnDate
     };

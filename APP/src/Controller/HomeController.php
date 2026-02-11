@@ -176,6 +176,7 @@ class HomeController extends AbstractController
             'allProductions' => $prodRepo->findAll(),
             'allCleanings' => $cleanRepo->findAll(),
             'allVolunteers' => $volunteerRepo->findAll(),
+            'allContacts' => $contactRepo->findAll(),
             // JSON-Data für JavaScript
             'techniciansData' => $techniciansData,
             'volunteersData' => $volunteersData,
@@ -673,7 +674,8 @@ class HomeController extends AbstractController
         \App\Repository\UserRepository $userRepo,
         \App\Repository\TechnicianRepository $techRepo,
         \App\Repository\ProductionRepository $prodRepo,
-        \App\Repository\CleaningRepository $cleanRepo
+        \App\Repository\CleaningRepository $cleanRepo,
+        ContactRepository $contactRepo
     ): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -686,11 +688,13 @@ class HomeController extends AbstractController
         $key->setTechnician(null);
         $key->setProduction(null);
         $key->setCleaning(null);
+        $key->setContact(null);
 
         if (!empty($data['userId'])) $key->setUser($userRepo->find($data['userId']));
         if (!empty($data['technicianId'])) $key->setTechnician($techRepo->find($data['technicianId']));
         if (!empty($data['productionId'])) $key->setProduction($prodRepo->find($data['productionId']));
         if (!empty($data['cleaningId'])) $key->setCleaning($cleanRepo->find($data['cleaningId']));
+        if (!empty($data['contactId'])) $key->setContact($contactRepo->find($data['contactId']));
 
         if (isset($data['borrowDate'])) {
             $key->setBorrowDate(!empty($data['borrowDate']) ? new \DateTime($data['borrowDate']) : null);
@@ -1273,6 +1277,7 @@ class HomeController extends AbstractController
                 'technician' => $key->getTechnician() ? ['id' => $key->getTechnician()->getId()] : null,
                 'production' => $key->getProduction() ? ['id' => $key->getProduction()->getId()] : null,
                 'cleaning' => $key->getCleaning() ? ['id' => $key->getCleaning()->getId()] : null,
+                'contact' => $key->getContact() ? ['id' => $key->getContact()->getId()] : null,
                 'description' => $key->getDescription(),
             ];
         }, $allKeys);

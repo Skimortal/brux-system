@@ -37,6 +37,8 @@ class KeyManagement extends Base
     #[ORM\ManyToOne(targetEntity: Production::class)]
     private ?Production $production = null;
 
+    #[ORM\ManyToOne(targetEntity: Contact::class)]
+    private ?Contact $contact = null;
     #[ORM\ManyToOne(targetEntity: Cleaning::class)]
     private ?Cleaning $cleaning = null;
 
@@ -200,6 +202,7 @@ class KeyManagement extends Base
 
     public function getCurrentHolderName(): string
     {
+        if ($this->contact) return $this->contact->getName();
         if ($this->user) return $this->user->getEmail();
         if ($this->technician) return $this->technician->getName();
         if ($this->production) return $this->production->getDisplayName();
@@ -216,4 +219,15 @@ class KeyManagement extends Base
     {
         $this->description = $description;
     }
+
+    public function getContact(): ?Contact
+    {
+        return $this->contact;
+    }
+
+    public function setContact(?Contact $contact): void
+    {
+        $this->contact = $contact;
+    }
+
 }

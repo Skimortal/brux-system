@@ -213,9 +213,10 @@
                                     <select class="form-select" id="borrowerType">
                                         <option value="">Bitte wählen...</option>
                                         <option value="user">Benutzer</option>
-                                        <option value="technician">Techniker</option>
-                                        <option value="production">Produktion</option>
-                                        <option value="cleaning">Reinigung</option>
+                                        <option value="contact">Kontakt</option>
+{#                                        <option value="technician">Techniker</option>#}
+{#                                        <option value="production">Produktion</option>#}
+{#                                        <option value="cleaning">Reinigung</option>#}
                                     </select>
                                 </div>
 
@@ -249,12 +250,12 @@
                                     </select>
                                 </div>
 
-                                <div class="mb-3 borrower-select" id="cleaningSelectDiv" style="display:none;">
-                                    <label class="form-label">Reinigung</label>
-                                    <select class="form-select" id="cleaningId">
+                                <div class="mb-3 borrower-select" id="contactSelectDiv" style="display:none;">
+                                    <label class="form-label">Kontakt</label>
+                                    <select class="form-select" id="contactId">
                                         <option value="">Wählen...</option>
-                                        {% for c in allCleanings %}
-                                            <option value="{{ c.id }}">{{ c.name }}</option>
+                                        {% for c in allContacts %}
+                                            <option value="{{ c.id }}">{{ c.name }}{% if c.company %} ({{ c.company }}){% endif %}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
