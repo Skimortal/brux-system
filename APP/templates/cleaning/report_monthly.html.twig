@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
+        h1 { font-size: 18px; margin-bottom: 10px; }
+        h2 { font-size: 14px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+        th { background: #f4f4f4; }
+    </style>
+</head>
+<body>
+<h1>🧹 Reinigungsbericht – {{ month|date('F Y') }}</h1>
+<p><strong>Reinigung:</strong> {{ contact.name }}</p>
+
+<h2>Abgesagte Reinigungstermine</h2>
+<table>
+    <thead>
+    <tr><th>Datum</th><th>Uhrzeit</th></tr>
+    </thead>
+    <tbody>
+    {% if canceled is empty %}
+        <tr><td colspan="2">Keine abgesagten Termine</td></tr>
+    {% else %}
+        {% for ex in canceled %}
+            <tr>
+                <td>{{ ex.date|date('d.m.Y') }}</td>
+                <td>
+                    {% if ex.timeFrom and ex.timeTo %}
+                        {{ ex.timeFrom|date('H:i') }}–{{ ex.timeTo|date('H:i') }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    {% endif %}
+    </tbody>
+</table>
+
+<h2>Zusätzliche Reinigungstermine</h2>
+<table>
+    <thead>
+    <tr><th>Datum</th><th>Uhrzeit</th></tr>
+    </thead>
+    <tbody>
+    {% if extra is empty %}
+        <tr><td colspan="2">Keine zusätzlichen Termine</td></tr>
+    {% else %}
+        {% for ex in extra %}
+            <tr>
+                <td>{{ ex.date|date('d.m.Y') }}</td>
+                <td>
+                    {% if ex.timeFrom and ex.timeTo %}
+                        {{ ex.timeFrom|date('H:i') }}–{{ ex.timeTo|date('H:i') }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    {% endif %}
+    </tbody>
+</table>
+</body>
+</html>

@@ -6,6 +6,7 @@ use App\DTO\CalendarEventDto;
 use App\Entity\Appointment;
 use App\Entity\AppointmentTechnician;
 use App\Entity\AppointmentVolunteer;
+use App\Entity\CleaningException;
 use App\Entity\KeyManagement;
 use App\Entity\ProductionContactPerson;
 use App\Entity\ProductionEvent;
@@ -16,7 +17,9 @@ use App\Enum\AppointmentTypeEnum;
 use App\Enum\EventTypeEnum;
 use App\Enum\KeyStatus;
 use App\Repository\AppointmentRepository;
+use App\Repository\CleaningExceptionRepository;
 use App\Repository\CleaningRepository;
+use App\Repository\CleaningScheduleRepository;
 use App\Repository\ContactCategoryRepository;
 use App\Repository\ContactRepository;
 use App\Repository\KeyManagementRepository;
@@ -195,7 +198,9 @@ class HomeController extends AbstractController
         ProductionEventRepository $productionEventRepo,
         KeyManagementRepository $keyManagementRepo,
         CalendarColorService $colorService,
-        TranslatorInterface $translator
+        TranslatorInterface $translator,
+        CleaningScheduleRepository $cleaningScheduleRepo,
+        CleaningExceptionRepository $cleaningExceptionRepo
     ): JsonResponse
     {
         $startStr = $request->query->get('start');
@@ -455,7 +460,143 @@ class HomeController extends AbstractController
             }
         }
 
+        // 4. Fixe Reinigungstermine (Regel + Ausnahmen)
+        if (in_array('cleaning', $filters)) {
+            $events = array_merge(
+                $events,
+                $this->buildCleaningRuleEvents($start, $end, $cleaningScheduleRepo, $cleaningExceptionRepo, $roomId)
+            );
+        }
+
         return $this->json($events);
+    }
+
+    private function buildCleaningRuleEvents(
+        \DateTimeInterface $start,
+        \DateTimeInterface $end,
+        CleaningScheduleRepository $scheduleRepo,
+        CleaningExceptionRepository $exceptionRepo,
+        ?string $roomId
+    ): array {
+        $events = [];
+
+        $schedules = $scheduleRepo->findAll();
+        if (!$schedules) {
+            return $events;
+        }
+
+        $exceptions = $exceptionRepo->createQueryBuilder('e')
+            ->where('e.date BETWEEN :start AND :end')
+            ->setParameter('start', $start->format('Y-m-d'))
+            ->setParameter('end', $end->format('Y-m-d'))
+            ->getQuery()
+            ->getResult();
+
+        $exceptionsByKey = [];
+        /** @var CleaningException $ex */
+        foreach ($exceptions as $ex) {
+            $id = 0;
+            if($ex->getAppointment()) {
+                $id = $ex->getAppointment()->getId();
+            }
+            if($ex->getCleaningContact()) {
+                $id = $ex->getCleaningContact()->getId();
+            }
+            $key = $id  . '_' . $ex->getDate()->format('Y-m-d') . '_' . $ex->getType();
+            $exceptionsByKey[$key][] = $ex;
+        }
+
+        foreach ($schedules as $schedule) {
+            $cleaning = $schedule->getCleaningContact();
+            if (!$cleaning) {
+                continue;
+            }
+
+            $activeFrom = $schedule->getActiveFrom();
+            $activeTo = $schedule->getActiveTo();
+
+            $cursor = new \DateTime($start->format('Y-m-d'));
+            $endDay = new \DateTime($end->format('Y-m-d'));
+
+            while ($cursor <= $endDay) {
+                $weekday = (int)$cursor->format('N'); // 1=Mo ... 7=So
+                if (!in_array($weekday, $schedule->getWeekdays(), true)) {
+                    $cursor->modify('+1 day');
+                    continue;
+                }
+
+                if ($activeFrom && $cursor < $activeFrom) {
+                    $cursor->modify('+1 day');
+                    continue;
+                }
+                if ($activeTo && $cursor > $activeTo) {
+                    $cursor->modify('+1 day');
+                    continue;
+                }
+
+                $dateKey = $cleaning->getId() . '_' . $cursor->format('Y-m-d') . '_cancel';
+                $isCanceled = isset($exceptionsByKey[$dateKey]);
+
+                $startDate = new \DateTime($cursor->format('Y-m-d') . ' ' . $schedule->getTimeFrom()->format('H:i:s'));
+                $endDate = new \DateTime($cursor->format('Y-m-d') . ' ' . $schedule->getTimeTo()->format('H:i:s'));
+
+                $events[] = [
+                    'id' => 'cleaning_rule_' . $cleaning->getId() . '_' . $cursor->format('Ymd'),
+                    'title' => '🧹 Reinigung',
+                    'start' => $startDate->format('c'),
+                    'end' => $endDate->format('c'),
+                    'allDay' => false,
+                    'color' => '#4CAF50',
+                    'backgroundColor' => '#4CAF50',
+                    'borderColor' => '#4CAF50',
+                    'extendedProps' => [
+                        'type' => 'cleaning_rule',
+                        'cleaningId' => $cleaning->getId(),
+                        'date' => $cursor->format('Y-m-d'),
+                        'isCanceled' => $isCanceled,
+                        'roomId' => $roomId ? (int)$roomId : null
+                    ]
+                ];
+
+                $cursor->modify('+1 day');
+            }
+
+            // Extra-Reinigungen für Zeitraum hinzufügen
+            $extraKeyPrefix = $cleaning->getId() . '_';
+            foreach ($exceptionsByKey as $key => $items) {
+                if (!str_starts_with($key, $extraKeyPrefix)) {
+                    continue;
+                }
+                foreach ($items as $ex) {
+                    if ($ex->getType() !== \App\Entity\CleaningException::TYPE_EXTRA) {
+                        continue;
+                    }
+
+                    $date = $ex->getDate()->format('Y-m-d');
+                    $startTime = $ex->getTimeFrom() ? $ex->getTimeFrom()->format('H:i:s') : $schedule->getTimeFrom()->format('H:i:s');
+                    $endTime = $ex->getTimeTo() ? $ex->getTimeTo()->format('H:i:s') : $schedule->getTimeTo()->format('H:i:s');
+
+                    $events[] = [
+                        'id' => 'cleaning_extra_' . $cleaning->getId() . '_' . $ex->getId(),
+                        'title' => '🧹 Extra-Reinigung',
+                        'start' => (new \DateTime($date . ' ' . $startTime))->format('c'),
+                        'end' => (new \DateTime($date . ' ' . $endTime))->format('c'),
+                        'allDay' => false,
+                        'color' => '#4CAF50',
+                        'backgroundColor' => '#4CAF50',
+                        'borderColor' => '#4CAF50',
+                        'extendedProps' => [
+                            'type' => 'cleaning_extra',
+                            'cleaningId' => $cleaning->getId(),
+                            'date' => $date,
+                            'isCanceled' => false
+                        ]
+                    ];
+                }
+            }
+        }
+
+        return $events;
     }
 
     private function mapAppointmentTypeToFilter(AppointmentTypeEnum $type): string
@@ -1074,10 +1215,18 @@ class HomeController extends AbstractController
         if (array_key_exists('roomId', $data)) {
             $appointment->setRoom(!empty($data['roomId']) ? $roomRepository->find($data['roomId']) : null);
         }
+        if (array_key_exists('cleaningOptions', $data)) {
+            if (in_array('white', $data['cleaningOptions'])) {
+                $appointment->setRoom($roomRepository->find(2));
+            }
+            if (in_array('black', $data['cleaningOptions'])) {
+                $appointment->setRoom($roomRepository->find(1));
+            }
+        }
 
         // Relationen
         if (array_key_exists('cleaningId', $data)) {
-            $appointment->setCleaning(!empty($data['cleaningId']) ? $cleanRepo->find($data['cleaningId']) : null);
+            $appointment->setCleaningContact(!empty($data['cleaningId']) ? $contactRepo->find($data['cleaningId']) : null);
         }
         if (array_key_exists('cleaningOptions', $data)) {
             $appointment->setCleaningOptions($data['cleaningOptions'] ?? []);
@@ -1162,17 +1311,16 @@ class HomeController extends AbstractController
             }
         }
 
-        if (array_key_exists('cleaningContactId', $data)) {
-            $appointment->setCleaningContact(!empty($data['cleaningContactId']) ? $contactRepo->find($data['cleaningContactId']) : null);
-        }
-
         // Farbe neu setzen
         $color = $this->getAppointmentColor($appointment, $colorService);
         $appointment->setColor($color);
 
         $em->flush();
 
-        return $this->json(['success' => true]);
+        return $this->json([
+            'success' => true,
+            'id' => $appointment->getId()
+        ]);
     }
 
     #[Route('/appointment/{id}/delete', name: 'app_appointment_delete', methods: ['DELETE'])]

@@ -116,6 +116,25 @@ function initCalendar() {
         newSyncBtn.addEventListener('click', triggerApiSync);
     }
 
+    const reportBtn = document.getElementById('cleaningReportBtn');
+    const reportMonth = document.getElementById('cleaningReportMonth');
+    const reportCleaning = document.getElementById('cleaningReportCleaning');
+
+    if (reportBtn && reportMonth && reportCleaning) {
+        const newReportBtn = reportBtn.cloneNode(true);
+        reportBtn.parentNode.replaceChild(newReportBtn, reportBtn);
+
+        newReportBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!reportMonth.value || !reportCleaning.value) {
+                alert('Bitte Monat und Reinigung wählen.');
+                return;
+            }
+            const url = `/cleaning/report/monthly?cleaningId=${reportCleaning.value}&month=${reportMonth.value}`;
+            window.open(url, '_blank');
+        });
+    }
+
     const isMobile = window.innerWidth <= 767;
 
     initGlobalCalendar(isMobile);
@@ -374,15 +393,20 @@ function initGlobalCalendar(isMobile) {
             const now = new Date();
             const eventEnd = info.event.end || info.event.start;
             const isKey = info.event.extendedProps.type === 'key';
+
+            if (info.event.extendedProps.isCanceled) {
+                info.el.style.textDecoration = 'line-through';
+                info.el.style.opacity = '0.5';
+                return;
+            }
+
             if (isKey) {
-                // Schlüssel-Logik: Rot unterlegen wenn überfällig, niemals durchstreichen
                 if (info.event.extendedProps.isOverdue) {
-                    info.el.style.backgroundColor = '#dc3545'; // Rot
+                    info.el.style.backgroundColor = '#dc3545';
                     info.el.style.borderColor = '#bd2130';
                     info.el.style.opacity = '0.5';
                 }
             } else if (eventEnd < now) {
-                // Standard-Logik für andere Events: Durchstreichen wenn vergangen
                 info.el.style.textDecoration = 'line-through';
                 info.el.style.opacity = '0.5';
             }
@@ -480,6 +504,13 @@ function createRoomCalendar(calendarEl, isMobile) {
             const now = new Date();
             const eventEnd = info.event.end || info.event.start;
             const isKey = info.event.extendedProps.type === 'key';
+
+            if (info.event.extendedProps.isCanceled) {
+                info.el.style.textDecoration = 'line-through';
+                info.el.style.opacity = '0.5';
+                return;
+            }
+
             if (isKey) {
                 if (info.event.extendedProps.isOverdue) {
                     info.el.style.backgroundColor = '#dc3545';
@@ -564,6 +595,32 @@ function handleEventClick(info) {
         if (keyId) {
             openKeyModal(keyId);
         }
+    } else if (type === 'cleaning_rule') {
+        const cleaningId = info.event.extendedProps.cleaningId;
+        const date = info.event.extendedProps.date;
+
+        if (!cleaningId || !date) return;
+
+        const isCanceled = info.event.extendedProps.isCanceled;
+        const actionLabel = isCanceled ? 'Absage entfernen' : 'Reinigung absagen';
+
+        if (!confirm(`${actionLabel} für ${date}?`)) return;
+
+        fetch('/cleaning/exception/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cleaningId, date })
+        })
+            .then(r => r.json())
+            .then(result => {
+                if (result && result.success) {
+                    refreshAllCalendars();
+                    showToast('success', isCanceled ? 'Absage entfernt' : 'Reinigung abgesagt');
+                } else {
+                    showToast('error', 'Aktion fehlgeschlagen');
+                }
+            })
+            .catch(() => showToast('error', 'Netzwerkfehler'));
     } else if (['private', 'cleaning', 'production'].includes(type)) {
         openAppointmentModal(null, info.event);
     } else {
@@ -969,6 +1026,9 @@ function updateTypeSpecificFields() {
     // Title Feld abhängig vom Typ steuern
     toggleTitleVisibilityByType(type);
 
+    // Raum-Feld abhängig vom Typ steuern
+    toggleRoomVisibilityByType(type);
+
     switch(type) {
         case 'private':
             break;
@@ -1019,6 +1079,22 @@ function toggleTitleVisibilityByType(type) {
     if (hideTitle) {
         // Leeren Titel erlauben, wir setzen später automatisch einen sinnvollen Default
         titleInput.value = '';
+    }
+}
+
+function toggleRoomVisibilityByType(type) {
+    const roomSelect = document.getElementById('appointmentRoom');
+    if (!roomSelect) return;
+
+    const roomWrapper = roomSelect.closest('.mb-3'); // aus Twig: Raum steckt in .mb-3
+    const hideRoom = (type === 'cleaning');
+
+    if (roomWrapper) {
+        roomWrapper.style.display = hideRoom ? 'none' : 'block';
+    }
+
+    if (hideRoom) {
+        roomSelect.value = '';
     }
 }
 
@@ -1800,6 +1876,14 @@ function saveAppointment() {
                 fetch('/appointments/all').then(r=>r.json()).then(d => {
                     allEvents = d;
                 });
+
+                if (type === 'cleaning') {
+                    return saveExtraCleaning(
+                        result.id ? result.id : null,
+                        startDate,
+                        endDate
+                    );
+                }
                 showToast('success', 'Termin erfolgreich gespeichert');
             } else {
                 alert('Fehler beim Speichern: ' + (result.message || 'Unbekannter Fehler'));
@@ -1809,6 +1893,34 @@ function saveAppointment() {
             console.error(error);
             alert('Fehler beim Speichern.');
         });
+}
+
+function saveExtraCleaning(appointmentId, startDate, endDate) {
+    if (!appointmentId) {
+        alert('Fehler beim Anlegen eines Extra-Reinigungstermins.');
+        return;
+    }
+
+    const date = startDate.format('YYYY-MM-DD');
+    const timeFrom = startDate.format('HH:mm:ss');
+    const timeTo = endDate.format('HH:mm:ss');
+
+    fetch('/cleaning/exception/extra', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appointmentId, date, timeFrom, timeTo })
+    })
+        .then(r => r.json())
+        .then(result => {
+            if (result && result.success) {
+                appointmentModal.hide();
+                refreshAllCalendars();
+                showToast('success', 'Extra-Reinigung gespeichert');
+            } else {
+                showToast('error', 'Speichern fehlgeschlagen');
+            }
+        })
+        .catch(() => showToast('error', 'Netzwerkfehler'));
 }
 
 function collectTechnicians() {

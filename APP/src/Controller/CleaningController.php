@@ -2,10 +2,18 @@
 
 namespace App\Controller;
 
+use App\Entity\Appointment;
 use App\Entity\Cleaning;
+use App\Entity\CleaningException;
 use App\Form\CleaningType;
+use App\Repository\AppointmentRepository;
+use App\Repository\CleaningExceptionRepository;
 use App\Repository\CleaningRepository;
+use App\Repository\CleaningScheduleRepository;
+use App\Repository\ContactRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -88,4 +96,165 @@ class CleaningController extends AbstractController
             return $this->redirectToRoute('app_cleaning_edit', ['id' => $cleaning->getId()]);
         }
     }
+
+    #[Route('/exception/toggle', name: 'app_cleaning_exception_toggle', methods: ['POST'])]
+    public function toggleCleaningException(
+        Request                     $request,
+        EntityManagerInterface      $em,
+        ContactRepository           $contactRepository,
+        CleaningExceptionRepository $exceptionRepo
+    ): Response {
+        $data = json_decode($request->getContent(), true);
+
+        $cleaningId = $data['cleaningId'] ?? null;
+        $date = $data['date'] ?? null;
+
+        if (!$cleaningId || !$date) {
+            return $this->json(['success' => false, 'message' => 'Invalid payload'], 400);
+        }
+
+        $cleaning = $contactRepository->find((int)$cleaningId);
+        if (!$cleaning) {
+            return $this->json(['success' => false, 'message' => 'Cleaning not found'], 404);
+        }
+
+        $existing = $exceptionRepo->findOneBy([
+            'cleaningContact' => $cleaning,
+            'date' => new \DateTime($date),
+            'type' => CleaningException::TYPE_CANCEL
+        ]);
+
+        if ($existing) {
+            $em->remove($existing);
+            $em->flush();
+            return $this->json(['success' => true, 'canceled' => false]);
+        }
+
+        $ex = new CleaningException();
+        $ex->setCleaningContact($cleaning);
+        $ex->setDate(new \DateTime($date));
+        $ex->setType(CleaningException::TYPE_CANCEL);
+
+        $em->persist($ex);
+        $em->flush();
+
+        return $this->json(['success' => true, 'canceled' => true]);
+    }
+
+    #[Route('/report/monthly', name: 'app_cleaning_report_monthly', methods: ['GET'])]
+    public function monthlyReport(
+        Request                     $request,
+        ContactRepository           $contactRepository,
+        CleaningExceptionRepository $exceptionRepo,
+        CleaningScheduleRepository  $scheduleRepo
+    ): Response {
+        $cleaningId = $request->query->get('cleaningId');
+        $month = $request->query->get('month'); // YYYY-MM
+
+        if (!$cleaningId || !$month) {
+            return new Response('Missing parameters', 400);
+        }
+
+        $contact = $contactRepository->find((int)$cleaningId);
+        if (!$contact) {
+            return new Response('Cleaning not found', 404);
+        }
+
+        $start = new \DateTime($month . '-01');
+        $end = (clone $start)->modify('last day of this month');
+
+        $exceptions = $exceptionRepo->createQueryBuilder('e')
+            ->leftJoin('e.appointment', 'a')
+            ->where('e.cleaningContact = :contact or a.cleaningContact = :contact')
+            ->andWhere('e.date BETWEEN :start AND :end')
+            ->setParameter('contact', $contact)
+            ->setParameter('start', $start)
+            ->setParameter('end', $end)
+            ->getQuery()
+            ->getResult();
+
+        $schedule = $scheduleRepo->findOneBy(['cleaningContact' => $contact]);
+
+        $canceled = [];
+        $extra = [];
+
+        foreach ($exceptions as $ex) {
+            if ($ex->getType() === \App\Entity\CleaningException::TYPE_CANCEL) {
+                $timeFrom = null;
+                $timeTo = null;
+
+                if ($schedule) {
+                    $timeFrom = $schedule->getTimeFrom();
+                    $timeTo = $schedule->getTimeTo();
+                }
+
+                $canceled[] = [
+                    'date' => $ex->getDate(),
+                    'timeFrom' => $timeFrom,
+                    'timeTo' => $timeTo,
+                ];
+            } else {
+                $extra[] = $ex;
+            }
+        }
+
+        $html = $this->renderView('cleaning/report_monthly.html.twig', [
+            'contact' => $contact,
+            'month' => $start,
+            'canceled' => $canceled,
+            'extra' => $extra
+        ]);
+
+        $options = new Options();
+        $options->set('defaultFont', 'DejaVu Sans');
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->render();
+
+        return new Response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="contact-report.pdf"'
+        ]);
+    }
+
+    #[Route('/exception/extra', name: 'app_cleaning_exception_extra', methods: ['POST'])]
+    public function createExtraCleaning(
+        Request $request,
+        EntityManagerInterface $em,
+        AppointmentRepository $appointmentRepository,
+        CleaningExceptionRepository $exRepo
+    ): Response {
+        $data = json_decode($request->getContent(), true);
+
+        $appointmentId = $data['appointmentId'] ?? null;
+        $date = $data['date'] ?? null;
+        $timeFrom = $data['timeFrom'] ?? null;
+        $timeTo = $data['timeTo'] ?? null;
+
+        if (!$appointmentId || !$date || !$timeFrom || !$timeTo) {
+            return $this->json(['success' => false, 'message' => 'Invalid payload'], 400);
+        }
+
+        /** @var Appointment $appointment */
+        $appointment = $appointmentRepository->find((int)$appointmentId);
+        if (!$appointment) {
+            return $this->json(['success' => false, 'message' => 'Cleaning not found'], 404);
+        }
+
+        $ex = $exRepo->findOneBy(['appointment' => $appointment]);
+        if(!$ex) $ex = new \App\Entity\CleaningException();
+
+        $ex->setAppointment($appointment);
+        $ex->setDate(new \DateTime($date));
+        $ex->setType(\App\Entity\CleaningException::TYPE_EXTRA);
+        $ex->setTimeFrom(new \DateTime($timeFrom));
+        $ex->setTimeTo(new \DateTime($timeTo));
+
+        $em->persist($ex);
+        $em->flush();
+
+        return $this->json(['success' => true]);
+    }
+
 }

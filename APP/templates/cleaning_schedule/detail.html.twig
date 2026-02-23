@@ -1,0 +1,42 @@
+{% extends 'base_logged_in.html.twig' %}
+
+{% block title %}Reinigungsplan{% endblock %}
+
+{% block logged_in_content %}
+    <h1 class="mb-4">Reinigungsplan</h1>
+
+    {% form_theme form 'form/adminator_bootstrap_5_layout.html.twig' %}
+
+    {% for label, messages in app.flashes(['success', 'danger', 'warning', 'info']) %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
+                {{ message|trans }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    {{ form_start(form, { attr: { 'data-turbo': 'false' } }) }}
+    {{ form_widget(form) }}
+
+    <div class="mb-3 row">
+        <div class="col-sm-8">
+            <a href="{{ path('app_cleaning_schedule_index') }}" class="btn btn-secondary">{{ 'back_to_list'|trans }}</a>
+            <button type="submit" class="btn btn-primary">{{ 'save'|trans }}</button>
+        </div>
+        <div class="col-sm-4" style="text-align: right;">
+            {% if schedule.id and is_granted('ROLE_ADMIN') %}
+                <a href="{{ path('app_cleaning_schedule_delete', {'id': schedule.id}) }}"
+                   class="btn btn-danger confirmRemoveItem"
+                   role="button"
+                   data-confirm="{}"
+                   data-confirm-message="{{ 'confirm_remove'|trans }}">
+                    {{ 'delete'|trans }}
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {{ form_rest(form) }}
+    {{ form_end(form) }}
+{% endblock %}
