@@ -129,8 +129,8 @@ class HomeController extends AbstractController
 
         // Kontakte nach Kategorien laden
         $techniciansCategory = $contactCategoryRepo->find(1); // Techniker
-        $volunteersCategory = $contactCategoryRepo->find(3);  // Freiwillige
-        $cleaningCategory = $contactCategoryRepo->find(2);    // Reinigung
+        $volunteersCategory = $contactCategoryRepo->find(2);  // Freiwillige
+        $cleaningCategory = $contactCategoryRepo->find(3);    // Reinigung
 
         $technicianContacts = $techniciansCategory ? $techniciansCategory->getContacts()->toArray() : [];
         $volunteerContacts = $volunteersCategory ? $volunteersCategory->getContacts()->toArray() : [];
