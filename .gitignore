@@ -1,5 +1,6 @@
 # IDEs & Editoren
 .idea/
+.claude
 /.vscode/
 /*.sublime-project
 /*.sublime-workspace
