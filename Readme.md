@@ -33,3 +33,41 @@ cd docker
 make
 cd ..
 ```
+
+## Frontend (seit dem Redesign)
+
+Kein Node-Build mehr: Styles und JavaScript laufen über Symfony AssetMapper
+(`APP/assets/`, Importmap in `APP/importmap.php`). Icons liegen lokal unter
+`APP/assets/icons/`, Schriften unter `APP/assets/fonts/`.
+
+Beim Deploy (siehe `docker-test/bin/update.sh`):
+
+```
+composer install --no-dev --optimize-autoloader
+bin/console doctrine:migrations:migrate --no-interaction --env=prod
+bin/console importmap:install --env=prod
+bin/console asset-map:compile --env=prod
+bin/console cache:clear --env=prod
+```
+
+### WordPress
+
+| Variable | Zweck |
+|---|---|
+| `BRUX_API_URL` | Import-Endpunkt (Standard: `https://www.brux.at/wp-json/brux/v1/events`) |
+| `WORDPRESS_API_URL` | Rückweg (PUT `/production`, `/event`); leer = kein Push |
+| `WORDPRESS_API_TOKEN` | Bearer-Token für den Rückweg |
+
+Welche Felder WordPress gehören, steht in `APP/config/services.yaml`
+(`wordpress_owned_fields`). Diese Felder sind im Haussystem nur lesbar und werden
+beim Import überschrieben. Soll das Haussystem ein Feld führen, entfernt man es
+aus der Liste.
+
+Import: Cronjob `app:sync-brux-api` (siehe `docs/cron-setup.md`), Button im
+Kalender, und nach dem ersten Login, wenn der letzte Import älter als 24 h ist.
+
+### Benutzer anlegen
+
+```
+bin/console app:user:create <benutzername> <email> --role=ROLE_ADMIN --first-name=… --last-name=…
+```

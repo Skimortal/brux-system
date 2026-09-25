@@ -19,10 +19,8 @@
         {{ form_row(f.contact) }}
         {{ form_row(f.user) }}
         {{ form_row(f.holderName) }}
-        <div class="form-grid-2">
-            {{ form_row(f.startAt) }}
-            {{ form_row(f.dueAt) }}
-        </div>
+        {{ form_row(f.startAt) }}
+        {{ form_row(f.dueAt) }}
         <p class="small muted" style="margin-top:-6px">Liegt die Ausgabe in der Zukunft, ist die Übergabe geplant.</p>
         {{ form_row(f.note) }}
         {% if loan.returnedAt %}<div class="note note-ok">{{ ux_icon('lucide:check') }}<span>Zurückerhalten am {{ loan.returnedAt|de_date('EE d.M.y HH:mm') }}</span></div>{% endif %}

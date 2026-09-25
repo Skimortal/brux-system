@@ -20,10 +20,8 @@
         {{ form_row(f.production) }}
         <div class="small muted" data-appointment-form-target="needs" hidden></div>
         {{ form_row(f.room) }}
-        <div class="form-grid-2">
-            {{ form_row(f.startDate) }}
-            {{ form_row(f.endDate) }}
-        </div>
+        {{ form_row(f.startDate) }}
+        {{ form_row(f.endDate) }}
         {{ form_row(f.allDay, {attr: {'data-action': 'change->appointment-form#update'}}) }}
 
         {% if f.repeat is defined %}

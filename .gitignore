@@ -28,3 +28,4 @@ APP/bin/*
 
 docker-dev/.env
 docker-prod/.env
+.gstack/

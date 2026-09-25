@@ -12,6 +12,7 @@
 .seg-links a[aria-current="true"] { background: var(--surface); color: var(--ink); font-weight: 500; box-shadow: var(--shadow-card); }
 
 .cal-filters { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.cal-filters .chip { height: 30px; padding: 0 10px; font-size: 12.5px; gap: 6px; }
 .cal-filters .grow { min-width: 8px; }
 
 /* grid */
@@ -19,7 +20,7 @@
     flex-grow: 1; min-height: 0; overflow: auto; background: var(--surface);
     border: 1px solid var(--line); border-bottom: 0; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
-.cal-grid { --days: 7; display: grid; grid-template-columns: 104px repeat(var(--days), minmax(118px, 1fr)); min-width: max-content; }
+.cal-grid { --days: 7; display: grid; grid-template-columns: 104px repeat(var(--days), minmax(0, 1fr)); min-width: calc(104px + var(--days) * 118px); }
 .cal-grid.is-day { grid-template-columns: 104px minmax(0, 1fr); min-width: 0; }
 .cal-head {
     position: sticky; top: 0; z-index: 3; background: var(--surface-2); border-bottom: 1px solid var(--line);
@@ -56,7 +57,7 @@
     font-size: 12px; line-height: 1.25; cursor: pointer; min-width: 0; position: relative;
 }
 .cal-item:hover { color: var(--ink); filter: brightness(0.97); }
-.cal-item .t { display: flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 10.5px; opacity: .9; }
+.cal-item .t { display: flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 10.5px; opacity: .9; white-space: nowrap; }
 .cal-item .t svg { width: 11px; height: 11px; }
 .cal-item .title { font-weight: 500; overflow-wrap: anywhere; }
 .cal-item .meta { font-size: 11px; opacity: .88; }

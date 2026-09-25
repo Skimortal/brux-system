@@ -269,11 +269,9 @@ final class CalendarBuilder
             $start = $loan->getStartAt();
             $end = $loan->getReturnedAt() ?? $loan->getDueAt();
             $overdue = $loan->isOverdue($now);
+            // keys that are still out (open-ended or overdue) stay visible until they come back
             if ($end === null || $overdue) {
-                $end = max($now, $end ?? $to);
-                if ($loan->getReturnedAt() === null && $loan->getDueAt() === null) {
-                    $end = $to;
-                }
+                $end = $to;
             }
             $startIndex = max(0, (int) floor(($start->getTimestamp() - $from->getTimestamp()) / 86400));
             $endIndex = min($lastIndex, (int) floor(($end->getTimestamp() - 1 - $from->getTimestamp()) / 86400));

@@ -117,7 +117,7 @@
             {% endif %}
             {% if production.postThumbnailUrl or production.excerptHtml %}
                 <section class="card">
-                    {% if production.postThumbnailUrl %}<img src="{{ production.postThumbnailUrl }}" alt="" style="border-radius: 14px 14px 0 0; width:100%; aspect-ratio: 16/9; object-fit: cover">{% endif %}
+                    {% if production.postThumbnailUrl %}<img src="{{ production.postThumbnailUrl }}" alt="" onerror="this.remove()" style="border-radius: 14px 14px 0 0; width:100%; aspect-ratio: 16/9; object-fit: cover">{% endif %}
                     {% if production.excerptHtml %}<div class="card-body small muted">{{ production.excerptHtml|striptags }}</div>{% endif %}
                 </section>
             {% endif %}
