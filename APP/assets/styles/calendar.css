@@ -1,6 +1,22 @@
 /* calendar page: full height, calendar left, side column right */
 .cal-page { height: 100vh; overflow: hidden; }
-.cal-shell { display: grid; grid-template-columns: minmax(0, 1fr) var(--panel-w); height: 100vh; }
+.cal-shell { display: grid; grid-template-columns: minmax(0, 1fr) 12px var(--panel-w); height: 100vh; }
+
+/* drag handle between calendar and side column */
+.pane-handle {
+    cursor: ew-resize; touch-action: none; position: relative; z-index: 5;
+    background: linear-gradient(var(--line), var(--line)) center / 1px 100% no-repeat;
+}
+.pane-handle::after {
+    content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 36px; margin: -18px 0 0 -2px;
+    border-radius: 2px; background: #c4c4c4;
+}
+.pane-handle:hover, .pane-handle.is-dragging, .pane-handle:focus-visible {
+    background: linear-gradient(var(--ink), var(--ink)) center / 3px 100% no-repeat; box-shadow: none;
+}
+.pane-handle:hover::after, .pane-handle.is-dragging::after { background: var(--ink); }
+body.is-resizing { cursor: ew-resize; user-select: none; }
+body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .cal-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 16px 20px 0 24px; gap: 12px; }
 .cal-main > turbo-frame { display: flex; flex-direction: column; min-height: 0; flex-grow: 1; gap: 12px; }
 
@@ -166,7 +182,7 @@
 .popover-foot { padding: 10px 14px; border-top: 1px solid var(--line-soft); font-size: 11.5px; color: var(--muted); }
 
 /* side column */
-.cal-side { display: flex; flex-direction: column; min-height: 0; height: 100vh; background: var(--surface); border-left: 1px solid var(--line); }
+.cal-side { display: flex; flex-direction: column; min-height: 0; height: 100vh; background: var(--surface); min-width: 0; }
 .side-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 1px solid var(--line); flex-shrink: 0; }
 .side-tabs a { height: 52px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; }
 .side-tabs a[aria-current="true"] { color: var(--ink); border-bottom-color: var(--accent); }
@@ -204,12 +220,11 @@
 .todo-row .edit input { width: 100%; border: 0; background: transparent; padding: 2px 0; font-size: 14px; }
 .todo-row .edit input:focus { outline: none; box-shadow: none; border-bottom: 1px solid var(--accent); }
 
-@media (max-width: 1200px) {
-    :root { --panel-w: 340px; }
-}
+
 @media (max-width: 900px) {
     .cal-page { height: auto; overflow: visible; }
     .cal-shell { grid-template-columns: minmax(0, 1fr); height: auto; }
+    .pane-handle { display: none; }
     .cal-main { padding: 12px 12px 0; }
     .cal-board { max-height: calc(100vh - 220px); }
     .cal-side { height: auto; border-left: 0; border-top: 1px solid var(--line); }

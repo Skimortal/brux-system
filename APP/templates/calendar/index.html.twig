@@ -21,6 +21,10 @@
             </div>
         </turbo-frame>
     </section>
+    <div class="pane-handle" role="separator" aria-orientation="vertical" aria-label="Breite der rechten Spalte ändern (Doppelklick: zurücksetzen)" tabindex="0"
+         title="Ziehen, um die Breite zu ändern · Doppelklick setzt zurück"
+         data-controller="pane-resize"
+         data-action="pointerdown->pane-resize#start pointermove->pane-resize#move pointerup->pane-resize#end pointercancel->pane-resize#end dblclick->pane-resize#reset keydown->pane-resize#key"></div>
     <turbo-frame id="side" class="cal-side{{ panel ? ' has-panel' : '' }}" data-turbo-action="advance">
         {% if panel %}
             {{ include('calendar/panel/_' ~ panel.kind ~ '.html.twig') }}
