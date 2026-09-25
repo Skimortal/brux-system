@@ -19,7 +19,7 @@
             {% endfor %}
         </nav>
     {% endif %}
-    <button type="button" class="btn btn-primary btn-sm" data-action="quick-create#openDefault" data-date="{{ query.view == 'day' ? query.date|date('Y-m-d') : 'now'|date('Y-m-d') }}">{{ ux_icon('lucide:plus') }} Neu</button>
+    <button type="button" class="btn btn-primary btn-sm" data-action="quick-create#openDefault" data-date="{{ query.view == 'day' or not ('now'|date('Y-m-d') >= query.rangeStart|date('Y-m-d') and 'now'|date('Y-m-d') < query.rangeEnd|date('Y-m-d')) ? query.date|date('Y-m-d') : 'now'|date('Y-m-d') }}">{{ ux_icon('lucide:plus') }} Neu</button>
 </div>
 <div class="cal-filters">
     {% for group in groups %}

@@ -30,7 +30,8 @@ export default class extends Controller {
     openDefault(event) {
         const rect = event.currentTarget.getBoundingClientRect();
         const date = event.currentTarget.dataset.date;
-        this.show(date, '', new Date(date).toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'numeric' }), rect.right - 300, rect.bottom + 8);
+        const label = new Date(`${date}T12:00`).toLocaleDateString('de-AT', { weekday: 'short', day: 'numeric', month: 'numeric' });
+        this.show(date, '', label, rect.right - 300, rect.bottom + 8);
     }
 
     show(date, room, label, x, y) {
@@ -59,7 +60,8 @@ export default class extends Controller {
 
     defaultHour(date) {
         const now = new Date();
-        const today = now.toISOString().slice(0, 10);
+        const pad = (n) => String(n).padStart(2, '0');
+        const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
         if (date === today && now.getHours() >= 8 && now.getHours() < 22) {
             return `${String(now.getHours() + 1).padStart(2, '0')}:00`;
         }
