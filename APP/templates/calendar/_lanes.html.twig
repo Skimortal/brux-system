@@ -1,0 +1,47 @@
+<div class="cal-grid{{ query.view == 'day' ? ' is-day' }}" style="--days: {{ cal.days|length }}">
+    <div class="cal-head cal-corner"></div>
+    {% for day in cal.days %}
+        <div class="cal-head{{ cal.isToday(day) ? ' is-today' }}">
+            <a href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}" title="Tagesansicht">
+                <span>{{ day|de_date('EE') }}</span><span class="num">{{ day|date('j') }}</span>{% if query.view == 'day' %}<span>{{ day|de_date('MMMM y') }}</span>{% endif %}
+            </a>
+        </div>
+    {% endfor %}
+
+    {% for lane in cal.lanes %}
+        <div class="cal-lane-label{{ lane.key == 'house' ? ' is-house' }}">
+            <strong>{{ lane.label }}</strong>
+            {% if lane.sub %}<span>{{ lane.sub }}</span>{% endif %}
+        </div>
+        {% for index, day in cal.days %}
+            <div class="cal-cell{{ cal.isToday(day) ? ' is-today' }}{{ lane.key == 'house' ? ' is-house' }}"
+                 data-date="{{ day|date('Y-m-d') }}" data-room="{{ lane.roomId ?? '' }}" data-label="{{ day|de_date('EE d.M.') }} · {{ lane.label }}">
+                {% for e in lane.days[index] %}
+                    {{ include('calendar/_entry.html.twig', {e: e, day: day}) }}
+                {% endfor %}
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    {% if not query.isHidden(enum('App\\Calendar\\EntryGroup').KEYS) %}
+        <div class="cal-keys" style="--rows: {{ max(cal.keyRows, 1) }}">
+            <div class="cal-lane-label">
+                <strong>Schlüssel</strong>
+                <span>Ausgabe bis Rückgabe</span>
+            </div>
+            <div class="cal-keys-bars">
+                {% for bar in cal.keyBars %}
+                    {% set loan = bar.loan %}
+                    <a href="{{ cal_path(query, {panel: 'k-' ~ loan.key.id}) }}" data-turbo-frame="side" data-turbo-action="advance"
+                       class="cal-bar is-{{ bar.state }}{{ bar.clippedStart ? ' clip-start' }}{{ bar.clippedEnd ? ' clip-end' }}"
+                       style="grid-column: {{ bar.col + 1 }} / span {{ bar.span }}; grid-row: {{ bar.row + 1 }}"
+                       title="{{ bar.label }}">
+                        {{ ux_icon('lucide:key-round') }}<span>{{ bar.label }}</span>
+                    </a>
+                {% else %}
+                    <div class="cal-keys-empty">In diesem Zeitraum sind keine Schlüssel verliehen.</div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>

@@ -1,0 +1,24 @@
+{% macro contact(f) %}
+    <div class="row-card" data-collection-target="item">
+        <div class="form-grid-3">
+            {{ form_row(f.name) }}
+            {{ form_row(f.email) }}
+            {{ form_row(f.phone) }}
+        </div>
+        <div class="between">
+            <span class="toggle">{{ form_widget(f.hauptansprechperson) }}<label for="{{ f.hauptansprechperson.vars.id }}">Hauptansprechperson</label></span>
+            <button type="button" class="btn btn-ghost btn-sm btn-danger" data-action="collection#remove">{{ ux_icon('lucide:trash-2') }} Entfernen</button>
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro technician(f) %}
+    <div class="row-card" data-collection-target="item">
+        <div class="form-grid-3">
+            {{ form_row(f.name) }}
+            {{ form_row(f.email) }}
+            {{ form_row(f.phone) }}
+        </div>
+        <div><button type="button" class="btn btn-ghost btn-sm btn-danger" data-action="collection#remove">{{ ux_icon('lucide:trash-2') }} Entfernen</button></div>
+    </div>
+{% endmacro %}

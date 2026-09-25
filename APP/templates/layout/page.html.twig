@@ -1,0 +1,15 @@
+{% extends 'layout/app.html.twig' %}
+
+{% block content %}
+<div class="page {% block page_class %}{% endblock %}">
+    <header class="page-header">
+        <div>
+            {% block crumbs %}{% endblock %}
+            <h1>{{ block('page_title') }}</h1>
+            {% block subtitle %}{% endblock %}
+        </div>
+        <div class="page-actions">{% block actions %}{% endblock %}</div>
+    </header>
+    {% block page %}{% endblock %}
+</div>
+{% endblock %}

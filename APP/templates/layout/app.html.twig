@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% set nav = [
+    {route: 'app_calendar', icon: 'lucide:calendar', label: 'Kalender', match: 'app_calendar'},
+    {route: 'app_production_index', icon: 'lucide:ticket', label: 'Produktionen', match: 'app_production'},
+    {route: 'app_contact_index', icon: 'lucide:users', label: 'Kontakte', match: 'app_contact'},
+    {route: 'app_key_index', icon: 'lucide:key-round', label: 'Schlüssel', match: 'app_key'},
+    {route: 'app_cleaning_schedule_index', icon: 'lucide:spray-can', label: 'Reinigungsplan', match: 'app_cleaning'},
+] %}
+{% set current = app.request.attributes.get('_route') ?? '' %}
+
+{% block body %}
+<div class="app">
+    <nav class="rail" aria-label="Hauptnavigation">
+        <a href="{{ path('app_calendar') }}" class="rail-logo" aria-label="Zum Kalender">b</a>
+        {% for item in nav %}
+            <a href="{{ path(item.route) }}" class="rail-link" {% if current starts with item.match %}aria-current="page"{% endif %}>
+                {{ ux_icon(item.icon) }}<span class="rail-tip">{{ item.label }}</span><span class="sr-only">{{ item.label }}</span>
+            </a>
+        {% endfor %}
+        <div class="rail-spacer"></div>
+        <a href="{{ path('app_settings') }}" class="rail-link" {% if current starts with 'app_settings' or current starts with 'app_room' or current starts with 'app_user' or current starts with 'app_event_category' or current starts with 'app_email_template' %}aria-current="page"{% endif %}>
+            {{ ux_icon('lucide:settings') }}<span class="rail-tip">Verwaltung</span><span class="sr-only">Verwaltung</span>
+        </a>
+        <div class="rail-menu" data-controller="dropdown">
+            <button type="button" class="rail-link" data-action="dropdown#toggle" aria-haspopup="menu" aria-expanded="false" data-dropdown-target="button" style="background:none;border:0">
+                {% if app.user.avatarFilename %}
+                    <img class="rail-avatar" src="{{ asset('uploads/avatars/' ~ app.user.avatarFilename) }}" alt="">
+                {% else %}
+                    <span class="rail-avatar">{{ app.user.initials }}</span>
+                {% endif %}
+                <span class="sr-only">Benutzermenü</span>
+            </button>
+            <div class="rail-menu-pop" data-dropdown-target="menu" hidden role="menu">
+                <div class="menu-head">
+                    <div style="font-weight:600">{{ app.user.fullname }}</div>
+                    <div class="muted small">{{ app.user.email }}</div>
+                </div>
+                <a href="{{ path('app_profile') }}" role="menuitem">{{ ux_icon('lucide:user') }} Mein Profil</a>
+                <div class="menu-sep"></div>
+                <a href="{{ path('app_logout') }}" role="menuitem" data-turbo="false">{{ ux_icon('lucide:log-out') }} Abmelden</a>
+            </div>
+        </div>
+    </nav>
+    <main id="main" class="{% block main_class %}{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}

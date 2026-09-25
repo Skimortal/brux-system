@@ -1,0 +1,80 @@
+{% import 'calendar/panel/_staff.html.twig' as staff %}
+{% set a = panel.appointment %}
+{% set f = panel.form %}
+{% set is_new = a.id is null %}
+{{ include('calendar/panel/_head.html.twig', {
+    chip: is_new ? 'Neuer Termin' : a.type.label,
+    chip_class: 'badge-square t-' ~ a.type.value,
+    title: is_new ? 'Neuer Termin' : a.displayTitle,
+    when: a.startDate ? (a.startDate|de_date('EEEE, d. MMMM') ~ (a.allDay ? ' · ganztägig' : ' · ' ~ a.startDate|date('H:i') ~ '–' ~ a.endDate|date('H:i')) ~ (a.room ? ' · ' ~ a.room.name : '')) : null,
+}) }}
+<div class="panel-body">
+    {{ form_start(f, {
+        action: is_new ? path('app_appointment_create') : path('app_appointment_update', {id: a.id}),
+        attr: {id: 'appointment-form', 'data-controller': 'appointment-form', 'data-turbo-frame': '_top', novalidate: 'novalidate'}
+    }) }}
+        <input type="hidden" name="_return" value="{{ return_url }}">
+        {{ form_errors(f) }}
+        {{ form_row(f.type) }}
+        {{ form_row(f.title) }}
+        {{ form_row(f.production) }}
+        <div class="small muted" data-appointment-form-target="needs" hidden></div>
+        {{ form_row(f.room) }}
+        <div class="form-grid-2">
+            {{ form_row(f.startDate) }}
+            {{ form_row(f.endDate) }}
+        </div>
+        {{ form_row(f.allDay, {attr: {'data-action': 'change->appointment-form#update'}}) }}
+
+        {% if f.repeat is defined %}
+            <div class="form-grid-2">
+                {{ form_row(f.repeat) }}
+                {{ form_row(f.repeatUntil) }}
+            </div>
+        {% elseif f.scope is defined %}
+            <div class="note">{{ ux_icon('lucide:repeat') }}<span>Teil einer Serie: {{ constant('App\\Entity\\Appointment::RECURRENCE_FREQUENCIES')[a.seriesRoot.recurrenceFrequency] ?? 'wiederholt' }}{% if a.seriesRoot.recurrenceEndDate %} bis {{ a.seriesRoot.recurrenceEndDate|date('d.m.Y') }}{% endif %} · {{ panel.series|length }} Termine</span></div>
+            {{ form_row(f.scope) }}
+        {% endif %}
+
+        <div class="panel-section" data-appointment-form-target="productionOnly" style="padding-top:0;border-top:0">
+            {{ form_row(f.eventType) }}
+            {{ form_row(f.status) }}
+            {{ form_row(f.internalTechniciansAttending) }}
+        </div>
+
+        {{ form_row(f.cleaningContact) }}
+        {{ form_row(f.cleaningAreas) }}
+
+        {{ staff.collections(f) }}
+
+        {{ form_row(f.description) }}
+    {{ form_end(f) }}
+
+    {% if not is_new %}
+        {{ include('calendar/panel/_loans_for.html.twig', {loans: panel.loans, new_params: {panel: 'kl-new'}, extra: 'appointment=' ~ a.id}) }}
+    {% endif %}
+</div>
+<div class="panel-foot">
+    {% if not is_new %}
+        <form method="post" action="{{ path('app_appointment_duplicate', {id: a.id}) }}" data-turbo-frame="_top">
+            <input type="hidden" name="_token" value="{{ csrf_token('appointment-' ~ a.id) }}">
+            <input type="hidden" name="_return" value="{{ return_url }}">
+            <button class="btn btn-icon btn-sm" type="submit" title="Duplizieren" aria-label="Duplizieren">{{ ux_icon('lucide:copy') }}</button>
+        </form>
+        <form method="post" action="{{ path('app_appointment_delete', {id: a.id}) }}" data-turbo-frame="_top"
+              data-turbo-confirm="{{ a.inSeries ? 'Termin löschen? Mit „Serie“ werden alle Termine der Serie gelöscht.' : 'Diesen Termin löschen?' }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('appointment-' ~ a.id) }}">
+            <input type="hidden" name="_return" value="{{ return_url }}">
+            {% if a.inSeries %}
+                <select name="scope" class="input" style="height:32px;width:auto;font-size:12.5px" aria-label="Umfang">
+                    <option value="single">nur diesen</option>
+                    <option value="series">ganze Serie</option>
+                </select>
+            {% endif %}
+            <button class="btn btn-icon btn-sm btn-danger" type="submit" title="Löschen" aria-label="Löschen">{{ ux_icon('lucide:trash-2') }}</button>
+        </form>
+    {% endif %}
+    <div class="grow"></div>
+    {% if is_new %}<a class="btn btn-sm btn-ghost" href="{{ cal_path(query, {panel: null}) }}">Abbrechen</a>{% endif %}
+    <button class="btn btn-primary" type="submit" form="appointment-form">{{ ux_icon('lucide:save') }} {{ is_new ? 'Anlegen' : 'Speichern' }}</button>
+</div>

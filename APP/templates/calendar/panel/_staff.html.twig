@@ -1,0 +1,50 @@
+{# Technicians and volunteers collections of an AppointmentType form #}
+{% macro technician_row(f) %}
+    <div class="row-card" data-collection-target="item">
+        <div class="row-card-top">
+            {{ form_widget(f.contact) }}
+            <button type="button" class="btn btn-ghost btn-icon btn-sm btn-danger" data-action="collection#remove" aria-label="Entfernen">{{ ux_icon('lucide:trash-2') }}</button>
+        </div>
+        {{ form_errors(f.contact) }}
+        <div class="toggles">
+            {% for field in [f.confirmed, f.lighting, f.sound, f.setup] %}
+                <span class="toggle">{{ form_widget(field) }}<label for="{{ field.vars.id }}">{{ field.vars.label }}</label></span>
+            {% endfor %}
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro volunteer_row(f) %}
+    <div class="row-card" data-collection-target="item">
+        <div class="row-card-top">
+            {{ form_widget(f.contact) }}
+            <span class="toggle">{{ form_widget(f.confirmed) }}<label for="{{ f.confirmed.vars.id }}">bestätigt</label></span>
+            <button type="button" class="btn btn-ghost btn-icon btn-sm btn-danger" data-action="collection#remove" aria-label="Entfernen">{{ ux_icon('lucide:trash-2') }}</button>
+        </div>
+        {{ form_errors(f.contact) }}
+        {{ form_widget(f.taskEnums) }}
+    </div>
+{% endmacro %}
+
+{% macro collections(form) %}
+    <div class="panel-section" data-appointment-form-target="assign">
+        <div class="stack-sm" data-controller="collection" data-collection-index-value="{{ form.appointmentTechnicians|length }}" data-collection-placeholder-value="__tech__">
+            <div class="between"><h3>Technik</h3><button type="button" class="btn btn-xs" data-action="collection#add">{{ ux_icon('lucide:plus') }} Techniker:in</button></div>
+            <div class="rows" data-collection-target="list">
+                {% for f in form.appointmentTechnicians %}{{ _self.technician_row(f) }}{% endfor %}
+            </div>
+            <template data-collection-target="prototype">{{ _self.technician_row(form.appointmentTechnicians.vars.prototype) }}</template>
+            <p class="small muted" data-collection-target="empty" {% if form.appointmentTechnicians|length %}hidden{% endif %}>Noch niemand eingeteilt.</p>
+        </div>
+        <div class="stack-sm" data-controller="collection" data-collection-index-value="{{ form.appointmentVolunteers|length }}" data-collection-placeholder-value="__vol__">
+            <div class="between"><h3>Freiwillige</h3><button type="button" class="btn btn-xs" data-action="collection#add">{{ ux_icon('lucide:plus') }} Freiwillige:r</button></div>
+            <div class="rows" data-collection-target="list">
+                {% for f in form.appointmentVolunteers %}{{ _self.volunteer_row(f) }}{% endfor %}
+            </div>
+            <template data-collection-target="prototype">{{ _self.volunteer_row(form.appointmentVolunteers.vars.prototype) }}</template>
+            <p class="small muted" data-collection-target="empty" {% if form.appointmentVolunteers|length %}hidden{% endif %}>Noch niemand eingeteilt.</p>
+        </div>
+    </div>
+    {% do form.appointmentTechnicians.setRendered %}
+    {% do form.appointmentVolunteers.setRendered %}
+{% endmacro %}

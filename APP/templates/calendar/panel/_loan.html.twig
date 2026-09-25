@@ -1,0 +1,41 @@
+{% set loan = panel.loan %}
+{% set f = panel.form %}
+{% set is_new = loan.id is null %}
+{{ include('calendar/panel/_head.html.twig', {
+    chip: 'Schlüssel',
+    chip_class: 'badge-warn',
+    title: is_new ? 'Schlüssel verleihen' : loan.key.name ~ ' → ' ~ loan.holderLabel,
+    when: loan.appointment ? 'für ' ~ loan.appointment.displayTitle : (loan.productionEvent ? 'für ' ~ loan.productionEvent.production.title ~ ' am ' ~ loan.productionEvent.startsAt|date('d.m.') : null),
+}) }}
+<div class="panel-body">
+    {{ form_start(f, {
+        action: is_new ? path('app_key_loan_create') : path('app_key_loan_update', {id: loan.id}),
+        attr: {id: 'loan-form', 'data-controller': 'key-loan-form', 'data-turbo-frame': '_top', novalidate: 'novalidate'}
+    }) }}
+        <input type="hidden" name="_return" value="{{ return_url }}{{ loan.appointment ? '&appointment=' ~ loan.appointment.id }}{{ loan.productionEvent ? '&performance=' ~ loan.productionEvent.id }}">
+        {{ form_errors(f) }}
+        {{ form_row(f.key) }}
+        {{ form_row(f.holderKind) }}
+        {{ form_row(f.contact) }}
+        {{ form_row(f.user) }}
+        {{ form_row(f.holderName) }}
+        <div class="form-grid-2">
+            {{ form_row(f.startAt) }}
+            {{ form_row(f.dueAt) }}
+        </div>
+        <p class="small muted" style="margin-top:-6px">Liegt die Ausgabe in der Zukunft, ist die Übergabe geplant.</p>
+        {{ form_row(f.note) }}
+        {% if loan.returnedAt %}<div class="note note-ok">{{ ux_icon('lucide:check') }}<span>Zurückerhalten am {{ loan.returnedAt|de_date('EE d.M.y HH:mm') }}</span></div>{% endif %}
+    {{ form_end(f) }}
+</div>
+<div class="panel-foot">
+    {% if not is_new %}
+        <form method="post" action="{{ path('app_key_loan_delete', {id: loan.id}) }}" data-turbo-frame="_top" data-turbo-confirm="Diese Ausleihe löschen?">
+            <input type="hidden" name="_token" value="{{ csrf_token('loan-' ~ loan.id) }}">
+            <input type="hidden" name="_return" value="{{ return_url }}">
+            <button class="btn btn-icon btn-sm btn-danger" type="submit" aria-label="Löschen">{{ ux_icon('lucide:trash-2') }}</button>
+        </form>
+    {% endif %}
+    <div class="grow"></div>
+    <button class="btn btn-primary" type="submit" form="loan-form">{{ ux_icon('lucide:save') }} {{ is_new ? 'Eintragen' : 'Speichern' }}</button>
+</div>

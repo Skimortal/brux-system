@@ -1,0 +1,89 @@
+{% import 'calendar/panel/_staff.html.twig' as staff %}
+{% set pe = panel.performance %}
+{% set production = panel.production %}
+{% set free = pe.seatsFree %}
+{{ include('calendar/panel/_head.html.twig', {
+    chip: 'Vorstellung · aus WordPress',
+    chip_class: 'badge-accent',
+    title: production.title,
+    when: pe.startsAt|de_date('EEEE, d. MMMM') ~ (pe.allDay ? '' : ' · ' ~ pe.startsAt|date('H:i') ~ ' Uhr') ~ (pe.room ? ' · ' ~ pe.room.name : ''),
+}) }}
+<div class="panel-body">
+    {% if panel.locked %}
+        <div class="note">{{ ux_icon('lucide:lock') }}<span>Termin, Plätze und Preise kommen von der Website und werden beim Import aktualisiert{% if pe.syncedAt %} (zuletzt {{ pe.syncedAt|de_date('d.M. HH:mm') }}){% endif %}. Änderungen bitte in WordPress vornehmen.</span></div>
+    {% endif %}
+    {% if pe.lastPushError %}
+        <div class="note note-danger">{{ ux_icon('lucide:triangle-alert') }}<span>Letzte Übertragung an die Website ist fehlgeschlagen: {{ pe.lastPushError }}</span></div>
+    {% endif %}
+
+    <dl class="dl">
+        <dt>Datum</dt><dd>{{ pe.startsAt|de_date('EEEE, d. MMMM y') }}</dd>
+        <dt>Uhrzeit</dt><dd class="mono">{{ pe.allDay ? 'ganztägig' : pe.timeFrom ~ (pe.timeTo ? ' – ' ~ pe.timeTo : '') ~ ' Uhr' }}</dd>
+        <dt>Raum</dt><dd>{{ pe.room ? pe.room.name : '–' }}</dd>
+        <dt>Status</dt><dd>{% if pe.status %}<span class="badge {{ pe.status.value == 'aktiv' ? 'badge-ok' : '' }}">{{ pe.status.label }}</span>{% else %}–{% endif %}</dd>
+        <dt>Reservierung</dt><dd>{{ pe.reservationStatus ? pe.reservationStatus.label : '–' }}</dd>
+        {% if production.requirementLabels|length %}<dt>Bedarf</dt><dd>{{ production.requirementLabels|join(' · ') }}</dd>{% endif %}
+    </dl>
+
+    {% if pe.quota is not null %}
+        <div class="stats">
+            <div class="stat"><span class="label">Kontingent</span><span class="value">{{ pe.quota }}</span></div>
+            <div class="stat"><span class="label">Reserviert</span><span class="value">{{ pe.seatsTaken ?? '–' }}</span></div>
+            <div class="stat {{ free is null ? '' : (free > 10 ? 'ok' : (free > 0 ? 'warn' : 'danger')) }}"><span class="label">Frei</span><span class="value">{{ free ?? '–' }}</span></div>
+        </div>
+    {% endif %}
+
+    {% if pe.priceList|length %}
+        <div class="price-table">
+            <div><span>Kategorie</span><span class="num">Preis</span><span class="num">Reserv.</span></div>
+            {% for price in pe.priceList %}
+                <div><span>{{ price.categoryLabel }}</span><span class="num">{{ price.priceLabel }} €</span><span class="num">{{ price.incomingReservations ?? 0 }}</span></div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if pe.categories|length or pe.reservationNote %}
+        <div class="row-wrap">
+            {% for category in pe.categories %}
+                <span class="badge {{ category.slug == 'ausverkauft-event' ? 'badge-danger' : 'badge-info' }}">{{ category.name }}</span>
+            {% endfor %}
+            {% if pe.reservationLink %}
+                <a class="btn btn-sm" href="{{ pe.reservationNote|trim }}" target="_blank" rel="noopener" style="margin-left:auto">{{ ux_icon('lucide:external-link') }} Zur Reservierung</a>
+            {% elseif pe.reservationNote %}
+                <span class="small muted">{{ pe.reservationNote }}</span>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div class="panel-section">
+        <span class="section-label ok">Hier gepflegt</span>
+        <h3>Ansprechpartner für diese Vorstellung</h3>
+        {% if production.contactPersons|length %}
+            {{ form_start(panel.contacts_form, {action: path('app_performance_contacts', {id: pe.id}), attr: {'data-controller': 'autosubmit', 'data-turbo-frame': '_top'}}) }}
+                <input type="hidden" name="_return" value="{{ return_url }}">
+                {{ form_widget(panel.contacts_form.contactPersons) }}
+                <p class="small muted" style="margin-top:6px">Änderungen werden sofort gespeichert.</p>
+            {{ form_end(panel.contacts_form) }}
+        {% else %}
+            <p class="small muted">In der Produktion sind noch keine Ansprechpersonen hinterlegt. <a href="{{ path('app_production_show', {id: production.id}) }}" data-turbo-frame="_top">Zur Produktion</a></p>
+        {% endif %}
+    </div>
+
+    {% set f = panel.staffing_form %}
+    {{ form_start(f, {action: path('app_performance_staffing', {id: pe.id}), attr: {id: 'staffing-form', class: 'panel-section', 'data-turbo-frame': '_top'}}) }}
+        <input type="hidden" name="_return" value="{{ return_url }}">
+        <div class="between"><h3>Besetzung</h3>{% if panel.staffing.id is null %}<span class="badge">noch nicht angelegt</span>{% endif %}</div>
+        {% do f.eventType.setRendered %}
+        {{ form_row(f.status) }}
+        {{ form_row(f.internalTechniciansAttending) }}
+        {{ staff.collections(f) }}
+        {{ form_row(f.description) }}
+        <button type="submit" class="btn btn-primary">{{ ux_icon('lucide:save') }} Besetzung speichern</button>
+    {{ form_end(f) }}
+
+    {{ include('calendar/panel/_loans_for.html.twig', {loans: panel.loans, new_params: {panel: 'kl-new'}, extra: 'performance=' ~ pe.id}) }}
+</div>
+<div class="panel-foot">
+    {% if production.permalink %}<a class="btn btn-sm" href="{{ production.permalink }}" target="_blank" rel="noopener">{{ ux_icon('lucide:globe') }} Website</a>{% endif %}
+    <a class="btn btn-sm btn-ghost" href="{{ path('app_production_show', {id: production.id}) }}" data-turbo-frame="_top">Produktion öffnen</a>
+</div>

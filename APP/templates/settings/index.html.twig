@@ -1,0 +1,41 @@
+{% extends 'layout/page.html.twig' %}
+
+{% block title %}Verwaltung{% endblock %}
+{% block page_title %}Verwaltung{% endblock %}
+
+{% block page %}
+{% set links = [
+    {route: 'app_room_index', icon: 'lucide:door-open', label: 'Räume', text: 'Reihenfolge im Kalender, Zuordnung zu WordPress', role: 'ROLE_ADMIN'},
+    {route: 'app_contact_category_index', icon: 'lucide:tag', label: 'Kontaktkategorien', text: 'Welche Kategorie Technik, Freiwillige oder Reinigung ist', role: 'ROLE_ADMIN'},
+    {route: 'app_event_category_index', icon: 'lucide:layout-list', label: 'Event-Kategorien', text: 'Aus WordPress, z. B. „ausverkauft“', role: 'ROLE_ADMIN'},
+    {route: 'app_user_index', icon: 'lucide:shield', label: 'Benutzer:innen', text: 'Zugänge und Rechte', role: 'ROLE_ADMIN'},
+    {route: 'app_email_template_index', icon: 'lucide:mail', label: 'E-Mail-Vorlagen', text: 'Texte der automatischen E-Mails', role: 'ROLE_SUPERUSER'},
+    {route: 'app_profile', icon: 'lucide:user', label: 'Mein Profil', text: 'Name, Passwort, Profilbild', role: 'ROLE_USER'},
+] %}
+<div class="grid-main-side">
+    <div class="cards-grid">
+        {% for link in links %}
+            {% if is_granted(link.role) %}
+                <a class="contact-card" href="{{ path(link.route) }}">
+                    <span class="row"><span style="font-size:20px;color:var(--accent)">{{ ux_icon(link.icon) }}</span><strong>{{ link.label }}</strong></span>
+                    <span class="small muted">{{ link.text }}</span>
+                </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+    <section class="card">
+        <div class="card-head"><h2>WordPress</h2><span class="badge {{ wordpress_leads ? 'badge-accent' : 'badge-ok' }}">{{ wordpress_leads ? 'WordPress führt' : 'Haussystem führt' }}</span></div>
+        <div class="card-body stack">
+            <dl class="dl">
+                <dt>Import</dt><dd class="small" style="word-break:break-all">{{ sync_url }}</dd>
+                <dt>Letzter Import</dt><dd>{{ last_sync ? last_sync|de_date('EE d.M.y HH:mm') : 'noch nie' }}</dd>
+                <dt>Rückweg</dt><dd>{% if push_configured %}<span class="badge badge-ok">eingerichtet</span>{% else %}<span class="badge">noch nicht eingerichtet</span>{% endif %}</dd>
+            </dl>
+            <p class="small muted">Der Import läuft nachts per Cronjob, nach dem ersten Login des Tages und über den Button im Kalender.</p>
+            {% if missing_roles|length %}
+                <div class="note note-warn">{{ ux_icon('lucide:triangle-alert') }}<span>Keine Kontaktkategorie mit der Rolle {{ missing_roles|join(', ') }}. Diese Auswahl ist im Kalender dann leer. <a href="{{ path('app_contact_category_index') }}">Kategorien zuordnen</a></span></div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}

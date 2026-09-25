@@ -1,0 +1,78 @@
+{% use 'form_div_layout.html.twig' %}
+
+{# Rows: label above widget, help and errors below #}
+{% block form_row %}
+    {% set widget_attr = {} %}
+    {% if help is not empty %}{% set widget_attr = {attr: {'aria-describedby': id ~ '_help'}} %}{% endif %}
+    <div class="field{% if errors|length > 0 %} has-error{% endif %}{% if row_attr.class is defined %} {{ row_attr.class }}{% endif %}"{% for k, v in row_attr|filter((v, k) => k != 'class') %} {{ k }}="{{ v }}"{% endfor %}>
+        {{ form_label(form) }}
+        {{ form_widget(form, widget_attr) }}
+        {{ form_help(form) }}
+        {{ form_errors(form) }}
+    </div>
+{% endblock %}
+
+{% block form_label %}
+    {% if label is not same as(false) %}
+        {% if not compound %}{% set label_attr = label_attr|merge({for: id}) %}{% endif %}
+        {% if label is empty %}{% set label = name|humanize %}{% endif %}
+        <label{% for k, v in label_attr %} {{ k }}="{{ v }}"{% endfor %}>{{ label }}{% if required and not disabled %}<span class="required-mark" aria-hidden="true"> *</span>{% endif %}</label>
+    {% endif %}
+{% endblock %}
+
+{% block form_help %}
+    {% if help is not empty %}<div id="{{ id }}_help" class="field-help">{{ help }}</div>{% endif %}
+{% endblock %}
+
+{% block form_errors %}
+    {% if errors|length > 0 %}
+        <ul class="field-errors">{% for error in errors %}<li>{{ error.message }}</li>{% endfor %}</ul>
+    {% endif %}
+{% endblock %}
+
+{# Checkbox as inline label #}
+{% block checkbox_row %}
+    <div class="field{% if row_attr.class is defined %} {{ row_attr.class }}{% endif %}">
+        <label class="check">{{ form_widget(form) }} {{ label is not same as(false) ? label : '' }}</label>
+        {{ form_help(form) }}
+        {{ form_errors(form) }}
+    </div>
+{% endblock %}
+
+{# Expanded choices: segmented control (radio) or toggle chips / checkbox list (multiple) #}
+{% block choice_widget_expanded %}
+    {% set style = attr['data-style'] ?? (multiple ? 'toggles' : 'seg') %}
+    {% if style == 'seg' %}
+        <div class="seg{% if form.children|length > 4 %} seg-3{% endif %}" role="radiogroup" id="{{ id }}">
+            {% for child in form %}
+                {{ form_widget(child, {attr: child.vars.attr|merge({class: 'sr-only-input'})}) }}
+                <label for="{{ child.vars.id }}">{{ child.vars.label }}</label>
+            {% endfor %}
+        </div>
+    {% elseif style == 'checks' %}
+        <div class="checks-2" id="{{ id }}">
+            {% for child in form %}
+                <label class="check">{{ form_widget(child) }} {{ child.vars.label }}</label>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="toggles" id="{{ id }}">
+            {% for child in form %}
+                <span class="toggle">{{ form_widget(child) }}<label for="{{ child.vars.id }}">{{ child.vars.label }}</label></span>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block choice_row %}
+    {% if expanded %}
+        <div class="field{% if errors|length > 0 %} has-error{% endif %}{% if row_attr.class is defined %} {{ row_attr.class }}{% endif %}"{% for k, v in row_attr|filter((v, k) => k != 'class') %} {{ k }}="{{ v }}"{% endfor %}>
+            {% if label is not same as(false) %}<span class="field-label">{{ label }}{% if required %}<span class="required-mark" aria-hidden="true"> *</span>{% endif %}</span>{% endif %}
+            {{ form_widget(form) }}
+            {{ form_help(form) }}
+            {{ form_errors(form) }}
+        </div>
+    {% else %}
+        {{ block('form_row') }}
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'layout/page.html.twig' %}
+
+{% block title %}Schlüssel{% endblock %}
+{% block page_title %}Schlüssel{% endblock %}
+{% block subtitle %}<p class="sub">Stammdaten. Verleihen und Rückgaben laufen über den Kalender.</p>{% endblock %}
+{% block actions %}
+    <a class="btn" href="{{ path('app_calendar', {panel: 'kl-new'}) }}">{{ ux_icon('lucide:calendar') }} Im Kalender verleihen</a>
+    <a class="btn btn-primary" href="{{ path('app_key_new') }}">{{ ux_icon('lucide:plus') }} Schlüssel</a>
+{% endblock %}
+
+{% block page %}
+<div class="table-wrap">
+    <table class="table">
+        <thead><tr><th>Schlüssel</th><th>Öffnet</th><th>Status</th><th>Bei</th><th></th></tr></thead>
+        <tbody>
+        {% for key in keys %}
+            {% set status = key.status(now) %}
+            {% set active = key.activeLoan(now) %}
+            <tr>
+                <td><a class="cell-link" href="{{ path('app_key_edit', {id: key.id}) }}">{{ key.name }}</a>{% if key.description %}<div class="small muted">{{ key.description }}</div>{% endif %}</td>
+                <td>{{ key.roomNames ?: '–' }}</td>
+                <td><span class="badge {{ status.value == 'available' ? 'badge-ok' : (status.value == 'lost' ? '' : (key.overdue(now) ? 'badge-danger' : 'badge-warn')) }}">{{ key.overdue(now) ? 'überfällig' : status.label }}</span></td>
+                <td>{% if active %}{{ active.holderLabel }}{% if active.dueAt %} <span class="muted small">bis {{ active.dueAt|date('d.m. H:i') }}</span>{% endif %}{% else %}<span class="muted">–</span>{% endif %}</td>
+                <td class="actions"><a class="btn btn-sm btn-ghost" href="{{ path('app_calendar', {panel: 'k-' ~ key.id}) }}">{{ ux_icon('lucide:calendar') }} Im Kalender</a></td>
+            </tr>
+        {% else %}
+            <tr><td colspan="5"><div class="empty">Noch keine Schlüssel.</div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

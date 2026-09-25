@@ -1,0 +1,9 @@
+{# chip, chip_class, title, when #}
+<div class="panel-head">
+    <div class="top">
+        <a class="btn btn-ghost btn-sm" href="{{ cal_path(query, {panel: null}) }}" style="padding-left:6px">{{ ux_icon('lucide:arrow-left') }} Schlüssel &amp; Todos</a>
+        <span class="badge {{ chip_class ?? '' }}">{{ chip }}</span>
+    </div>
+    <h2>{{ title }}</h2>
+    {% if when is defined and when %}<div class="when">{{ when }}</div>{% endif %}
+</div>

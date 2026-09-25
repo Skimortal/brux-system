@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<style>
+    body { font-family: 'DejaVu Sans', sans-serif; font-size: 11px; color: #1c1b18; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    h2 { font-size: 13px; margin: 22px 0 6px; }
+    .muted { color: #5c574d; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 5px 6px; border-bottom: 1px solid #e3ded3; }
+    th { background: #faf8f4; font-size: 10px; text-transform: uppercase; color: #5c574d; }
+    .cancelled td { color: #9f1d1d; text-decoration: line-through; }
+    .sum { margin-top: 18px; font-size: 12px; }
+</style>
+</head>
+<body>
+    <h1>Reinigungsbericht {{ month|de_date('MMMM y') }}</h1>
+    <div class="muted">{{ contact.name }}{{ contact.company ? ' · ' ~ contact.company : '' }} · erstellt am {{ 'now'|date('d.m.Y') }}</div>
+
+    <h2>Regelmäßige Reinigung laut Plan</h2>
+    <table>
+        <tr><th>Datum</th><th>Zeit</th><th>Status</th></tr>
+        {% for o in report.regular %}
+            <tr class="{{ o.cancelled ? 'cancelled' : '' }}"><td>{{ o.start|de_date('EE d.M.y') }}</td><td>{{ o.start|date('H:i') }}–{{ o.end|date('H:i') }}</td><td>{{ o.cancelled ? 'abgesagt' : 'geplant' }}</td></tr>
+        {% else %}
+            <tr><td colspan="3" class="muted">Keine regelmäßigen Termine.</td></tr>
+        {% endfor %}
+    </table>
+
+    <h2>Extra-Reinigungen</h2>
+    <table>
+        <tr><th>Datum</th><th>Zeit</th><th>Bereiche</th></tr>
+        {% for a in report.extra %}
+            <tr><td>{{ a.startDate|de_date('EE d.M.y') }}</td><td>{{ a.startDate|date('H:i') }}–{{ a.endDate|date('H:i') }}</td><td>{{ a.cleaningAreas|map(x => x.label)|join(', ') ?: '–' }}</td></tr>
+        {% else %}
+            <tr><td colspan="3" class="muted">Keine Extra-Reinigungen.</td></tr>
+        {% endfor %}
+    </table>
+
+    <p class="sum"><strong>Summe:</strong> {{ report.hours|number_format(2, ',', '.') }} Stunden (ohne abgesagte Termine)</p>
+</body>
+</html>

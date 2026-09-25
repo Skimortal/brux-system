@@ -1,0 +1,18 @@
+<div class="cal-month">
+    {% for label in ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] %}
+        <div class="cal-head">{{ label }}</div>
+    {% endfor %}
+    {% for day in cal.days %}
+        {% set entries = cal.entriesOn(day) %}
+        <div class="cal-mday{{ cal.inCurrentMonth(day) ? '' : ' is-other' }}{{ cal.isToday(day) ? ' is-today' }}"
+             data-date="{{ day|date('Y-m-d') }}" data-room="" data-label="{{ day|de_date('EE d.M.') }}">
+            <a class="mnum" href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}">{{ day|date('j') }}</a>
+            {% for e in entries|slice(0, 4) %}
+                {{ include('calendar/_entry.html.twig', {e: e, day: day, compact: true}) }}
+            {% endfor %}
+            {% if entries|length > 4 %}
+                <a class="more" href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}">+{{ entries|length - 4 }} weitere</a>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>

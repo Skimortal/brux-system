@@ -1,0 +1,27 @@
+{% extends 'layout/page.html.twig' %}
+{# title, subtitle, crumbs, new_url, columns: [label], rows: [{url, cells: [..]}] #}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block crumbs %}<div class="crumbs">{% for c in crumbs ?? [] %}<a href="{{ c.url }}">{{ c.label }}</a> / {% endfor %}</div>{% endblock %}
+{% block subtitle %}{% if subtitle is defined and subtitle %}<p class="sub">{{ subtitle }}</p>{% endif %}{% endblock %}
+{% block actions %}{% if new_url is defined and new_url %}<a class="btn btn-primary" href="{{ new_url }}">{{ ux_icon('lucide:plus') }} Neu</a>{% endif %}{% endblock %}
+
+{% block page %}
+<div class="table-wrap">
+    <table class="table">
+        <thead><tr>{% for c in columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for row in rows %}
+            <tr class="is-link" onclick="Turbo.visit('{{ row.url }}')">
+                {% for cell in row.cells %}
+                    <td>{% if loop.first %}<a class="cell-link" href="{{ row.url }}">{{ cell }}</a>{% else %}{{ cell }}{% endif %}</td>
+                {% endfor %}
+            </tr>
+        {% else %}
+            <tr><td colspan="{{ columns|length }}"><div class="empty">Noch keine Einträge.</div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

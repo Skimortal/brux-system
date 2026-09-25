@@ -1,0 +1,73 @@
+{% set borrowed = keys|filter(k => k.status(now).value == 'borrowed') %}
+{% set available = keys|filter(k => k.status(now).value == 'available') %}
+{% set lost = keys|filter(k => k.status(now).value == 'lost') %}
+<nav class="side-tabs">
+    <a href="{{ cal_path(query, {side: 'keys'}) }}" {% if query.side == 'keys' %}aria-current="true"{% endif %}>{{ ux_icon('lucide:key-round') }} Schlüssel</a>
+    <a href="{{ cal_path(query, {side: 'todos'}) }}" {% if query.side == 'todos' %}aria-current="true"{% endif %}>{{ ux_icon('lucide:list-todo') }} Todos <span class="count">{{ todos|length }}</span></a>
+</nav>
+
+{% if query.side == 'todos' %}
+    <form class="side-section" method="post" action="{{ path('app_todo_create') }}" data-turbo-frame="_top" style="flex-direction:row">
+        <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+        <input type="hidden" name="_return" value="{{ return_url }}">
+        <input class="input grow" name="description" placeholder="Neues Todo …" maxlength="255" required aria-label="Neues Todo">
+        <button class="btn btn-dark" type="submit">Anlegen</button>
+    </form>
+    <div class="side-scroll">
+        {% for todo in todos %}
+            <div class="todo-row">
+                <form class="done" method="post" action="{{ path('app_todo_done', {id: todo.id}) }}" data-turbo-frame="_top">
+                    <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+                    <input type="hidden" name="_return" value="{{ return_url }}">
+                    <button type="submit" aria-label="Als erledigt markieren" title="Erledigt">{{ ux_icon('lucide:check') }}</button>
+                </form>
+                <form class="edit" method="post" action="{{ path('app_todo_update', {id: todo.id}) }}" data-turbo-frame="_top" data-controller="autosubmit">
+                    <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+                    <input type="hidden" name="_return" value="{{ return_url }}">
+                    <input name="description" value="{{ todo.description }}" maxlength="255" aria-label="Todo bearbeiten" data-action="change->autosubmit#submit">
+                </form>
+            </div>
+        {% else %}
+            <div class="empty">Keine offenen Todos.</div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="side-section">
+        <div class="row-wrap">
+            <span class="badge badge-warn">{{ borrowed|length }} verliehen</span>
+            {% set overdue = borrowed|filter(k => k.overdue(now)) %}
+            {% if overdue|length %}<span class="badge badge-danger">{{ overdue|length }} überfällig</span>{% endif %}
+            <span class="badge badge-ok">{{ available|length }} verfügbar</span>
+            {% if lost|length %}<span class="badge">{{ lost|length }} verloren</span>{% endif %}
+        </div>
+        <a class="btn btn-sm" href="{{ cal_path(query, {panel: 'kl-new'}) }}">{{ ux_icon('lucide:plus') }} Schlüssel verleihen</a>
+    </div>
+    <div class="side-scroll">
+        {% for group in [{label: 'Verliehen', keys: borrowed}, {label: 'Verfügbar', keys: available}, {label: 'Verloren', keys: lost}] %}
+            {% if group.keys|length %}
+                <div class="section-label" style="padding: 12px 18px 6px">{{ group.label }}</div>
+                {% for key in group.keys %}
+                    {% set active = key.activeLoan(now) %}
+                    {% set next = key.nextLoan(now) %}
+                    <a class="key-row" href="{{ cal_path(query, {panel: 'k-' ~ key.id}) }}">
+                        {% set color = key.lost ? '#45413a' : (key.overdue(now) ? 'var(--danger-ink)' : (active ? 'var(--t-key-dot)' : '#3f8f5a')) %}
+                        <span class="dot" style="background: {{ color }}"></span>
+                        <span class="grow" style="min-width:0">
+                            <span class="name" style="display:block">{{ key.name }}</span>
+                            <span class="line{{ key.overdue(now) ? ' is-danger' }}" style="display:block">
+                                {% if key.lost %}verloren
+                                {% elseif active %}bei {{ active.holderLabel }}{% if key.overdue(now) %} · überfällig seit {{ active.dueAt|date('d.m.') }}{% elseif active.dueAt %} bis {{ active.dueAt|de_date('EE d.M. HH:mm') }}{% endif %}
+                                {% else %}{{ key.roomNames ?: 'im Haus' }}{% if next %} · {{ next.startAt|de_date('EE d.M.') }} an {{ next.holderLabel }}{% endif %}
+                                {% endif %}
+                            </span>
+                        </span>
+                        {{ ux_icon('lucide:chevron-right', {class: 'muted'}) }}
+                    </a>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+        {% if keys is empty %}
+            <div class="empty">Noch keine Schlüssel. <a href="{{ path('app_key_new') }}" data-turbo-frame="_top">Schlüssel anlegen</a></div>
+        {% endif %}
+    </div>
+{% endif %}

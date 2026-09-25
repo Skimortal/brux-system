@@ -1,0 +1,55 @@
+{% set groups = enum_cases('App\\Calendar\\EntryGroup') %}
+<div class="cal-toolbar">
+    <div class="cal-nav">
+        <a class="btn btn-icon btn-sm" href="{{ cal_path(query, {date: query.previousDate|date('Y-m-d')}) }}" aria-label="Zurück">{{ ux_icon('lucide:chevron-left') }}</a>
+        <a class="btn btn-sm" href="{{ cal_path(query, {date: null}) }}">Heute</a>
+        <a class="btn btn-icon btn-sm" href="{{ cal_path(query, {date: query.nextDate|date('Y-m-d')}) }}" aria-label="Weiter">{{ ux_icon('lucide:chevron-right') }}</a>
+    </div>
+    <h1>{{ cal.title }}</h1>
+    <div class="grow"></div>
+    <nav class="seg-links" aria-label="Ansicht">
+        {% for key, label in constant('App\\Calendar\\CalendarQuery::VIEWS') %}
+            <a href="{{ cal_path(query, {view: key}) }}" {% if query.view == key %}aria-current="true"{% endif %}>{{ label }}</a>
+        {% endfor %}
+    </nav>
+    {% if query.view != 'month' %}
+        <nav class="seg-links" aria-label="Aufteilung">
+            {% for key, label in constant('App\\Calendar\\CalendarQuery::LAYOUTS') %}
+                <a href="{{ cal_path(query, {layout: key}) }}" {% if query.layout == key %}aria-current="true"{% endif %}>{{ label }}</a>
+            {% endfor %}
+        </nav>
+    {% endif %}
+    <button type="button" class="btn btn-primary btn-sm" data-action="quick-create#openDefault" data-date="{{ query.view == 'day' ? query.date|date('Y-m-d') : 'now'|date('Y-m-d') }}">{{ ux_icon('lucide:plus') }} Neu</button>
+</div>
+<div class="cal-filters">
+    {% for group in groups %}
+        {% set off = query.isHidden(group) %}
+        <a class="chip{{ off ? ' is-off' : '' }}" href="{{ path('app_calendar', query.toggleParams(group)) }}" aria-pressed="{{ off ? 'false' : 'true' }}" title="{{ off ? 'Einblenden' : 'Ausblenden' }}">
+            <span class="chip-swatch swatch-{{ group.colorKey }}"></span>{{ group.label }}
+        </a>
+    {% endfor %}
+    <div class="grow"></div>
+    <form method="post" action="{{ path('app_wordpress_sync') }}" data-turbo-frame="_top" data-controller="busy">
+        <input type="hidden" name="_token" value="{{ csrf_token('wordpress-sync') }}">
+        <input type="hidden" name="_return" value="{{ return_url }}">
+        <button class="chip" type="submit" data-busy-target="button" title="Vorstellungen jetzt von der Website laden">
+            {{ ux_icon('lucide:refresh-cw') }} WordPress{% if last_sync %} · {{ last_sync|de_date(last_sync|date('Y-m-d') == 'now'|date('Y-m-d') ? "HH:mm" : "d.M. HH:mm") }}{% endif %}
+        </button>
+    </form>
+    <details class="rail-menu" style="position:relative">
+        <summary class="chip" style="list-style:none;cursor:pointer">{{ ux_icon('lucide:file-text') }} Reinigungsbericht</summary>
+        <form class="rail-menu-pop form" style="left:auto;right:0;top:40px;bottom:auto;padding:14px;gap:12px;z-index:50" method="get" action="{{ path('app_cleaning_report') }}" target="_blank" data-turbo="false">
+            <div class="field">
+                <label for="report-contact">Reinigungskraft</label>
+                <select id="report-contact" name="contact" required>
+                    {% for c in cleaning_contacts %}<option value="{{ c.id }}">{{ c.name }}</option>{% else %}<option value="">– keine Kontakte mit Rolle Reinigung –</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="report-month">Monat</label>
+                <input id="report-month" type="month" name="month" value="{{ query.date|date('Y-m') }}" required>
+            </div>
+            <button class="btn btn-dark btn-sm" type="submit">{{ ux_icon('lucide:file-text') }} PDF öffnen</button>
+        </form>
+    </details>
+</div>

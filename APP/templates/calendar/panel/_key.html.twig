@@ -1,0 +1,81 @@
+{% set key = panel.key %}
+{% set status = key.status(now) %}
+{% set active = key.activeLoan(now) %}
+{% set upcoming = key.loans|filter(l => l.plannedAt(now))|sort((a, b) => a.startAt <=> b.startAt) %}
+{% set history = key.loans|filter(l => l.returned)|slice(0, 8) %}
+{{ include('calendar/panel/_head.html.twig', {
+    chip: 'Schlüssel · ' ~ status.label,
+    chip_class: status.value == 'borrowed' ? (key.overdue(now) ? 'badge-danger' : 'badge-warn') : (status.value == 'lost' ? '' : 'badge-ok'),
+    title: key.name,
+    when: key.roomNames ? 'Öffnet: ' ~ key.roomNames : null,
+}) }}
+<div class="panel-body">
+    {% if key.description %}<p class="muted">{{ key.description }}</p>{% endif %}
+    {% if key.lost %}
+        <div class="note note-danger">{{ ux_icon('lucide:triangle-alert') }}<span>Dieser Schlüssel ist als verloren gemeldet.</span></div>
+    {% endif %}
+
+    <div class="panel-section">
+        <h3>Aktuell</h3>
+        {% if active %}
+            <div class="loan-item {{ active.overdue(now) ? 'is-overdue' : 'is-active' }}">
+                <span class="between"><strong>bei {{ active.holderLabel }}</strong>{% if active.overdue(now) %}<span class="badge badge-danger">überfällig</span>{% endif %}</span>
+                <span class="small">seit {{ active.startAt|de_date('EE d.M. HH:mm') }}{% if active.dueAt %} · Rückgabe {{ active.dueAt|de_date('EE d.M. HH:mm') }}{% endif %}</span>
+                {% if active.note %}<span class="small muted">{{ active.note|nl2br }}</span>{% endif %}
+                <div class="row">
+                    <form method="post" action="{{ path('app_key_loan_return', {id: active.id}) }}" data-turbo-frame="_top">
+                        <input type="hidden" name="_token" value="{{ csrf_token('loan-' ~ active.id) }}">
+                        <input type="hidden" name="_return" value="{{ return_url }}">
+                        <button class="btn btn-sm btn-dark" type="submit">{{ ux_icon('lucide:check') }} Zurückerhalten</button>
+                    </form>
+                    <a class="btn btn-sm btn-ghost" href="{{ cal_path(query, {panel: 'kl-' ~ active.id}) }}">{{ ux_icon('lucide:pencil') }} Bearbeiten</a>
+                </div>
+            </div>
+        {% elseif not key.lost %}
+            <p class="small muted">Im Haus verfügbar.</p>
+        {% endif %}
+        {% if not key.lost %}
+            <a class="btn btn-sm" href="{{ cal_path(query, {panel: 'kl-new'}) }}&key={{ key.id }}">{{ ux_icon('lucide:plus') }} {{ active ? 'Nächste Übergabe planen' : 'Verleihen' }}</a>
+        {% endif %}
+    </div>
+
+    {% if upcoming|length %}
+        <div class="panel-section">
+            <h3>Geplante Übergaben</h3>
+            <div class="loan-list">
+                {% for loan in upcoming %}
+                    <div class="loan-item">
+                        <span class="between"><strong>an {{ loan.holderLabel }}</strong><span class="small muted">geplant</span></span>
+                        <span class="small">{{ loan.startAt|de_date('EE d.M. HH:mm') }}{% if loan.dueAt %} – {{ loan.dueAt|de_date('EE d.M. HH:mm') }}{% endif %}</span>
+                        <div class="row">
+                            <form method="post" action="{{ path('app_key_loan_handover', {id: loan.id}) }}" data-turbo-frame="_top">
+                                <input type="hidden" name="_token" value="{{ csrf_token('loan-' ~ loan.id) }}">
+                                <input type="hidden" name="_return" value="{{ return_url }}">
+                                <button class="btn btn-xs" type="submit">Jetzt übergeben</button>
+                            </form>
+                            <a class="btn btn-xs btn-ghost" href="{{ cal_path(query, {panel: 'kl-' ~ loan.id}) }}">Bearbeiten</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    {% if history|length %}
+        <div class="panel-section">
+            <h3>Verlauf</h3>
+            {% for loan in history %}
+                <div class="between small"><span>{{ loan.holderLabel }}</span><span class="mono muted">{{ loan.startAt|date('d.m.') }}–{{ loan.returnedAt|date('d.m.y') }}</span></div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+<div class="panel-foot">
+    <form method="post" action="{{ path('app_key_lost', {id: key.id}) }}" data-turbo-frame="_top" {% if not key.lost %}data-turbo-confirm="{{ key.name }} als verloren melden?"{% endif %}>
+        <input type="hidden" name="_token" value="{{ csrf_token('key-' ~ key.id) }}">
+        <input type="hidden" name="_return" value="{{ return_url }}">
+        <button class="btn btn-sm {{ key.lost ? '' : 'btn-danger' }}" type="submit">{{ key.lost ? 'Wiedergefunden' : 'Als verloren melden' }}</button>
+    </form>
+    <div class="grow"></div>
+    <a class="btn btn-sm btn-ghost" href="{{ path('app_key_edit', {id: key.id}) }}" data-turbo-frame="_top">Stammdaten</a>
+</div>

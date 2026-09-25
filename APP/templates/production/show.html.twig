@@ -1,0 +1,127 @@
+{% extends 'layout/page.html.twig' %}
+{% set is_new = production.id is null %}
+
+{% block title %}{{ is_new ? 'Neue Produktion' : production.title }}{% endblock %}
+{% block page_title %}{{ is_new ? 'Neue Produktion' : production.title }}{% endblock %}
+{% block crumbs %}<div class="crumbs"><a href="{{ path('app_production_index') }}">Produktionen</a> /</div>{% endblock %}
+{% block subtitle %}
+    {% if not is_new %}
+        <div class="row-wrap sub">
+            {% if production.fromWordPress %}<span class="badge badge-accent">WordPress-ID {{ production.externalId }}</span>{% else %}<span class="badge">eigene Produktion</span>{% endif %}
+            {% if production.syncedAt %}<span class="small muted">zuletzt importiert {{ production.syncedAt|de_date('d.M.y HH:mm') }}</span>{% endif %}
+        </div>
+    {% endif %}
+{% endblock %}
+{% block actions %}
+    {% if production.permalink %}<a class="btn" href="{{ production.permalink }}" target="_blank" rel="noopener">{{ ux_icon('lucide:globe') }} Auf Website ansehen</a>{% endif %}
+{% endblock %}
+
+{% block page %}
+{% import 'production/_rows.html.twig' as rows %}
+<div class="grid-main-side">
+    <div class="stack-lg">
+        {% if production.lastPushError %}
+            <div class="note note-danger">{{ ux_icon('lucide:triangle-alert') }}<span>Letzte Übertragung an die Website fehlgeschlagen: {{ production.lastPushError }}</span></div>
+        {% endif %}
+        {{ form_start(form, {attr: {class: 'stack-lg', novalidate: 'novalidate'}}) }}
+            <section class="card">
+                <div class="card-head"><h2>Technik &amp; Bühne</h2></div>
+                <div class="card-body form">
+                    {% if form.title is defined %}{{ form_row(form.title) }}{% endif %}
+                    {% if form.permalink is defined %}{{ form_row(form.permalink) }}{% endif %}
+                    <div class="field">
+                        <span class="field-label">Benötigt</span>
+                        <div class="toggles">
+                            {% for field in [form.needsLightingTechnician, form.needsSoundTechnician, form.needsSetupTechnician] %}
+                                <span class="toggle">{{ form_widget(field) }}<label for="{{ field.vars.id }}">{{ field.vars.label }}</label></span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {{ form_row(form.grandstand) }}
+                </div>
+            </section>
+
+            <section class="card" data-controller="collection" data-collection-index-value="{{ form.contactPersons|length }}" data-collection-placeholder-value="__cp__">
+                <div class="card-head">
+                    <h2>Ansprechpersonen</h2>
+                    <button type="button" class="btn btn-sm" data-action="collection#add">{{ ux_icon('lucide:plus') }} Person</button>
+                </div>
+                <div class="card-body">
+                    <div class="rows" data-collection-target="list">
+                        {% for f in form.contactPersons %}{{ rows.contact(f) }}{% endfor %}
+                    </div>
+                    <p class="muted small" data-collection-target="empty" {% if form.contactPersons|length %}hidden{% endif %}>Noch keine Ansprechpersonen. Sie können im Kalender einzelnen Vorstellungen zugeordnet werden.</p>
+                    <template data-collection-target="prototype">{{ rows.contact(form.contactPersons.vars.prototype) }}</template>
+                </div>
+            </section>
+
+            <section class="card" data-controller="collection" data-collection-index-value="{{ form.technicians|length }}" data-collection-placeholder-value="__pt__">
+                <div class="card-head">
+                    <h2>Technik der Produktion</h2>
+                    <button type="button" class="btn btn-sm" data-action="collection#add">{{ ux_icon('lucide:plus') }} Person</button>
+                </div>
+                <div class="card-body">
+                    <p class="muted small" style="margin-bottom:10px">Techniker:innen, die die Produktion selbst mitbringt.</p>
+                    <div class="rows" data-collection-target="list">
+                        {% for f in form.technicians %}{{ rows.technician(f) }}{% endfor %}
+                    </div>
+                    <template data-collection-target="prototype">{{ rows.technician(form.technicians.vars.prototype) }}</template>
+                    <p data-collection-target="empty" hidden></p>
+                </div>
+            </section>
+            {% do form.contactPersons.setRendered %}
+            {% do form.technicians.setRendered %}
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">{{ ux_icon('lucide:save') }} Speichern</button>
+                <a class="btn btn-ghost" href="{{ path('app_production_index') }}">Zurück</a>
+            </div>
+        {{ form_end(form) }}
+
+        {% if not is_new and is_granted('ROLE_ADMIN') %}
+            <form method="post" action="{{ path('app_production_delete', {id: production.id}) }}" data-turbo-confirm="Produktion mit allen Vorstellungen löschen? Kommt sie aus WordPress, wird sie beim nächsten Import wieder angelegt.">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete-production-' ~ production.id) }}">
+                <button class="btn btn-sm btn-danger" type="submit">{{ ux_icon('lucide:trash-2') }} Produktion löschen</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <aside class="stack-lg">
+        {% if not is_new %}
+            <section class="card">
+                <div class="card-head"><h2>Vorstellungen</h2><span class="badge">{{ performances|length }}</span></div>
+                <div>
+                    {% for pe in performances %}
+                        {% set past = pe.date and pe.date < today %}
+                        <a class="key-row" href="{{ path('app_calendar', {date: pe.date|date('Y-m-d'), panel: 'pe-' ~ pe.id}) }}" style="{{ past ? 'opacity:.55' }}">
+                            <span class="grow">
+                                <span class="name" style="display:block">{{ pe.startsAt ? pe.startsAt|de_date('EE d. MMM y') : 'ohne Datum' }}{{ pe.timeFrom ? ' · ' ~ pe.timeFrom : '' }}</span>
+                                <span class="line" style="display:block">{{ pe.room ? pe.room.name : 'ohne Raum' }}{% if pe.quota %} · {{ pe.seatsTaken ?? 0 }}/{{ pe.quota }} reserviert{% endif %}{% if pe.appointment %} · Besetzung{% endif %}</span>
+                            </span>
+                            {{ ux_icon('lucide:calendar') }}
+                        </a>
+                    {% else %}
+                        <div class="empty">Noch keine Vorstellungen.</div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% if production.priceList|length %}
+                <section class="card">
+                    <div class="card-head"><h2>Preise</h2><span class="badge badge-accent">WordPress</span></div>
+                    <div class="price-table" style="border:0;border-radius:0">
+                        <div><span>Kategorie</span><span class="num">Preis</span><span class="num">Kontingent</span></div>
+                        {% for price in production.priceList %}
+                            <div><span>{{ price.categoryLabel }}</span><span class="num">{{ price.priceLabel }} €</span><span class="num">{{ price.parentReserved ?? '–' }}</span></div>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+            {% if production.postThumbnailUrl or production.excerptHtml %}
+                <section class="card">
+                    {% if production.postThumbnailUrl %}<img src="{{ production.postThumbnailUrl }}" alt="" style="border-radius: 14px 14px 0 0; width:100%; aspect-ratio: 16/9; object-fit: cover">{% endif %}
+                    {% if production.excerptHtml %}<div class="card-body small muted">{{ production.excerptHtml|striptags }}</div>{% endif %}
+                </section>
+            {% endif %}
+        {% endif %}
+    </aside>
+</div>
+{% endblock %}

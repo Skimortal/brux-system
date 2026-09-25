@@ -1,0 +1,37 @@
+{% extends 'layout/page.html.twig' %}
+
+{% block title %}Kontakte{% endblock %}
+{% block page_title %}Kontakte{% endblock %}
+{% block subtitle %}<p class="sub">{{ count }} Kontakte · Technik, Freiwillige, Reinigung, Mieter:innen und mehr</p>{% endblock %}
+{% block actions %}
+    {% if is_granted('ROLE_ADMIN') %}<a class="btn btn-ghost" href="{{ path('app_contact_category_index') }}">Kategorien</a>{% endif %}
+    <a class="btn btn-primary" href="{{ path('app_contact_new', {kategorie: category ?: null}) }}">{{ ux_icon('lucide:plus') }} Kontakt</a>
+{% endblock %}
+
+{% block page %}
+<form class="list-toolbar" method="get" data-turbo-action="replace" data-controller="autosubmit">
+    {% if category %}<input type="hidden" name="kategorie" value="{{ category }}">{% endif %}
+    <label class="search-input">{{ ux_icon('lucide:search') }}<input type="search" name="q" value="{{ term }}" placeholder="Name, Firma, E-Mail oder Telefon" data-action="input->autosubmit#submit"></label>
+    <a class="chip{{ not category ? ' is-active' }}" href="{{ path('app_contact_index', {q: term ?: null}) }}">Alle</a>
+    {% for c in categories %}
+        <a class="chip{{ category == c.id ? ' is-active' }}" href="{{ path('app_contact_index', {kategorie: c.id, q: term ?: null}) }}">{{ c.name }}{% if c.role %} <span class="count">· {{ c.role.label }}</span>{% endif %}</a>
+    {% endfor %}
+</form>
+
+{% for name, contacts in grouped %}
+    <h2 style="margin: 22px 0 10px">{{ name }} <span class="muted" style="font-weight:400">{{ contacts|length }}</span></h2>
+    <div class="cards-grid">
+        {% for c in contacts %}
+            <a class="contact-card" href="{{ path('app_contact_edit', {id: c.id}) }}">
+                <strong>{{ c.name }}</strong>
+                {% if c.company %}<span class="line">{{ ux_icon('lucide:building-2') }}{{ c.company }}</span>{% endif %}
+                {% if c.phone %}<span class="line">{{ ux_icon('lucide:phone') }}{{ c.phone }}</span>{% endif %}
+                {% if c.email %}<span class="line">{{ ux_icon('lucide:mail') }}{{ c.email }}</span>{% endif %}
+                {% if c.notes %}<span class="line small muted">{{ c.notes|length > 90 ? c.notes|slice(0, 90) ~ '…' : c.notes }}</span>{% endif %}
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="card"><div class="empty">Keine Kontakte gefunden.</div></div>
+{% endfor %}
+{% endblock %}

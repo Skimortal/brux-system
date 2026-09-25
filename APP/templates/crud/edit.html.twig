@@ -1,0 +1,30 @@
+{% extends 'layout/page.html.twig' %}
+{# title, crumbs: [{label, url}], form, back_url, delete_url, delete_token, intro #}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block crumbs %}
+    <div class="crumbs">{% for c in crumbs %}<a href="{{ c.url }}">{{ c.label }}</a> / {% endfor %}</div>
+{% endblock %}
+
+{% block page %}
+<div style="max-width: 760px">
+    {% if intro is defined and intro %}<p class="muted" style="margin-bottom:16px">{{ intro }}</p>{% endif %}
+    {{ form_start(form, {attr: {class: 'card', novalidate: 'novalidate'}}) }}
+        <div class="card-body form">
+            {{ form_errors(form) }}
+            {{ form_widget(form) }}
+        </div>
+        <div class="card-foot form-actions">
+            <button class="btn btn-primary" type="submit">{{ ux_icon('lucide:save') }} Speichern</button>
+            <a class="btn btn-ghost" href="{{ back_url }}">Abbrechen</a>
+        </div>
+    {{ form_end(form) }}
+    {% if delete_url is defined and delete_url %}
+        <form method="post" action="{{ delete_url }}" data-turbo-confirm="Wirklich löschen?" style="margin-top:16px">
+            <input type="hidden" name="_token" value="{{ csrf_token(delete_token) }}">
+            <button class="btn btn-sm btn-danger" type="submit">{{ ux_icon('lucide:trash-2') }} Löschen</button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

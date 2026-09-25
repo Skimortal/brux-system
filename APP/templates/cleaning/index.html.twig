@@ -1,0 +1,27 @@
+{% extends 'layout/page.html.twig' %}
+
+{% block title %}Reinigungsplan{% endblock %}
+{% block page_title %}Reinigungsplan{% endblock %}
+{% block subtitle %}<p class="sub">Regelmäßige Reinigungen. Absagen und Extra-Reinigungen im Kalender.</p>{% endblock %}
+{% block actions %}<a class="btn btn-primary" href="{{ path('app_cleaning_schedule_new') }}">{{ ux_icon('lucide:plus') }} Plan</a>{% endblock %}
+
+{% block page %}
+<div class="table-wrap">
+    <table class="table">
+        <thead><tr><th>Reinigungskraft</th><th>Wochentage</th><th>Zeit</th><th>Zeitraum</th><th>Absagen</th></tr></thead>
+        <tbody>
+        {% for s in schedules %}
+            <tr class="is-link" onclick="Turbo.visit('{{ path('app_cleaning_schedule_edit', {id: s.id}) }}')">
+                <td><a class="cell-link" href="{{ path('app_cleaning_schedule_edit', {id: s.id}) }}">{{ s.cleaningContact.name }}</a></td>
+                <td>{{ s.weekdayLabels }}</td>
+                <td class="mono">{{ s.timeFrom|date('H:i') }}–{{ s.timeTo|date('H:i') }}</td>
+                <td>{{ s.activeFrom ? 'ab ' ~ s.activeFrom|date('d.m.Y') : 'unbegrenzt' }}{{ s.activeTo ? ' bis ' ~ s.activeTo|date('d.m.Y') : '' }}</td>
+                <td>{{ s.exceptions|length }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="5"><div class="empty">Noch kein Reinigungsplan.</div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% set s = panel.schedule %}
+{{ include('calendar/panel/_head.html.twig', {
+    chip: 'Reinigungsplan',
+    chip_class: 'badge-square t-cleaning',
+    title: 'Reinigung · ' ~ s.cleaningContact.name,
+    when: panel.day|de_date('EEEE, d. MMMM') ~ ' · ' ~ panel.start|date('H:i') ~ '–' ~ panel.end|date('H:i'),
+}) }}
+<div class="panel-body">
+    <div class="note">{{ ux_icon('lucide:repeat') }}<span>Aus dem Reinigungsplan: jeden {{ s.weekdayLabels }}, {{ s.timeFrom|date('H:i') }}–{{ s.timeTo|date('H:i') }}{% if s.activeFrom %}, ab {{ s.activeFrom|date('d.m.Y') }}{% endif %}{% if s.activeTo %}, bis {{ s.activeTo|date('d.m.Y') }}{% endif %}.</span></div>
+    <div class="between" style="padding:12px 14px;border:1px solid var(--line-soft);border-radius:10px">
+        <span class="muted">An diesem Tag</span>
+        <span class="badge {{ panel.cancelled ? 'badge-danger' : 'badge-ok' }}">{{ panel.cancelled ? 'Abgesagt' : 'Findet statt' }}</span>
+    </div>
+    <form method="post" action="{{ path('app_cleaning_cancel', {id: s.id, date: panel.day|date('Ymd')}) }}" data-turbo-frame="_top">
+        <input type="hidden" name="_token" value="{{ csrf_token('cleaning-' ~ s.id ~ '-' ~ panel.day|date('Ymd')) }}">
+        <input type="hidden" name="_return" value="{{ return_url }}">
+        <input type="hidden" name="cancel" value="{{ panel.cancelled ? '0' : '1' }}">
+        <button class="btn btn-block {{ panel.cancelled ? 'btn-dark' : 'btn-danger-solid' }}" type="submit">
+            {{ ux_icon(panel.cancelled ? 'lucide:undo-2' : 'lucide:circle-x') }} {{ panel.cancelled ? 'Absage zurücknehmen' : 'Für diesen Tag absagen' }}
+        </button>
+    </form>
+    <a class="btn btn-block" href="{{ cal_path(query, {panel: 'a-new'}) }}&type=cleaning&start={{ panel.day|date('Y-m-d') }}T{{ panel.end|date('H:i') }}">{{ ux_icon('lucide:plus') }} Extra-Reinigung anlegen</a>
+    {% if s.cleaningContact.phone %}
+        <a class="btn btn-block btn-ghost" href="tel:{{ s.cleaningContact.phone|replace({' ': ''}) }}">{{ ux_icon('lucide:phone') }} {{ s.cleaningContact.phone }}</a>
+    {% endif %}
+</div>
+<div class="panel-foot">
+    <span class="small muted grow">Wirkt nur auf diesen Tag.</span>
+    <a class="btn btn-sm btn-ghost" href="{{ path('app_cleaning_schedule_edit', {id: s.id}) }}" data-turbo-frame="_top">Plan bearbeiten</a>
+</div>

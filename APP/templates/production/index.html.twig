@@ -1,0 +1,36 @@
+{% extends 'layout/page.html.twig' %}
+
+{% block title %}Produktionen{% endblock %}
+{% block page_title %}Produktionen{% endblock %}
+{% block subtitle %}<p class="sub">Kommen aus WordPress. Hier pflegst du Technik-Bedarf, Bühnenform und Ansprechpersonen.</p>{% endblock %}
+{% block actions %}
+    <a class="btn" href="{{ path('app_production_new') }}">{{ ux_icon('lucide:plus') }} Eigene Produktion</a>
+{% endblock %}
+
+{% block page %}
+<form class="list-toolbar" method="get" data-turbo-action="replace" data-controller="autosubmit">
+    <label class="search-input">{{ ux_icon('lucide:search') }}<input type="search" name="q" value="{{ term }}" placeholder="Produktion suchen" data-action="input->autosubmit#submit"></label>
+    <a class="chip{{ not show_all ? ' is-active' }}" href="{{ path('app_production_index', {q: term ?: null}) }}">Mit kommenden Vorstellungen</a>
+    <a class="chip{{ show_all ? ' is-active' }}" href="{{ path('app_production_index', {alle: 1, q: term ?: null}) }}">Alle</a>
+</form>
+
+<div class="table-wrap">
+    <table class="table">
+        <thead><tr><th>Produktion</th><th>Nächste Vorstellung</th><th>Vorstellungen</th><th>Bedarf</th><th>Quelle</th></tr></thead>
+        <tbody>
+        {% for row in rows %}
+            {% set p = row.production %}
+            <tr class="is-link" onclick="Turbo.visit('{{ path('app_production_show', {id: p.id}) }}')">
+                <td><a class="cell-link" href="{{ path('app_production_show', {id: p.id}) }}">{{ p.title }}</a></td>
+                <td>{{ row.next ? row.next|de_date('EE d. MMM y') : '–' }}</td>
+                <td>{{ row.upcoming }} kommend{% if row.total > row.upcoming %} <span class="muted">· {{ row.total }} gesamt</span>{% endif %}</td>
+                <td>{% for label in p.requirementLabels %}<span class="badge badge-square">{{ label }}</span> {% else %}<span class="muted">–</span>{% endfor %}</td>
+                <td>{% if p.fromWordPress %}<span class="badge badge-accent">WordPress</span>{% else %}<span class="badge">eigene</span>{% endif %}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="5"><div class="empty">Keine Produktionen gefunden.</div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

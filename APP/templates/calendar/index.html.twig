@@ -1,0 +1,32 @@
+{% extends 'layout/app.html.twig' %}
+
+{% block title %}Kalender{% endblock %}
+{% block main_class %}cal-page{% endblock %}
+
+{% block content %}
+<div class="cal-shell">
+    <section class="cal-main">
+        <turbo-frame id="calendar" data-turbo-action="advance">
+            {{ include('calendar/_toolbar.html.twig') }}
+            <div class="cal-board" data-controller="quick-create scroll-keeper"
+                 data-quick-create-appointment-url-value="{{ cal_path(query, {panel: 'a-new'}) }}"
+                 data-quick-create-loan-url-value="{{ cal_path(query, {panel: 'kl-new'}) }}"
+                 data-action="click->quick-create#open">
+                {% if query.view == 'month' %}
+                    {{ include('calendar/_month.html.twig') }}
+                {% else %}
+                    {{ include('calendar/_lanes.html.twig') }}
+                {% endif %}
+                {{ include('calendar/_quick_create.html.twig') }}
+            </div>
+        </turbo-frame>
+    </section>
+    <turbo-frame id="side" class="cal-side{{ panel ? ' has-panel' : '' }}" data-turbo-action="advance">
+        {% if panel %}
+            {{ include('calendar/panel/_' ~ panel.kind ~ '.html.twig') }}
+        {% else %}
+            {{ include('calendar/_home.html.twig') }}
+        {% endif %}
+    </turbo-frame>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'layout/auth.html.twig' %}
+
+{% block title %}Anmelden{% endblock %}
+
+{% block auth %}
+    <h1 style="font-size:26px">Anmelden</h1>
+    {% if error %}
+        <div class="note note-danger">{{ ux_icon('lucide:triangle-alert') }}<span>{{ error.messageKey|trans(error.messageData, 'security') }}</span></div>
+    {% endif %}
+    <form method="post" class="form" data-turbo="false">
+        <div class="field">
+            <label for="username">Benutzername</label>
+            <input type="text" id="username" name="_username" value="{{ last_username }}" autocomplete="username" required autofocus>
+        </div>
+        <div class="field">
+            <label for="password">Passwort</label>
+            <input type="password" id="password" name="_password" autocomplete="current-password" required>
+        </div>
+        <label class="check"><input type="checkbox" name="_remember_me" checked> Angemeldet bleiben</label>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+        <button class="btn btn-primary btn-block" type="submit">Anmelden</button>
+    </form>
+    <a href="{{ path('app_forgot_password') }}" class="small">Passwort vergessen?</a>
+{% endblock %}

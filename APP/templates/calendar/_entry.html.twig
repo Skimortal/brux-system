@@ -1,0 +1,16 @@
+{# @var e \App\Calendar\CalendarEntry #}
+{% set compact = compact ?? false %}
+<a href="{{ cal_path(query, {panel: e.panel}) }}" data-turbo-frame="side" data-turbo-action="advance"
+   data-panel="{{ e.panel }}" data-action="quick-create#select"
+   class="cal-item t-{{ e.colorKey }}{{ e.isPast(cal.now) ? ' is-past' }}{{ e.cancelled ? ' is-cancelled' }}{{ e.conflict ? ' has-conflict' }}{{ query.panel == e.panel ? ' is-selected' }}"
+   title="{{ e.title }} · {{ day is defined ? e.timeLabelOn(day) : e.timeLabel }}{{ e.conflict ? ' · ' ~ e.conflict }}">
+    {% if compact %}
+        <span class="mono small">{{ e.allDay ? '' : e.start|date('H:i') }}</span>
+        <span class="title">{{ e.title }}</span>
+    {% else %}
+        <span class="t">{% if e.icon %}{{ ux_icon(e.icon) }}{% endif %}{{ day is defined ? e.timeLabelOn(day) : e.timeLabel }}{% if e.fromWordPress %}<span class="wp">WP</span>{% endif %}</span>
+        <span class="title">{{ e.title }}</span>
+        {% if e.meta %}<span class="meta">{{ e.meta }}</span>{% endif %}
+    {% endif %}
+    {% if e.conflict %}<span class="conflict-dot" aria-hidden="true">!</span><span class="sr-only">{{ e.conflict }}</span>{% endif %}
+</a>

@@ -1,0 +1,11 @@
+<div class="toasts" id="toasts" aria-live="polite">
+    {% for type, messages in app.flashes(['success', 'danger', 'warning', 'info']) %}
+        {% for message in messages %}
+            <div class="toast {{ type == 'danger' ? 'is-danger' : (type == 'warning' ? 'is-warning' : '') }}" data-controller="toast" role="status">
+                {{ ux_icon(type == 'danger' ? 'lucide:circle-x' : (type == 'warning' ? 'lucide:triangle-alert' : 'lucide:circle-check')) }}
+                <span class="grow">{{ message }}</span>
+                <button type="button" data-action="toast#close" aria-label="Schließen">{{ ux_icon('lucide:x') }}</button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>

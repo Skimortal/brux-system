@@ -1,0 +1,19 @@
+<div class="popover" data-quick-create-target="popover" hidden role="dialog" aria-label="Neu anlegen">
+    <div class="popover-head">
+        <span>Neu · <span data-quick-create-target="label"></span></span>
+        <button type="button" class="btn btn-ghost btn-icon btn-sm" data-action="quick-create#close" aria-label="Schließen">{{ ux_icon('lucide:x') }}</button>
+    </div>
+    <div class="popover-list">
+        {% for type in enum_cases('App\\Enum\\AppointmentTypeEnum') %}
+            <a href="#" data-quick-create-target="link" data-kind="appointment" data-type="{{ type.value }}" data-turbo-frame="side" data-turbo-action="advance">
+                <span class="swatch swatch-{{ type.value in ['closed_event', 'school_event'] ? 'closed_event' : type.value }}"></span>
+                <span><span>{{ type.label }}</span><span class="d">{{ type.description }}</span></span>
+            </a>
+        {% endfor %}
+        <a href="#" data-quick-create-target="link" data-kind="loan" data-turbo-frame="side" data-turbo-action="advance">
+            <span class="swatch swatch-key"></span>
+            <span><span>Schlüssel verleihen</span><span class="d">an wen, von wann bis wann</span></span>
+        </a>
+    </div>
+    <div class="popover-foot">Vorstellungen kommen aus WordPress und erscheinen nach dem Import automatisch.</div>
+</div>
