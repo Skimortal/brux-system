@@ -4,11 +4,8 @@
 <div class="auth">
     <div class="auth-card">
         <div class="auth-brand">
-            <span class="rail-logo">b</span>
-            <div>
-                <div style="font-weight:600;font-size:15px">Haussystem</div>
-                <div class="muted small">brux</div>
-            </div>
+            {{ include('components/_brux_logo.html.twig') }}
+            <div class="muted small" style="margin-top:10px">Haussystem</div>
         </div>
         {% block auth %}{% endblock %}
     </div>

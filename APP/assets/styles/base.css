@@ -5,21 +5,22 @@ html { -webkit-text-size-adjust: 100%; }
 body {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: 14px;
-    line-height: 1.45;
+    font-size: 15px;
+    line-height: 1.4;
     color: var(--ink);
     background: var(--ground);
     -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, h4 { margin: 0; line-height: 1.2; }
-h1 { font-family: var(--font-serif); font-weight: 400; font-size: 32px; letter-spacing: -0.01em; }
+h1 { font-family: var(--font-serif); font-weight: 300; font-size: 36px; letter-spacing: 0; }
 h2 { font-size: 16px; font-weight: 600; }
 h3 { font-size: 14px; font-weight: 600; }
 p { margin: 0; }
 
-a { color: var(--accent); text-decoration: none; }
-a:hover { color: var(--accent-hover); }
+a { color: var(--ink); text-decoration: underline; text-decoration-color: rgba(30, 30, 28, 0.3); text-underline-offset: 2px; }
+a:hover { color: #000; text-decoration-color: currentColor; }
+.btn, .chip, .rail a, .cal-item, .cal-bar, .key-row, .contact-card, .tabs a, .side-tabs a, .seg-links a, .popover-list a, .loan-item, .crumbs a, .cell-link, .mnum, .more, .rail-menu-pop a { text-decoration: none; }
 
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
@@ -28,8 +29,8 @@ button { cursor: pointer; }
 
 img { max-width: 100%; }
 
-.serif { font-family: var(--font-serif); }
-.mono { font-family: var(--font-mono); font-size: 0.93em; }
+.serif { font-family: var(--font-serif); font-weight: 300; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .muted { color: var(--muted); }
 .small { font-size: 12.5px; }
 .nowrap { white-space: nowrap; }

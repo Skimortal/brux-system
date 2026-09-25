@@ -12,7 +12,7 @@
 {% block body %}
 <div class="app">
     <nav class="rail" aria-label="Hauptnavigation">
-        <a href="{{ path('app_calendar') }}" class="rail-logo" aria-label="Zum Kalender">b</a>
+        <a href="{{ path('app_calendar') }}" class="rail-logo" aria-label="Zum Kalender">{{ include('components/_brux_logo.html.twig', {variant: 'b'}) }}</a>
         {% for item in nav %}
             <a href="{{ path(item.route) }}" class="rail-link" {% if current starts with item.match %}aria-current="page"{% endif %}>
                 {{ ux_icon(item.icon) }}<span class="rail-tip">{{ item.label }}</span><span class="sr-only">{{ item.label }}</span>
