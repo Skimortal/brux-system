@@ -238,17 +238,21 @@ final class CalendarBuilder
         }
         unset($lane);
 
+        $byLane = array_fill_keys(array_keys($lanes), []);
         foreach ($entries as $entry) {
             $laneKey = $query->layout === 'all' ? 'all' : ($entry->roomId !== null ? 'room-' . $entry->roomId : 'house');
             if (!isset($lanes[$laneKey])) {
                 $laneKey = $query->layout === 'all' ? 'all' : 'house';
             }
-            foreach ($days as $index => $day) {
-                if ($entry->overlapsDay($day)) {
-                    $lanes[$laneKey]['days'][$index][] = $entry;
-                }
-            }
+            $byLane[$laneKey][] = $entry;
         }
+        foreach ($lanes as $key => &$lane) {
+            $arranged = RunLayout::arrange($days, $byLane[$key]);
+            $lane['days'] = $arranged['days'];
+            $lane['runs'] = $arranged['runs'];
+            $lane['runRows'] = $arranged['rows'];
+        }
+        unset($lane);
 
         return array_values($lanes);
     }

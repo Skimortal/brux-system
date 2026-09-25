@@ -2,17 +2,32 @@
     {% for label in ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] %}
         <div class="cal-head">{{ label }}</div>
     {% endfor %}
-    {% for day in cal.days %}
-        {% set entries = cal.entriesOn(day) %}
-        <div class="cal-mday{{ cal.inCurrentMonth(day) ? '' : ' is-other' }}{{ cal.isToday(day) ? ' is-today' }}"
-             data-date="{{ day|date('Y-m-d') }}" data-room="" data-label="{{ day|de_date('EE d.M.') }}">
-            <a class="mnum" href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}">{{ day|date('j') }}</a>
-            {% for e in entries|slice(0, 4) %}
-                {{ include('calendar/_entry.html.twig', {e: e, day: day, compact: true}) }}
-            {% endfor %}
-            {% if entries|length > 4 %}
-                <a class="more" href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}">+{{ entries|length - 4 }} weitere</a>
-            {% endif %}
+    {% for week in cal.monthWeeks %}
+        <div class="cal-mweek">
+            <div class="cal-lane-bg">
+                {% for day in week.days %}
+                    <div class="cal-mday{{ cal.inCurrentMonth(day) ? '' : ' is-other' }}{{ cal.isToday(day) ? ' is-today' }}" data-date="{{ day|date('Y-m-d') }}" data-room="" data-label="{{ day|de_date('EE d.M.') }}">
+                        <a class="mnum" href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}">{{ day|date('j') }}</a>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="cal-lane-fg">
+                {% for run in week.runs %}
+                    {{ include('calendar/_run.html.twig', {compact: true}) }}
+                {% endfor %}
+                {% set limit = max(1, 4 - week.rows) %}
+                {% for index, day in week.days %}
+                    {% set entries = week.perDay[index] %}
+                    <div class="cal-cell" style="grid-column: {{ index + 1 }}; grid-row: {{ week.rows + 1 }}" data-date="{{ day|date('Y-m-d') }}" data-room="" data-label="{{ day|de_date('EE d.M.') }}">
+                        {% for e in entries|slice(0, limit) %}
+                            {{ include('calendar/_entry.html.twig', {e: e, day: day, compact: true}) }}
+                        {% endfor %}
+                        {% if entries|length > limit %}
+                            <a class="more" href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}">+{{ entries|length - limit }} weitere</a>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
         </div>
     {% endfor %}
 </div>

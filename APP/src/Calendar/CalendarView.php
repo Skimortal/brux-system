@@ -56,6 +56,24 @@ final class CalendarView
         return array_values(array_filter($this->entries, static fn (CalendarEntry $e) => $e->overlapsDay($day)));
     }
 
+    /**
+     * Month view: one row per week with joined runs and the remaining entries per day.
+     *
+     * @return array<int, array{days: \DateTimeImmutable[], runs: array, rows: int, perDay: array<int, CalendarEntry[]>}>
+     */
+    public function monthWeeks(): array
+    {
+        $weeks = [];
+        foreach ($this->weeks() as $weekDays) {
+            $end = end($weekDays)->modify('+1 day');
+            $entries = array_filter($this->entries, static fn (CalendarEntry $e) => $e->start < $end && $e->end > $weekDays[0]);
+            $arranged = RunLayout::arrange($weekDays, array_values($entries));
+            $weeks[] = ['days' => $weekDays, 'runs' => $arranged['runs'], 'rows' => $arranged['rows'], 'perDay' => $arranged['days']];
+        }
+
+        return $weeks;
+    }
+
     public function inCurrentMonth(\DateTimeImmutable $day): bool
     {
         return $day->format('Y-m') === $this->query->date->format('Y-m');
