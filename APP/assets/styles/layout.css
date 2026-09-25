@@ -1,0 +1,96 @@
+.app {
+    display: grid;
+    grid-template-columns: var(--rail-w) minmax(0, 1fr);
+    min-height: 100vh;
+}
+
+/* navigation rail */
+.rail {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    background: var(--rail);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 16px 0;
+    z-index: 30;
+}
+.rail-logo {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-serif); font-weight: 600; font-size: 19px;
+    margin-bottom: 16px;
+}
+.rail-link {
+    position: relative;
+    width: 48px; height: 48px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--rail-ink);
+    font-size: 20px;
+}
+.rail-link:hover { color: #fff; background: var(--rail-active); }
+.rail-link[aria-current="page"] { color: #fff; background: var(--rail-active); }
+.rail-link .rail-tip {
+    position: absolute; left: 58px; top: 50%; transform: translateY(-50%);
+    background: var(--ink); color: #fff; font-size: 12.5px; padding: 5px 9px; border-radius: 6px;
+    white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .12s;
+}
+.rail-link:hover .rail-tip, .rail-link:focus-visible .rail-tip { opacity: 1; }
+.rail-spacer { flex-grow: 1; }
+.rail-avatar {
+    width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+    background: var(--rail-active); color: #fff; font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+}
+.rail-menu { position: relative; }
+.rail-menu-pop {
+    position: absolute; left: 56px; bottom: 0; min-width: 220px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-pop); padding: 6px; display: flex; flex-direction: column;
+}
+.rail-menu-pop a, .rail-menu-pop button {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px;
+    color: var(--ink); background: none; border: 0; text-align: left; font-size: 14px;
+}
+.rail-menu-pop a:hover, .rail-menu-pop button:hover { background: var(--surface-3); }
+.rail-menu-pop .menu-head { padding: 8px 10px 10px; border-bottom: 1px solid var(--line-soft); margin-bottom: 4px; }
+.rail-menu-pop .menu-sep { height: 1px; background: var(--line-soft); margin: 4px 0; }
+
+/* admin pages */
+.page { padding: 32px 40px 56px; max-width: 1280px; width: 100%; }
+.page-wide { max-width: none; }
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
+.page-header .crumbs { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.page-header .sub { color: var(--muted); margin-top: 6px; }
+.page-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.grid-main-side { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+
+/* auth pages */
+.auth {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.auth-card {
+    width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); padding: 32px; display: flex; flex-direction: column; gap: 20px;
+}
+.auth-brand { display: flex; align-items: center; gap: 12px; }
+.auth-brand .rail-logo { margin: 0; }
+
+@media (max-width: 900px) {
+    .app { grid-template-columns: minmax(0, 1fr); padding-bottom: 64px; }
+    .rail {
+        position: fixed; top: auto; bottom: 0; left: 0; right: 0; height: 64px; flex-direction: row;
+        justify-content: space-around; padding: 0 8px; gap: 0;
+    }
+    .rail-logo, .rail-spacer { display: none; }
+    .rail-link .rail-tip { display: none; }
+    .rail-menu-pop { left: auto; right: 0; bottom: 56px; }
+    .page { padding: 20px 16px 40px; }
+    .grid-2, .grid-main-side { grid-template-columns: minmax(0, 1fr); }
+    h1 { font-size: 26px; }
+}

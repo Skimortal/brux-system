@@ -1,0 +1,76 @@
+@font-face {
+    font-family: 'Geist';
+    src: url('../fonts/geist-latin-wght-normal.woff2') format('woff2-variations');
+    font-weight: 100 900;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Geist Mono';
+    src: url('../fonts/geist-mono-latin-wght-normal.woff2') format('woff2-variations');
+    font-weight: 100 900;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Fraunces';
+    src: url('../fonts/fraunces-latin-wght-normal.woff2') format('woff2-variations');
+    font-weight: 100 900;
+    font-display: swap;
+}
+
+:root {
+    --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-serif: 'Fraunces', Georgia, serif;
+    --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+    --ground: #f4f2ec;
+    --surface: #ffffff;
+    --surface-2: #faf8f4;
+    --surface-3: #f4f2ec;
+    --line: #e3ded3;
+    --line-soft: #eeeae1;
+    --ink: #1c1b18;
+    --ink-2: #45413a;
+    --muted: #5c574d;
+    --faint: #8a8478;
+    --rail: #1c1b18;
+    --rail-ink: #a8a295;
+    --rail-active: #2f2d28;
+
+    --accent: #b8430d;
+    --accent-hover: #9a370a;
+    --accent-soft: #fbe9df;
+    --accent-ink: #7a2c08;
+
+    --ok-bg: #dcf0e1;
+    --ok-ink: #14532d;
+    --ok-line: #bfe0c8;
+    --warn-bg: #fcebc9;
+    --warn-ink: #7a3e00;
+    --warn-line: #eacb8e;
+    --danger-bg: #fbe1de;
+    --danger-ink: #9f1d1d;
+    --danger-line: #e7b3ac;
+    --info-bg: #e0e8fa;
+    --info-ink: #1e3a8a;
+    --info-line: #c3d2f2;
+
+    /* calendar entry types */
+    --t-performance-bg: #fbe9df; --t-performance-ink: #7a2c08; --t-performance-line: #f2c9b1; --t-performance-dot: #e08a5c;
+    --t-production-bg: #e0e8fa; --t-production-ink: #1e3a8a; --t-production-line: #c3d2f2; --t-production-dot: #6f8fd6;
+    --t-closed_event-bg: #e6e1f7; --t-closed_event-ink: #3b2f86; --t-closed_event-line: #cfc6ee; --t-closed_event-dot: #8c7dd1;
+    --t-school_event-bg: #e6f0d9; --t-school_event-ink: #35500f; --t-school_event-line: #cbddb3; --t-school_event-dot: #86a94e;
+    --t-private-bg: #f1e4f3; --t-private-ink: #6a2a6f; --t-private-line: #e1c8e4; --t-private-dot: #b37aba;
+    --t-internal-bg: #ece9e2; --t-internal-ink: #45413a; --t-internal-line: #dad5ca; --t-internal-dot: #a8a295;
+    --t-cleaning-bg: #ddf1ee; --t-cleaning-ink: #0f5249; --t-cleaning-line: #bce2dc; --t-cleaning-dot: #4fa396;
+    --t-key-bg: #fcebc9; --t-key-ink: #7a3e00; --t-key-line: #eacb8e; --t-key-dot: #d9a94a;
+
+    --radius-sm: 6px;
+    --radius: 9px;
+    --radius-lg: 14px;
+    --shadow-pop: 0 18px 48px rgba(28, 27, 24, 0.22);
+    --shadow-card: 0 1px 2px rgba(28, 27, 24, 0.05);
+    --focus: 0 0 0 3px rgba(184, 67, 13, 0.28);
+
+    --rail-w: 72px;
+    --panel-w: 380px;
+}

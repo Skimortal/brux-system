@@ -1,0 +1,10 @@
+ux_icons:
+    default_icon_attributes:
+        height: '1.15em'
+        width: '1.15em'
+        aria-hidden: 'true'
+    ignore_not_found: false
+
+when@prod:
+    ux_icons:
+        ignore_not_found: true

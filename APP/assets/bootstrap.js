@@ -1,7 +1,5 @@
-import { startStimulusApp } from '@symfony/stimulus-bridge';
+import { startStimulusApp } from '@symfony/stimulus-bundle';
 
-export const app = startStimulusApp(require.context(
-    './controllers',
-    true,
-    /\.(j|t)sx?$/
-));
+const app = startStimulusApp();
+
+export default app;
