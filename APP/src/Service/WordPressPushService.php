@@ -15,12 +15,22 @@ class WordPressPushService
         private EntityManagerInterface $entityManager,
         private LoggerInterface $logger,
         private string $wordpressApiUrl,
+        private string $wordpressApiToken = '',
     ) {}
+
+    public function isConfigured(): bool
+    {
+        return trim($this->wordpressApiUrl) !== '';
+    }
 
     public function pushProduction(Production $production): array
     {
         $data = $this->buildProductionPayload($production);
         $result = $this->sendPutRequest('/production', $data);
+        if ($result['status'] !== 'skipped') {
+            $production->markPushed($result['status'] === 'success' ? null : ($result['message'] ?? 'Unbekannter Fehler'));
+            $this->entityManager->flush();
+        }
 
         // WordPress gibt external_id zurück → bei uns speichern
         if ($result['status'] === 'success'
@@ -37,8 +47,13 @@ class WordPressPushService
     public function pushProductionEvent(ProductionEvent $event): array
     {
         $data = $this->buildEventPayload($event);
+        $result = $this->sendPutRequest('/event', $data);
+        if ($result['status'] !== 'skipped') {
+            $event->markPushed($result['status'] === 'success' ? null : ($result['message'] ?? 'Unbekannter Fehler'));
+            $this->entityManager->flush();
+        }
 
-        return $this->sendPutRequest('/event', $data);
+        return $result;
     }
 
     private function buildProductionPayload(Production $production): array
@@ -160,16 +175,28 @@ class WordPressPushService
         $url = rtrim($this->wordpressApiUrl, '/') . $endpoint;
 
         try {
+            $headers = [
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ];
+            if (trim($this->wordpressApiToken) !== '') {
+                $headers['Authorization'] = 'Bearer ' . trim($this->wordpressApiToken);
+            }
             $response = $this->httpClient->request('PUT', $url, [
                 'json' => $data,
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                ],
+                'headers' => $headers,
+                'timeout' => 15,
             ]);
 
             $statusCode = $response->getStatusCode();
             $responseData = $response->toArray(false);
+
+            if ($statusCode < 200 || $statusCode >= 300) {
+                $message = \is_array($responseData) && isset($responseData['message']) ? (string) $responseData['message'] : 'HTTP ' . $statusCode;
+                $this->logger->error('WordPress Push abgelehnt', ['url' => $url, 'status_code' => $statusCode, 'message' => $message]);
+
+                return ['status' => 'error', 'status_code' => $statusCode, 'message' => $message];
+            }
 
             $this->logger->info('WordPress Push erfolgreich', [
                 'url' => $url,

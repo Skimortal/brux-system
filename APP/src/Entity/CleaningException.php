@@ -6,104 +6,58 @@ use App\Repository\CleaningExceptionRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * Cancellation of a single occurrence of a cleaning schedule.
+ * Extra cleanings are regular appointments of type "cleaning".
+ */
 #[ORM\Entity(repositoryClass: CleaningExceptionRepository::class)]
+#[ORM\UniqueConstraint(name: 'uniq_cleaning_exception_schedule_date', columns: ['schedule_id', 'date'])]
 class CleaningException
 {
-    public const TYPE_CANCEL = 'cancel';
-    public const TYPE_EXTRA = 'extra';
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: Appointment::class)]
-    #[ORM\JoinColumn(nullable: true)]
-    private ?Appointment $appointment = null;
+    #[ORM\ManyToOne(targetEntity: CleaningSchedule::class, inversedBy: 'exceptions')]
+    #[ORM\JoinColumn(name: 'schedule_id', nullable: false, onDelete: 'CASCADE')]
+    private ?CleaningSchedule $schedule = null;
 
-    #[ORM\ManyToOne(targetEntity: Contact::class)]
-    #[ORM\JoinColumn(nullable: true)]
-    private ?Contact $cleaningContact = null;
+    #[ORM\Column(type: Types::DATE_IMMUTABLE)]
+    private ?\DateTimeImmutable $date = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
-    private ?\DateTimeInterface $date = null;
-
-    #[ORM\Column(type: Types::STRING, length: 20)]
-    private string $type = self::TYPE_CANCEL;
-
-    #[ORM\Column(type: Types::TIME_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $timeFrom = null;
-
-    #[ORM\Column(type: Types::TIME_MUTABLE, nullable: true)]
-    private ?\DateTimeInterface $timeTo = null;
+    public function __construct(?CleaningSchedule $schedule = null, ?\DateTimeImmutable $date = null)
+    {
+        $this->schedule = $schedule;
+        $this->date = $date?->setTime(0, 0);
+    }
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getAppointment(): ?Appointment
+    public function getSchedule(): ?CleaningSchedule
     {
-        return $this->appointment;
+        return $this->schedule;
     }
 
-    public function setAppointment(?Appointment $appointment): static
+    public function setSchedule(?CleaningSchedule $schedule): static
     {
-        $this->appointment = $appointment;
+        $this->schedule = $schedule;
+
         return $this;
     }
 
-    public function getCleaningContact(): ?Contact
-    {
-        return $this->cleaningContact;
-    }
-
-    public function setCleaningContact(?Contact $cleaningContact): void
-    {
-        $this->cleaningContact = $cleaningContact;
-    }
-
-    public function getDate(): ?\DateTimeInterface
+    public function getDate(): ?\DateTimeImmutable
     {
         return $this->date;
     }
 
-    public function setDate(\DateTimeInterface $date): static
+    public function setDate(\DateTimeImmutable $date): static
     {
-        $this->date = $date;
-        return $this;
-    }
+        $this->date = $date->setTime(0, 0);
 
-    public function getType(): string
-    {
-        return $this->type;
-    }
-
-    public function setType(string $type): static
-    {
-        $this->type = $type;
-        return $this;
-    }
-
-    public function getTimeFrom(): ?\DateTimeInterface
-    {
-        return $this->timeFrom;
-    }
-
-    public function setTimeFrom(?\DateTimeInterface $timeFrom): static
-    {
-        $this->timeFrom = $timeFrom;
-        return $this;
-    }
-
-    public function getTimeTo(): ?\DateTimeInterface
-    {
-        return $this->timeTo;
-    }
-
-    public function setTimeTo(?\DateTimeInterface $timeTo): static
-    {
-        $this->timeTo = $timeTo;
         return $this;
     }
 }

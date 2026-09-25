@@ -26,7 +26,7 @@ class SyncBruxApiCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $io->title('Brux API Synchronization');
-        $io->text('Starting synchronization from https://www.brux.at/wp-json/brux/v1/events');
+        $io->text('Starting synchronization from ' . $this->syncService->getApiUrl());
 
         $stats = $this->syncService->syncFromApi();
 

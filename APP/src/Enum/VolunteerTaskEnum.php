@@ -11,15 +11,15 @@ enum VolunteerTaskEnum: string
     case CLEANUP = 'cleanup';
     case OTHER = 'other';
 
-    public function getLabel(): string
+    public function label(): string
     {
-        return match($this) {
-            self::BAR => 'volunteer.task.bar',
-            self::SETUP => 'volunteer.task.setup',
-            self::TEARDOWN => 'volunteer.task.teardown',
-            self::TICKETING => 'volunteer.task.ticketing',
-            self::CLEANUP => 'volunteer.task.cleanup',
-            self::OTHER => 'volunteer.task.other',
+        return match ($this) {
+            self::BAR => 'Bar',
+            self::SETUP => 'Aufbau',
+            self::TEARDOWN => 'Abbau',
+            self::TICKETING => 'Ticketing',
+            self::CLEANUP => 'Aufräumen',
+            self::OTHER => 'Anderes',
         };
     }
 }

@@ -8,6 +8,9 @@ doctrine:
 
         profiling_collect_backtrace: '%kernel.debug%'
         use_savepoints: true
+        # Legacy tables (cleaning companies, technicians, volunteers) are kept until their data
+        # has been checked; they are no longer mapped.
+        schema_filter: '~^(?!(cleaning|technician|volunteer|volunteer_payment)$)~'
     orm:
         auto_generate_proxy_classes: true
         enable_lazy_ghost_objects: true

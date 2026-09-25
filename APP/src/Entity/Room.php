@@ -19,6 +19,10 @@ class Room extends Base
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $showOnDashboard = false;
 
+    /** Order of the room rows in the calendar. */
+    #[ORM\Column(options: ['default' => 0])]
+    private int $position = 0;
+
     #[ORM\ManyToMany(targetEntity: KeyManagement::class, mappedBy: 'rooms')]
     private Collection $keys;
     public function __construct()
@@ -46,6 +50,18 @@ class Room extends Base
     public function setExternalId(?string $externalId): static
     {
         $this->externalId = $externalId;
+
+        return $this;
+    }
+
+    public function getPosition(): int
+    {
+        return $this->position;
+    }
+
+    public function setPosition(int $position): static
+    {
+        $this->position = $position;
 
         return $this;
     }

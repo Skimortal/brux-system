@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\ContactRole;
 use App\Repository\ContactCategoryRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -13,7 +14,12 @@ class ContactCategory extends Base
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    #[ORM\OneToMany(mappedBy: 'category', targetEntity: Contact::class, cascade: ['remove'])]
+    /** Functional role used by the calendar (technicians, volunteers, cleaning). */
+    #[ORM\Column(length: 20, nullable: true, unique: true, enumType: ContactRole::class)]
+    private ?ContactRole $role = null;
+
+    #[ORM\OneToMany(mappedBy: 'category', targetEntity: Contact::class)]
+    #[ORM\OrderBy(['name' => 'ASC'])]
     private Collection $contacts;
 
     public function __construct()
@@ -29,6 +35,18 @@ class ContactCategory extends Base
     public function setName(string $name): static
     {
         $this->name = $name;
+        return $this;
+    }
+
+    public function getRole(): ?ContactRole
+    {
+        return $this->role;
+    }
+
+    public function setRole(?ContactRole $role): static
+    {
+        $this->role = $role;
+
         return $this;
     }
 

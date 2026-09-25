@@ -42,12 +42,12 @@ abstract class Base
         return $this->id;
     }
 
-    public function getCreatedAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?\DateTimeInterface
     {
         return $this->createdAt;
     }
 
-    public function getUpdatedAt(): ?\DateTimeImmutable
+    public function getUpdatedAt(): ?\DateTimeInterface
     {
         return $this->updatedAt;
     }

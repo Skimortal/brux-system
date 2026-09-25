@@ -38,6 +38,18 @@ class AppointmentTechnician
         return $this->id;
     }
 
+    public function __clone()
+    {
+        $this->id = null;
+        $this->appointment = null;
+    }
+
+    /** @return string[] */
+    public function getRoleLabels(): array
+    {
+        return array_keys(array_filter(['Licht' => $this->lighting, 'Ton' => $this->sound, 'Aufbau' => $this->setup]));
+    }
+
     public function getAppointment(): ?Appointment
     {
         return $this->appointment;

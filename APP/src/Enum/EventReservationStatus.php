@@ -7,11 +7,11 @@ enum EventReservationStatus: string
     case ACTIVE = 'aktiv';
     case INACTIVE = 'inaktiv';
 
-    public function getLabel(): string
+    public function label(): string
     {
-        return match($this) {
-            self::ACTIVE => 'event.reservation_status.active',
-            self::INACTIVE => 'event.reservation_status.inactive',
+        return match ($this) {
+            self::ACTIVE => 'Online-Reservierung aktiv',
+            self::INACTIVE => 'Online-Reservierung inaktiv',
         };
     }
 }

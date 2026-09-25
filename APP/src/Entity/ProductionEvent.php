@@ -13,6 +13,12 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: ProductionEventRepository::class)]
 class ProductionEvent extends Base
 {
+    use WordPressSyncTrait;
+
+    /** Staffing appointment (technicians, volunteers) attached to this performance. */
+    #[ORM\OneToOne(targetEntity: Appointment::class, mappedBy: 'productionEvent')]
+    private ?Appointment $appointment = null;
+
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     private ?int $eventIndex = null;
 
@@ -303,5 +309,85 @@ class ProductionEvent extends Base
         $this->contactPersons->removeElement($contactPerson);
 
         return $this;
+    }
+
+    public function getAppointment(): ?Appointment
+    {
+        return $this->appointment;
+    }
+
+    public function setAppointment(?Appointment $appointment): static
+    {
+        $this->appointment = $appointment;
+
+        return $this;
+    }
+
+    public function isAllDay(): bool
+    {
+        return empty($this->timeFrom) && empty($this->timeTo);
+    }
+
+    public function getStartsAt(): ?\DateTimeImmutable
+    {
+        if ($this->date === null) {
+            return null;
+        }
+        $start = \DateTimeImmutable::createFromInterface($this->date)->setTime(0, 0);
+
+        return self::applyTime($start, $this->timeFrom) ?? $start;
+    }
+
+    /** End of the performance; defaults to two hours after the start when WordPress sends no end time. */
+    public function getEndsAt(): ?\DateTimeImmutable
+    {
+        $start = $this->getStartsAt();
+        if ($start === null) {
+            return null;
+        }
+        if ($this->isAllDay()) {
+            return $start->modify('+1 day');
+        }
+        $end = self::applyTime($start, $this->timeTo);
+
+        return ($end !== null && $end > $start) ? $end : $start->modify('+2 hours');
+    }
+
+    public function getSeatsTaken(): ?int
+    {
+        if ($this->incomingTotal !== null) {
+            return $this->incomingTotal;
+        }
+        if ($this->quota !== null && $this->freeSeats !== null) {
+            return max(0, $this->quota - $this->freeSeats);
+        }
+
+        return null;
+    }
+
+    public function getSeatsFree(): ?int
+    {
+        if ($this->freeSeats !== null) {
+            return $this->freeSeats;
+        }
+        if ($this->quota !== null && $this->incomingTotal !== null) {
+            return max(0, $this->quota - $this->incomingTotal);
+        }
+
+        return null;
+    }
+
+    public function hasReservationLink(): bool
+    {
+        return $this->reservationNote !== null && preg_match('#^https?://#i', trim($this->reservationNote)) === 1;
+    }
+
+    private static function applyTime(\DateTimeImmutable $day, ?string $time): ?\DateTimeImmutable
+    {
+        if ($time === null || !preg_match('/^(\d{1,2}):(\d{2})/', trim($time), $m)) {
+            return null;
+        }
+
+        return $day->setTime((int) $m[1], (int) $m[2]);
     }
 }

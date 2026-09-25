@@ -86,7 +86,22 @@ class User extends Base implements UserInterface, PasswordAuthenticatedUserInter
     public function getRoles(): array
     {
         $roles = $this->roles;
+        $roles[] = 'ROLE_USER';
+
         return array_values(array_unique($roles));
+    }
+
+    /** @return string[] roles as stored, without the implicit ROLE_USER */
+    public function getAssignedRoles(): array
+    {
+        return array_values(array_unique($this->roles));
+    }
+
+    public function getInitials(): string
+    {
+        $initials = mb_substr((string) $this->firstName, 0, 1) . mb_substr((string) $this->lastName, 0, 1);
+
+        return mb_strtoupper($initials !== '' ? $initials : mb_substr((string) $this->username, 0, 2));
     }
 
     public function setRoles(array $roles): self
@@ -130,15 +145,6 @@ class User extends Base implements UserInterface, PasswordAuthenticatedUserInter
         $this->lastName = $lastName;
     }
 
-    public function getHireDate(): ?\DateTimeInterface
-    {
-        return $this->hireDate;
-    }
-
-    public function setHireDate(?\DateTimeInterface $hireDate): void
-    {
-        $this->hireDate = $hireDate;
-    }
 
     public function getDepartment(): ?string
     {
@@ -252,9 +258,11 @@ class User extends Base implements UserInterface, PasswordAuthenticatedUserInter
         // @deprecated, to be removed when upgrading to Symfony 8
     }
 
-    public function getFullname(): ?string
+    public function getFullname(): string
     {
-        return $this->firstName . ' ' . $this->lastName;
+        $name = trim($this->firstName . ' ' . $this->lastName);
+
+        return $name !== '' ? $name : (string) $this->username;
     }
 
     public function getAvatarFilename(): ?string

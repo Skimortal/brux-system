@@ -66,6 +66,29 @@ class AppointmentVolunteer
         return $this;
     }
 
+    /** @return \App\Enum\VolunteerTaskEnum[] */
+    public function getTaskEnums(): array
+    {
+        return array_values(array_filter(array_map(
+            static fn ($t) => \is_string($t) ? \App\Enum\VolunteerTaskEnum::tryFrom($t) : null,
+            $this->tasks ?? []
+        )));
+    }
+
+    /** @param \App\Enum\VolunteerTaskEnum[] $tasks */
+    public function setTaskEnums(array $tasks): static
+    {
+        $this->tasks = array_values(array_map(static fn (\App\Enum\VolunteerTaskEnum $t) => $t->value, $tasks));
+
+        return $this;
+    }
+
+    public function __clone()
+    {
+        $this->id = null;
+        $this->appointment = null;
+    }
+
     public function getTasks(): ?array
     {
         return $this->tasks;

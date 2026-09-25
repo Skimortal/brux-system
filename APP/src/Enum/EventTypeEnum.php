@@ -8,21 +8,21 @@ enum EventTypeEnum: string
     case SETUP_TEARDOWN = 'setup_teardown';
     case EVENT = 'event';
 
-    public function getLabel(): string
+    public function label(): string
     {
-        return match($this) {
-            self::REHEARSAL => 'appointment.event_type.rehearsal',
-            self::SETUP_TEARDOWN => 'appointment.event_type.setup_teardown',
-            self::EVENT => 'appointment.event_type.event',
+        return match ($this) {
+            self::REHEARSAL => 'Probe',
+            self::SETUP_TEARDOWN => 'Aufbau/Abbau',
+            self::EVENT => 'Veranstaltung',
         };
     }
 
-    public function getIcon(): string
+    public function icon(): string
     {
-        return match($this) {
-            self::REHEARSAL => 'ti-music-alt',
-            self::SETUP_TEARDOWN => 'ti-package',
-            self::EVENT => 'ti-flag-alt',
+        return match ($this) {
+            self::REHEARSAL => 'lucide:music',
+            self::SETUP_TEARDOWN => 'lucide:package',
+            self::EVENT => 'lucide:flag',
         };
     }
 }

@@ -7,11 +7,11 @@ enum EventStatus: string
     case ACTIVE = 'aktiv';
     case INACTIVE = 'inaktiv';
 
-    public function getLabel(): string
+    public function label(): string
     {
-        return match($this) {
-            self::ACTIVE => 'event.status.active',
-            self::INACTIVE => 'event.status.inactive',
+        return match ($this) {
+            self::ACTIVE => 'Aktiv',
+            self::INACTIVE => 'Inaktiv',
         };
     }
 }

@@ -15,4 +15,36 @@ class ProductionEventRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, ProductionEvent::class);
     }
+
+    /**
+     * Performances whose date lies within [$from, $to).
+     *
+     * @return ProductionEvent[]
+     */
+    public function findBetween(\DateTimeInterface $from, \DateTimeInterface $to): array
+    {
+        return $this->createQueryBuilder('pe')
+            ->addSelect('p', 'r', 'a')
+            ->innerJoin('pe.production', 'p')
+            ->leftJoin('pe.room', 'r')
+            ->leftJoin('pe.appointment', 'a')
+            ->andWhere('pe.date IS NOT NULL')
+            ->andWhere('pe.date >= :from AND pe.date < :to')
+            ->setParameter('from', \DateTimeImmutable::createFromInterface($from)->setTime(0, 0))
+            ->setParameter('to', \DateTimeImmutable::createFromInterface($to))
+            ->orderBy('pe.date', 'ASC')
+            ->addOrderBy('pe.timeFrom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findLastSyncedAt(): ?\DateTimeImmutable
+    {
+        $value = $this->createQueryBuilder('pe')
+            ->select('MAX(pe.syncedAt)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $value ? new \DateTimeImmutable($value) : null;
+    }
 }

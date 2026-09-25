@@ -2,18 +2,21 @@
 
 namespace App\Enum;
 
+/**
+ * Derived status of a key; it is computed from its loans and the lost flag.
+ */
 enum KeyStatus: string
 {
     case AVAILABLE = 'available';
     case BORROWED = 'borrowed';
     case LOST = 'lost';
 
-    public function getLabel(): string
+    public function label(): string
     {
-        return match($this) {
-            self::AVAILABLE => 'key_management.status.available',
-            self::BORROWED => 'key_management.status.borrowed',
-            self::LOST => 'key_management.status.lost',
+        return match ($this) {
+            self::AVAILABLE => 'Verfügbar',
+            self::BORROWED => 'Verliehen',
+            self::LOST => 'Verloren',
         };
     }
 }

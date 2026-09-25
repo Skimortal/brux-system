@@ -6,6 +6,12 @@
 parameters:
     avatars_dir: '%kernel.project_dir%/public/uploads/avatars'
     wordpress_api_url: '%env(WORDPRESS_API_URL)%'
+    # Fields that WordPress owns while it is the leading system. They are read-only here
+    # for records that come from WordPress and are overwritten by every sync. Remove a
+    # field from this list once this system should own it.
+    wordpress_owned_fields:
+        production: [title, permalink, postThumbnailUrl, contentHtml, excerptHtml, priceList]
+        production_event: [date, timeFrom, timeTo, room, status, reservationStatus, quota, incomingTotal, freeSeats, reservationNote, reservations, categories, priceList]
 
 services:
     # default configuration for services in *this* file
@@ -18,17 +24,19 @@ services:
     App\:
         resource: '../src/'
 
-    Imagine\Gd\Imagine: ~
-    Imagine\Image\ImagineInterface: '@Imagine\Gd\Imagine'
-    App\EventListener\ImageResizeSubscriber:
-        tags:
-            - { name: kernel.event_listener, event: vich_uploader.post_upload }
-
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
 
     App\Service\WordPressPushService:
         arguments:
             $wordpressApiUrl: '%wordpress_api_url%'
+            $wordpressApiToken: '%env(WORDPRESS_API_TOKEN)%'
 
-    App\Form\Extension\DefaultFormOptionsExtension: ~
+    App\Service\BruxApiSyncService:
+        arguments:
+            $apiUrl: '%env(BRUX_API_URL)%'
+
+    App\Service\FieldOwnership:
+        arguments:
+            $ownedFields: '%wordpress_owned_fields%'
+

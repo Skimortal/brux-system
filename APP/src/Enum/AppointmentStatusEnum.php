@@ -7,11 +7,11 @@ enum AppointmentStatusEnum: string
     case RESERVED = 'reserved';
     case CONFIRMED = 'confirmed';
 
-    public function getLabel(): string
+    public function label(): string
     {
-        return match($this) {
-            self::RESERVED => 'appointment.status.reserved',
-            self::CONFIRMED => 'appointment.status.confirmed',
+        return match ($this) {
+            self::RESERVED => 'Reserviert',
+            self::CONFIRMED => 'Fix',
         };
     }
 }

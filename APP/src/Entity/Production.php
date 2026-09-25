@@ -11,6 +11,14 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: ProductionRepository::class)]
 class Production extends Base
 {
+    use WordPressSyncTrait;
+
+    public const GRANDSTAND_LABELS = [
+        'with_grandstand' => 'mit Tribüne',
+        'without_grandstand' => 'ohne Tribüne',
+        'stage' => 'Bühne',
+    ];
+
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     private ?int $externalId = null;
 
@@ -295,6 +303,47 @@ class Production extends Base
         }
 
         return $this;
+    }
+
+    /** Whether the production originates from the WordPress site. */
+    public function isFromWordPress(): bool
+    {
+        return $this->externalId !== null;
+    }
+
+    /**
+     * @return ProductionContactPerson|null the main contact person, if any
+     */
+    public function getMainContactPerson(): ?ProductionContactPerson
+    {
+        foreach ($this->contactPersons as $person) {
+            if ($person->isHauptansprechperson()) {
+                return $person;
+            }
+        }
+
+        return null;
+    }
+
+    /** @return string[] labels of the technical requirements */
+    public function getRequirementLabels(): array
+    {
+        $labels = [];
+        if ($this->needsLightingTechnician) {
+            $labels[] = 'Licht';
+        }
+        if ($this->needsSoundTechnician) {
+            $labels[] = 'Ton';
+        }
+        if ($this->needsSetupTechnician) {
+            $labels[] = 'Aufbau';
+        }
+        $grandstand = self::GRANDSTAND_LABELS[$this->grandstand] ?? null;
+        if ($grandstand !== null) {
+            $labels[] = $grandstand;
+        }
+
+        return $labels;
     }
 
     public function getDisplayName(): string

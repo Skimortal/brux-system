@@ -11,15 +11,51 @@ enum AppointmentTypeEnum: string
     case INTERNAL = 'internal';
     case CLEANING = 'cleaning';
 
-    public function getLabel(): string
+    public function label(): string
     {
-        return match($this) {
-            self::PRIVATE => 'appointment.type.private',
-            self::PRODUCTION => 'appointment.type.production',
-            self::CLOSED_EVENT => 'appointment.type.closed_event',
-            self::SCHOOL_EVENT => 'appointment.type.school_event',
-            self::INTERNAL => 'appointment.type.internal',
-            self::CLEANING => 'appointment.type.cleaning',
+        return match ($this) {
+            self::PRIVATE => 'Privat / Vermietung',
+            self::PRODUCTION => 'Produktion',
+            self::CLOSED_EVENT => 'Geschlossene Veranstaltung',
+            self::SCHOOL_EVENT => 'Schulveranstaltung',
+            self::INTERNAL => 'Intern',
+            self::CLEANING => 'Reinigung',
         };
+    }
+
+    public function shortLabel(): string
+    {
+        return match ($this) {
+            self::PRIVATE => 'Privat',
+            self::PRODUCTION => 'Produktion',
+            self::CLOSED_EVENT => 'Geschl. Veranst.',
+            self::SCHOOL_EVENT => 'Schule',
+            self::INTERNAL => 'Intern',
+            self::CLEANING => 'Reinigung',
+        };
+    }
+
+    public function description(): string
+    {
+        return match ($this) {
+            self::PRIVATE => 'Titel, Raum, Zeit',
+            self::PRODUCTION => 'Probe, Aufbau/Abbau oder Veranstaltung',
+            self::CLOSED_EVENT => 'mit Technik und Freiwilligen',
+            self::SCHOOL_EVENT => 'mit Technik und Freiwilligen',
+            self::INTERNAL => 'Besprechung, Blocker',
+            self::CLEANING => 'Extra-Reinigung mit Bereichen',
+        };
+    }
+
+    /** Types that can have technicians and volunteers assigned. */
+    public function hasAssignments(): bool
+    {
+        return \in_array($this, [self::PRODUCTION, self::CLOSED_EVENT, self::SCHOOL_EVENT, self::INTERNAL], true);
+    }
+
+    /** Types whose title is derived instead of entered. */
+    public function hasDerivedTitle(): bool
+    {
+        return $this === self::PRODUCTION || $this === self::CLEANING;
     }
 }
