@@ -9,6 +9,12 @@
     when: pe.startsAt|de_date('EEEE, d. MMMM') ~ (pe.allDay ? '' : ' · ' ~ pe.startsAt|date('H:i') ~ ' Uhr') ~ (pe.room ? ' · ' ~ pe.room.name : ''),
 }) }}
 <div class="panel-body">
+    {% if production.postThumbnailUrl %}
+        <img class="panel-image" src="{{ production.postThumbnailUrl }}" alt="" loading="lazy" onerror="this.remove()">
+    {% endif %}
+    {% if pe.cancelled %}
+        <div class="note note-danger">{{ ux_icon('lucide:circle-x') }}<span>Diese Vorstellung ist auf der Website als abgesagt markiert.</span></div>
+    {% endif %}
     {% if panel.locked %}
         <div class="note">{{ ux_icon('lucide:lock') }}<span>Termin, Plätze und Preise kommen von der Website und werden beim Import aktualisiert{% if pe.syncedAt %} (zuletzt {{ pe.syncedAt|de_date('d.M. HH:mm') }}){% endif %}. Änderungen bitte in WordPress vornehmen.</span></div>
     {% endif %}
@@ -45,7 +51,7 @@
     {% if pe.categories|length or pe.reservationNote %}
         <div class="row-wrap">
             {% for category in pe.categories %}
-                <span class="badge {{ category.slug == 'ausverkauft-event' ? 'badge-danger' : 'badge-info' }}">{{ category.name }}</span>
+                <span class="badge {{ category.slug in ['ausverkauft-event', 'abgesagt-event'] ? 'badge-danger' : (category.slug == 'featured-event' ? 'badge-warn' : 'badge-info') }}">{{ category.name }}</span>
             {% endfor %}
             {% if pe.reservationLink %}
                 <a class="btn btn-sm" href="{{ pe.reservationNote|trim }}" target="_blank" rel="noopener" style="margin-left:auto">{{ ux_icon('lucide:external-link') }} Zur Reservierung</a>
@@ -53,6 +59,13 @@
                 <span class="small muted">{{ pe.reservationNote }}</span>
             {% endif %}
         </div>
+    {% endif %}
+
+    {% if production.contentHtml or production.excerptHtml %}
+        <details class="about">
+            <summary>Über die Produktion</summary>
+            <div class="about-text">{{ include('production/_about.html.twig') }}</div>
+        </details>
     {% endif %}
 
     <div class="panel-section">

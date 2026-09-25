@@ -377,6 +377,32 @@ class ProductionEvent extends Base
         return null;
     }
 
+    /** Cancelled on the website: status "inaktiv" or the category "Abgesagt". */
+    public function isCancelled(): bool
+    {
+        if ($this->status?->value === 'inaktiv') {
+            return true;
+        }
+        foreach ($this->categories as $category) {
+            if (\in_array($category->getSlug(), ['abgesagt-event', 'abgesagt'], true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function isSoldOut(): bool
+    {
+        foreach ($this->categories as $category) {
+            if (\in_array($category->getSlug(), ['ausverkauft-event', 'ausverkauft'], true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function hasReservationLink(): bool
     {
         return $this->reservationNote !== null && preg_match('#^https?://#i', trim($this->reservationNote)) === 1;

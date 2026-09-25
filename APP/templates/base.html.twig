@@ -10,6 +10,7 @@
     <link rel="icon" href="{{ asset('favicon.png') }}" type="image/png">
     <script>
         // restore the side column width before the first paint (see pane_resize_controller.js)
+        try { if (localStorage.getItem('brux.theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) {}
         try { const w = parseInt(localStorage.getItem('brux.pane.side-width'), 10); if (w > 0) document.documentElement.style.setProperty('--panel-w', Math.min(w, Math.max(300, innerWidth - 632)) + 'px'); } catch (e) {}
     </script>
     {% block importmap %}{{ importmap('app') }}{% endblock %}

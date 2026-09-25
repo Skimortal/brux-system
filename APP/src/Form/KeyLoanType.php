@@ -5,6 +5,7 @@ namespace App\Form;
 use App\Entity\Contact;
 use App\Entity\KeyLoan;
 use App\Entity\KeyManagement;
+use App\Entity\Production;
 use App\Entity\User;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
@@ -24,7 +25,13 @@ final class KeyLoanType extends AbstractType
     {
         /** @var KeyLoan $loan */
         $loan = $builder->getData();
-        $kind = $loan->getUser() !== null ? 'user' : ($loan->getHolderName() !== null && $loan->getContact() === null ? 'other' : 'contact');
+        $kind = match (true) {
+            $loan->getContact() !== null => 'contact',
+            $loan->getUser() !== null => 'user',
+            $loan->getHolderName() !== null => 'other',
+            $loan->getProduction() !== null => 'production',
+            default => 'contact',
+        };
 
         $builder
             ->add('key', EntityType::class, [
@@ -39,7 +46,7 @@ final class KeyLoanType extends AbstractType
                 'mapped' => false,
                 'expanded' => true,
                 'data' => $kind,
-                'choices' => ['Kontakt' => 'contact', 'Benutzer:in' => 'user', 'Andere Person' => 'other'],
+                'choices' => ['Kontakt' => 'contact', 'Benutzer:in' => 'user', 'Produktion' => 'production', 'Andere' => 'other'],
                 'attr' => ['data-action' => 'change->key-loan-form#update'],
             ])
             ->add('contact', EntityType::class, [
@@ -66,6 +73,16 @@ final class KeyLoanType extends AbstractType
                 'label' => 'Name',
                 'required' => false,
                 'row_attr' => ['data-key-loan-form-target' => 'other'],
+            ])
+            ->add('production', EntityType::class, [
+                'class' => Production::class,
+                'label' => 'Für Produktion',
+                'required' => false,
+                'placeholder' => 'keine',
+                'query_builder' => static fn (EntityRepository $r) => $r->createQueryBuilder('p')->orderBy('p.title', 'ASC'),
+                'choice_label' => 'title',
+                'help' => 'Optional. Wählst du oben „Produktion“, gilt die Produktion selbst als Empfängerin.',
+                'attr' => ['data-controller' => 'tom-select'],
             ])
             ->add('startAt', DateTimeType::class, [
                 'label' => 'Ausgabe',
@@ -98,6 +115,7 @@ final class KeyLoanType extends AbstractType
             if ($kind !== 'other') {
                 $loan->setHolderName(null);
             }
+
         });
     }
 

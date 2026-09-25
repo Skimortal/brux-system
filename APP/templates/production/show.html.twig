@@ -115,10 +115,15 @@
                     </div>
                 </section>
             {% endif %}
-            {% if production.postThumbnailUrl or production.excerptHtml %}
+            {% if production.postThumbnailUrl or production.contentHtml or production.excerptHtml %}
                 <section class="card">
-                    {% if production.postThumbnailUrl %}<img src="{{ production.postThumbnailUrl }}" alt="" onerror="this.remove()" style="border-radius: 14px 14px 0 0; width:100%; aspect-ratio: 16/9; object-fit: cover">{% endif %}
-                    {% if production.excerptHtml %}<div class="card-body small muted">{{ production.excerptHtml|striptags }}</div>{% endif %}
+                    {% if production.postThumbnailUrl %}<img src="{{ production.postThumbnailUrl }}" alt="" loading="lazy" onerror="this.remove()" style="border-radius: 8px 8px 0 0; width:100%; display:block">{% endif %}
+                    {% if production.contentHtml or production.excerptHtml %}
+                        <details class="about card-body" {% if not production.postThumbnailUrl %}open{% endif %}>
+                            <summary>Über die Produktion <span class="badge badge-square">WordPress</span></summary>
+                            <div class="about-text">{{ include('production/_about.html.twig') }}</div>
+                        </details>
+                    {% endif %}
                 </section>
             {% endif %}
         {% endif %}

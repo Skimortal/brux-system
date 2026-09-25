@@ -77,6 +77,58 @@
     --shadow-card: 0 1px 2px rgba(28, 27, 24, 0.05);
     --focus: 0 0 0 3px rgba(30, 30, 28, 0.25);
 
+    --seg-bg: #e3e3e2;
+
     --rail-w: 72px;
     --panel-w: 380px;
 }
+
+/* dark theme, switched in the user menu (stored per browser) */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #151514;
+    --surface: #1f1f1d;
+    --surface-2: #252523;
+    --surface-3: #2c2c2a;
+    --line: #3a3a37;
+    --line-soft: #30302e;
+    --ink: #ededeb;
+    --ink-2: #d2d2cf;
+    --muted: #a3a3a0;
+    --faint: #7c7c79;
+    --rail: #0e0e0d;
+    --rail-ink: #8f8f8c;
+    --rail-active: #2a2a28;
+    --seg-bg: #2c2c2a;
+    --accent: #ededeb;
+    --accent-hover: #ffffff;
+    --accent-soft: #2c2c2a;
+    --accent-ink: #ededeb;
+    --ok-bg: #173522; --ok-ink: #9fe0b3; --ok-line: #24503a;
+    --warn-bg: #3d2c0d; --warn-ink: #f2c77a; --warn-line: #5c451a;
+    --danger-bg: #43191a; --danger-ink: #f3a19b; --danger-line: #6a2a2a;
+    --info-bg: #1b2744; --info-ink: #a9c1f5; --info-line: #2c3d66;
+    --t-performance-bg: #402517; --t-performance-ink: #f5c1a3; --t-performance-line: #5c3521;
+    --t-production-bg: #1c2847; --t-production-ink: #b1c6f6; --t-production-line: #2c3d66;
+    --t-closed_event-bg: #2a2447; --t-closed_event-ink: #c9bff3; --t-closed_event-line: #3d3566;
+    --t-school_event-bg: #243317; --t-school_event-ink: #c5dea4; --t-school_event-line: #354a22;
+    --t-private-bg: #3a1f3d; --t-private-ink: #e7c0eb; --t-private-line: #542d58;
+    --t-internal-bg: #2e2e2b; --t-internal-ink: #d6d6d2; --t-internal-line: #43433f;
+    --t-cleaning-bg: #133633; --t-cleaning-ink: #9ee0d6; --t-cleaning-line: #1f4f4a;
+    --t-key-bg: #3d2c0d; --t-key-ink: #f2c77a; --t-key-line: #5c451a;
+    --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.55);
+    --focus: 0 0 0 3px rgba(237, 237, 235, 0.3);
+}
+:root[data-theme="dark"] .btn-primary, :root[data-theme="dark"] .btn-dark { color: #151514; }
+:root[data-theme="dark"] .chip.is-active { color: #151514; }
+:root[data-theme="dark"] .toggle input:checked + label { color: #151514; }
+:root[data-theme="dark"] .cal-head.is-today .num, :root[data-theme="dark"] .cal-mday.is-today .mnum { color: #151514; }
+:root[data-theme="dark"] .cal-bgcell.is-today, :root[data-theme="dark"] .cal-lane.is-house .cal-bgcell.is-today { background: #242422; }
+:root[data-theme="dark"] .cal-lane.is-house .cal-lane-bg, :root[data-theme="dark"] .cal-lane-label.is-house { background: #1b1b1a; }
+:root[data-theme="dark"] .cal-keys, :root[data-theme="dark"] .cal-keys .cal-lane-label { background: #1f1c16; }
+:root[data-theme="dark"] .cal-mday.is-other { background: #1b1b1a; }
+:root[data-theme="dark"] .cal-item .wp, :root[data-theme="dark"] .cal-run-title .wp { background: rgba(0, 0, 0, 0.35); }
+:root[data-theme="dark"] .loan-item.is-active { background: #221e14; }
+:root[data-theme="dark"] .loan-item.is-overdue { background: #2a1616; }
+:root[data-theme="dark"] .toast { background: #ededeb; color: #151514; }
+:root[data-theme="dark"] .auth-brand, :root[data-theme="dark"] .auth-card { color: var(--ink); }

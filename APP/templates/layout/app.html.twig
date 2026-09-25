@@ -37,6 +37,7 @@
                     <div class="muted small">{{ app.user.email }}</div>
                 </div>
                 <a href="{{ path('app_profile') }}" role="menuitem">{{ ux_icon('lucide:user') }} Mein Profil</a>
+                <button type="button" role="menuitem" data-controller="theme" data-action="theme#toggle">{{ ux_icon('lucide:sparkles') }} <span data-theme-target="label">Dunkler Modus</span></button>
                 <div class="menu-sep"></div>
                 <a href="{{ path('app_logout') }}" role="menuitem" data-turbo="false">{{ ux_icon('lucide:log-out') }} Abmelden</a>
             </div>

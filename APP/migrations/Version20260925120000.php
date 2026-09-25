@@ -36,30 +36,41 @@ final class Version20260925120000 extends AbstractMigration
         $this->addSql('UPDATE room SET position = id');
 
         // key loans
-        $this->addSql("CREATE TABLE key_loan (id INT AUTO_INCREMENT NOT NULL, key_id INT NOT NULL, contact_id INT DEFAULT NULL, user_id INT DEFAULT NULL, appointment_id INT DEFAULT NULL, production_event_id INT DEFAULT NULL, created_at DATETIME DEFAULT NULL, updated_at DATETIME DEFAULT NULL, holder_name VARCHAR(255) DEFAULT NULL, start_at DATETIME NOT NULL COMMENT '(DC2Type:datetime_immutable)', due_at DATETIME DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)', returned_at DATETIME DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)', note LONGTEXT DEFAULT NULL, INDEX IDX_43D4D6CAD145533 (key_id), INDEX IDX_43D4D6CAE7A1254A (contact_id), INDEX IDX_43D4D6CAA76ED395 (user_id), INDEX IDX_43D4D6CAE5B533F9 (appointment_id), INDEX IDX_43D4D6CA8980536F (production_event_id), INDEX IDX_43D4D6CAB75363F7 (start_at), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB");
+        $this->addSql("CREATE TABLE key_loan (id INT AUTO_INCREMENT NOT NULL, key_id INT NOT NULL, contact_id INT DEFAULT NULL, user_id INT DEFAULT NULL, production_id INT DEFAULT NULL, appointment_id INT DEFAULT NULL, production_event_id INT DEFAULT NULL, created_at DATETIME DEFAULT NULL, updated_at DATETIME DEFAULT NULL, holder_name VARCHAR(255) DEFAULT NULL, start_at DATETIME NOT NULL COMMENT '(DC2Type:datetime_immutable)', due_at DATETIME DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)', returned_at DATETIME DEFAULT NULL COMMENT '(DC2Type:datetime_immutable)', note LONGTEXT DEFAULT NULL, INDEX IDX_43D4D6CAD145533 (key_id), INDEX IDX_43D4D6CAE7A1254A (contact_id), INDEX IDX_43D4D6CAA76ED395 (user_id), INDEX IDX_43D4D6CAECC6147F (production_id), INDEX IDX_43D4D6CAE5B533F9 (appointment_id), INDEX IDX_43D4D6CA8980536F (production_event_id), INDEX IDX_43D4D6CAB75363F7 (start_at), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB");
         $this->addSql('ALTER TABLE key_loan ADD CONSTRAINT FK_43D4D6CAD145533 FOREIGN KEY (key_id) REFERENCES key_management (id) ON DELETE CASCADE');
         $this->addSql('ALTER TABLE key_loan ADD CONSTRAINT FK_43D4D6CAE7A1254A FOREIGN KEY (contact_id) REFERENCES contact (id) ON DELETE SET NULL');
         $this->addSql('ALTER TABLE key_loan ADD CONSTRAINT FK_43D4D6CAA76ED395 FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE SET NULL');
+        $this->addSql('ALTER TABLE key_loan ADD CONSTRAINT FK_43D4D6CAECC6147F FOREIGN KEY (production_id) REFERENCES production (id) ON DELETE SET NULL');
         $this->addSql('ALTER TABLE key_loan ADD CONSTRAINT FK_43D4D6CAE5B533F9 FOREIGN KEY (appointment_id) REFERENCES appointment (id) ON DELETE SET NULL');
         $this->addSql('ALTER TABLE key_loan ADD CONSTRAINT FK_43D4D6CA8980536F FOREIGN KEY (production_event_id) REFERENCES production_event (id) ON DELETE SET NULL');
 
-        // current and past lendings become loans; legacy holders without a contact/user keep their name
+        // current and past lendings become loans. Legacy technicians and cleaning companies
+        // were copied to contacts with the same name, so they are matched by name; the
+        // production stays linked; only holders that cannot be matched keep their name as text.
         $this->addSql(<<<'SQL'
-            INSERT INTO key_loan (key_id, contact_id, user_id, holder_name, start_at, due_at, returned_at, note, created_at)
-            SELECT k.id,
-                   k.contact_id,
-                   IF(k.contact_id IS NULL, k.user_id, NULL),
-                   IF(k.contact_id IS NULL AND k.user_id IS NULL, COALESCE(t.name, c.name, p.title, 'Unbekannt'), NULL),
-                   TIMESTAMP(COALESCE(k.borrow_date, CURRENT_DATE)),
-                   IF(k.return_date IS NULL, NULL, TIMESTAMP(k.return_date, '23:59:00')),
-                   IF(k.status = 'borrowed', NULL, TIMESTAMP(COALESCE(k.return_date, k.borrow_date), '23:59:00')),
+            INSERT INTO key_loan (key_id, contact_id, user_id, production_id, holder_name, start_at, due_at, returned_at, note, created_at)
+            SELECT m.id, m.contact_id,
+                   IF(m.contact_id IS NULL, m.user_id, NULL),
+                   m.production_id,
+                   IF(m.contact_id IS NULL AND m.user_id IS NULL AND m.production_id IS NULL, COALESCE(m.legacy_name, 'Unbekannt'), NULL),
+                   TIMESTAMP(COALESCE(m.borrow_date, CURRENT_DATE)),
+                   IF(m.return_date IS NULL, NULL, TIMESTAMP(m.return_date, '23:59:00')),
+                   IF(m.status = 'borrowed', NULL, TIMESTAMP(COALESCE(m.return_date, m.borrow_date), '23:59:00')),
                    'Aus der bisherigen Schlüsselverwaltung übernommen',
                    NOW()
-            FROM key_management k
-            LEFT JOIN technician t ON t.id = k.technician_id
-            LEFT JOIN cleaning c ON c.id = k.cleaning_id
-            LEFT JOIN production p ON p.id = k.production_id
-            WHERE k.status = 'borrowed' OR k.borrow_date IS NOT NULL
+            FROM (
+                SELECT k.id, k.status, k.borrow_date, k.return_date, k.user_id, k.production_id,
+                       COALESCE(
+                           k.contact_id,
+                           (SELECT MIN(ct.id) FROM contact ct WHERE ct.name = t.name),
+                           (SELECT MIN(cc.id) FROM contact cc WHERE cc.name = c.name)
+                       ) AS contact_id,
+                       COALESCE(t.name, c.name) AS legacy_name
+                FROM key_management k
+                LEFT JOIN technician t ON t.id = k.technician_id
+                LEFT JOIN cleaning c ON c.id = k.cleaning_id
+                WHERE k.status = 'borrowed' OR k.borrow_date IS NOT NULL
+            ) m
             SQL);
         $this->addSql('ALTER TABLE key_management ADD lost TINYINT(1) DEFAULT 0 NOT NULL');
         $this->addSql("UPDATE key_management SET lost = 1 WHERE status = 'lost'");

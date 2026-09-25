@@ -16,7 +16,7 @@
 
 <div class="table-wrap">
     <table class="table">
-        <thead><tr><th>Produktion</th><th>Nächste Vorstellung</th><th>Vorstellungen</th><th>Bedarf</th><th>Quelle</th></tr></thead>
+        <thead><tr><th>Produktion</th><th>Nächste Vorstellung</th><th>Vorstellungen</th><th>Bedarf</th><th>Quelle / ID</th></tr></thead>
         <tbody>
         {% for row in rows %}
             {% set p = row.production %}
@@ -25,7 +25,7 @@
                 <td>{{ row.next ? row.next|de_date('EE d. MMM y') : '–' }}</td>
                 <td>{{ row.upcoming }} kommend{% if row.total > row.upcoming %} <span class="muted">· {{ row.total }} gesamt</span>{% endif %}</td>
                 <td>{% for label in p.requirementLabels %}<span class="badge badge-square">{{ label }}</span> {% else %}<span class="muted">–</span>{% endfor %}</td>
-                <td>{% if p.fromWordPress %}<span class="badge badge-accent">WordPress</span>{% else %}<span class="badge">eigene</span>{% endif %}</td>
+                <td>{% if p.fromWordPress %}<span class="badge badge-accent">WordPress · {{ p.externalId }}</span>{% else %}<span class="badge">eigene</span>{% endif %}</td>
             </tr>
         {% else %}
             <tr><td colspan="5"><div class="empty">Keine Produktionen gefunden.</div></td></tr>

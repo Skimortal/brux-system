@@ -45,6 +45,11 @@ class KeyLoan extends Base
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $note = null;
 
+    /** Production the key is lent for (the holder can also be the production itself). */
+    #[ORM\ManyToOne(targetEntity: Production::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    private ?Production $production = null;
+
     #[ORM\ManyToOne(targetEntity: Appointment::class)]
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private ?Appointment $appointment = null;
@@ -56,7 +61,7 @@ class KeyLoan extends Base
     #[Assert\Callback]
     public function validateHolderAndDates(ExecutionContextInterface $context): void
     {
-        if ($this->contact === null && $this->user === null && ($this->holderName === null || trim($this->holderName) === '')) {
+        if ($this->contact === null && $this->user === null && $this->production === null && ($this->holderName === null || trim($this->holderName) === '')) {
             $context->buildViolation('Bitte angeben, an wen der Schlüssel geht.')->atPath('contact')->addViolation();
         }
         if ($this->startAt !== null && $this->dueAt !== null && $this->dueAt < $this->startAt) {
@@ -117,7 +122,20 @@ class KeyLoan extends Base
         return $this->contact?->getName()
             ?? $this->user?->getFullname()
             ?? $this->holderName
+            ?? $this->production?->getTitle()
             ?? 'Unbekannt';
+    }
+
+    public function getProduction(): ?Production
+    {
+        return $this->production;
+    }
+
+    public function setProduction(?Production $production): static
+    {
+        $this->production = $production;
+
+        return $this;
     }
 
     public function getStartAt(): ?\DateTimeImmutable

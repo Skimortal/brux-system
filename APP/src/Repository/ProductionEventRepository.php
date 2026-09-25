@@ -24,8 +24,9 @@ class ProductionEventRepository extends ServiceEntityRepository
     public function findBetween(\DateTimeInterface $from, \DateTimeInterface $to): array
     {
         return $this->createQueryBuilder('pe')
-            ->addSelect('p', 'r', 'a')
+            ->addSelect('p', 'r', 'a', 'cat')
             ->innerJoin('pe.production', 'p')
+            ->leftJoin('pe.categories', 'cat')
             ->leftJoin('pe.room', 'r')
             ->leftJoin('pe.appointment', 'a')
             ->andWhere('pe.date IS NOT NULL')

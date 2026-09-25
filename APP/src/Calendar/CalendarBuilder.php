@@ -108,7 +108,12 @@ final class CalendarBuilder
             return null;
         }
         $meta = [];
-        if ($performance->getQuota() !== null && $performance->getSeatsTaken() !== null) {
+        if ($performance->isCancelled()) {
+            $meta[] = 'abgesagt';
+        } elseif ($performance->isSoldOut()) {
+            $meta[] = 'ausverkauft';
+        }
+        if ($performance->getQuota() !== null && $performance->getSeatsTaken() !== null && !$performance->isCancelled()) {
             $meta[] = sprintf('%d / %d reserviert', $performance->getSeatsTaken(), $performance->getQuota());
         }
         $staffing = $performance->getAppointment();
@@ -127,7 +132,7 @@ final class CalendarBuilder
             roomId: $performance->getRoom()?->getId(),
             meta: $meta !== [] ? implode(' · ', $meta) : null,
             fromWordPress: true,
-            cancelled: $performance->getStatus()?->value === 'inaktiv',
+            cancelled: $performance->isCancelled(),
         );
     }
 
