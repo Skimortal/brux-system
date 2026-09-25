@@ -1,0 +1,105 @@
+{
+  "id": 3,
+  "external_id": 1977,
+  "title": "Herz-Impro: Magie des Augenblicks",
+  "permalink": "https://www.brux.at/herz-impro-jan26/",
+  "post_thumbnail_url": null,
+  "content_html": null,
+  "excerpt_html": null,
+  "needs_lighting_technician": true,
+  "needs_sound_technician": true,
+  "needs_setup_technician": true,
+  "grandstand": "with_grandstand",
+  "prices": [
+    {
+      "index": 0,
+      "price_label": "0",
+      "category_label": "Kulturpass \"Hunger auf Kunst und Kultur\"",
+      "parent_reserved": 70
+    },
+    {
+      "index": 1,
+      "price_label": "0",
+      "category_label": "Freikarte",
+      "parent_reserved": 70
+    },
+    {
+      "index": 2,
+      "price_label": "12",
+      "category_label": "Hocker",
+      "parent_reserved": 10
+    },
+    {
+      "index": 3,
+      "price_label": "16",
+      "category_label": "Stuhl",
+      "parent_reserved": 70
+    },
+    {
+      "index": 4,
+      "price_label": "40",
+      "category_label": "Zweiersofa (inkl. einer Flasche Prosecco)",
+      "parent_reserved": 2
+    }
+  ],
+  "technicians": [],
+  "contact_persons": [],
+  "events": [
+    {
+      "id": 2,
+      "event_index": 0,
+      "production_id": 3,
+      "production_external_id": 1977,
+      "date": "2026-01-23",
+      "time_from": "20:00",
+      "time_to": null,
+      "room": "schwarz",
+      "status": "aktiv",
+      "reservation_status": "aktiv",
+      "quota": 70,
+      "incoming_total": 4,
+      "free_seats": 66,
+      "reservation_note": "intern",
+      "reservations": {},
+      "categories": [],
+      "prices": [
+        {
+          "price_index": 0,
+          "price_label": "0",
+          "category_label": "Kulturpass \"Hunger auf Kunst und Kultur\"",
+          "reserved_seats": 70,
+          "incoming_reservations": 0
+        },
+        {
+          "price_index": 1,
+          "price_label": "0",
+          "category_label": "Freikarte",
+          "reserved_seats": 70,
+          "incoming_reservations": 0
+        },
+        {
+          "price_index": 2,
+          "price_label": "12",
+          "category_label": "Hocker",
+          "reserved_seats": 10,
+          "incoming_reservations": 0
+        },
+        {
+          "price_index": 3,
+          "price_label": "16",
+          "category_label": "Stuhl",
+          "reserved_seats": 70,
+          "incoming_reservations": 2
+        },
+        {
+          "price_index": 4,
+          "price_label": "40",
+          "category_label": "Zweiersofa (inkl. einer Flasche Prosecco)",
+          "reserved_seats": 2,
+          "incoming_reservations": 2
+        }
+      ],
+      "contact_persons": []
+    }
+  ]
+}

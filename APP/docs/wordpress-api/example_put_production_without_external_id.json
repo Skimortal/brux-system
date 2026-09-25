@@ -1,0 +1,30 @@
+{
+  "id": 42,
+  "external_id": null,
+  "title": "Neue Eigenproduktion 2026",
+  "permalink": null,
+  "post_thumbnail_url": null,
+  "content_html": null,
+  "excerpt_html": null,
+  "needs_lighting_technician": true,
+  "needs_sound_technician": false,
+  "needs_setup_technician": true,
+  "grandstand": "without_grandstand",
+  "prices": [],
+  "technicians": [
+    {
+      "name": "Max Mustermann",
+      "email": "max.mustermann@example.at",
+      "phone": "+43 664 1234567"
+    }
+  ],
+  "contact_persons": [
+    {
+      "name": "Anna Musterfrau",
+      "email": "anna.musterfrau@example.at",
+      "phone": "+43 660 9876543",
+      "hauptansprechperson": true
+    }
+  ],
+  "events": []
+}

@@ -20,7 +20,6 @@ class ProductionType extends AbstractType
             ->add('externalId', TextType::class, [
                 'label' => 'production.external_id',
                 'required' => false,
-                'disabled' => true,
             ])
             ->add('title', TextType::class, [
                 'label' => 'production.title',

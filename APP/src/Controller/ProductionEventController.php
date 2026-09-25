@@ -6,6 +6,7 @@ use App\Entity\Production;
 use App\Entity\ProductionEvent;
 use App\Form\ProductionEventType;
 use App\Repository\ProductionEventRepository;
+use App\Service\WordPressPushService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,7 +28,7 @@ class ProductionEventController extends AbstractController
     }
 
     #[Route('/new', name: 'app_production_event_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager, TranslatorInterface $t): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, TranslatorInterface $t, WordPressPushService $wordPressPush): Response
     {
         $productionEvent = new ProductionEvent();
 
@@ -46,8 +47,21 @@ class ProductionEventController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             try {
+                // eventIndex automatisch vergeben: nächster freier Index pro Produktion
+                if ($productionEvent->getEventIndex() === null && $productionEvent->getProduction()) {
+                    $maxIndex = -1;
+                    foreach ($productionEvent->getProduction()->getEvents() as $existingEvent) {
+                        if ($existingEvent->getEventIndex() !== null && $existingEvent->getEventIndex() > $maxIndex) {
+                            $maxIndex = $existingEvent->getEventIndex();
+                        }
+                    }
+                    $productionEvent->setEventIndex($maxIndex + 1);
+                }
+
                 $entityManager->persist($productionEvent);
                 $entityManager->flush();
+
+                $wordPressPush->pushProductionEvent($productionEvent);
 
                 $this->addFlash('success', $t->trans('production_event.created_successfully'));
 
@@ -68,7 +82,7 @@ class ProductionEventController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_production_event_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, ProductionEvent $productionEvent, EntityManagerInterface $entityManager, TranslatorInterface $t): Response
+    public function edit(Request $request, ProductionEvent $productionEvent, EntityManagerInterface $entityManager, TranslatorInterface $t, WordPressPushService $wordPressPush): Response
     {
         $form = $this->createForm(ProductionEventType::class, $productionEvent, [
             'production' => $productionEvent->getProduction(),
@@ -79,6 +93,8 @@ class ProductionEventController extends AbstractController
             try {
                 $entityManager->persist($productionEvent);
                 $entityManager->flush();
+
+                $wordPressPush->pushProductionEvent($productionEvent);
 
                 $this->addFlash('success', $t->trans('production_event.updated_successfully'));
 

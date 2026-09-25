@@ -1,0 +1,137 @@
+{
+  "id": 123,
+  "title": "Der Besuch der alten Dame",
+  "permalink": "https://www.brux.at/produktion/besuch-der-alten-dame",
+  "post_thumbnail_url": "https://www.brux.at/wp-content/uploads/2026/04/besuch-thumbnail.jpg",
+  "content_html": "<p>Eine tragikomische Geschichte über Gerechtigkeit und Rache.</p>",
+  "excerpt_html": "<p>Tragikomödie von Friedrich Dürrenmatt</p>",
+  "needs_lighting_technician": true,
+  "needs_sound_technician": false,
+  "needs_setup_technician": true,
+  "grandstand": "with_grandstand",
+  "prices": [
+    {
+      "index": 0,
+      "price_label": "22,00 \u20ac",
+      "category_label": "Erwachsene",
+      "parent_reserved": null
+    },
+    {
+      "index": 1,
+      "price_label": "15,00 \u20ac",
+      "category_label": "Ermäßigt",
+      "parent_reserved": null
+    }
+  ],
+  "technicians": [
+    {
+      "name": "Max Mustermann",
+      "email": "max.mustermann@example.at",
+      "phone": "+43 664 1234567"
+    },
+    {
+      "name": "Lisa Beispiel",
+      "email": "lisa.beispiel@example.at",
+      "phone": null
+    }
+  ],
+  "contact_persons": [
+    {
+      "name": "Anna Musterfrau",
+      "email": "anna.musterfrau@example.at",
+      "phone": "+43 660 9876543",
+      "hauptansprechperson": true
+    },
+    {
+      "name": "Peter Kontakt",
+      "email": "peter.kontakt@example.at",
+      "phone": "+43 699 1112233",
+      "hauptansprechperson": false
+    }
+  ],
+  "events": [
+    {
+      "event_index": 0,
+      "production_id": 123,
+      "date": "2026-05-15",
+      "time_from": "19:30",
+      "time_to": "21:30",
+      "room": "saal_1",
+      "status": "aktiv",
+      "reservation_status": "aktiv",
+      "quota": 200,
+      "incoming_total": 45,
+      "free_seats": 155,
+      "reservation_note": null,
+      "reservations": {},
+      "categories": [
+        {
+          "id": 5,
+          "name": "Theater",
+          "slug": "theater"
+        },
+        {
+          "id": 12,
+          "name": "Schauspiel",
+          "slug": "schauspiel"
+        }
+      ],
+      "prices": [
+        {
+          "price_index": 0,
+          "price_label": "22,00 \u20ac",
+          "category_label": "Erwachsene",
+          "reserved_seats": 50,
+          "incoming_reservations": 10
+        },
+        {
+          "price_index": 1,
+          "price_label": "15,00 \u20ac",
+          "category_label": "Ermäßigt",
+          "reserved_seats": 30,
+          "incoming_reservations": 5
+        }
+      ],
+      "contact_persons": [
+        {
+          "name": "Anna Musterfrau",
+          "email": "anna.musterfrau@example.at",
+          "phone": "+43 660 9876543",
+          "hauptansprechperson": true
+        }
+      ]
+    },
+    {
+      "event_index": 1,
+      "production_id": 123,
+      "date": "2026-05-16",
+      "time_from": "15:00",
+      "time_to": "17:00",
+      "room": "saal_1",
+      "status": "aktiv",
+      "reservation_status": "aktiv",
+      "quota": 200,
+      "incoming_total": 120,
+      "free_seats": 80,
+      "reservation_note": "Schulvorstellung",
+      "reservations": {},
+      "categories": [
+        {
+          "id": 5,
+          "name": "Theater",
+          "slug": "theater"
+        }
+      ],
+      "prices": [
+        {
+          "price_index": 0,
+          "price_label": "22,00 \u20ac",
+          "category_label": "Erwachsene",
+          "reserved_seats": 80,
+          "incoming_reservations": 20
+        }
+      ],
+      "contact_persons": []
+    }
+  ]
+}

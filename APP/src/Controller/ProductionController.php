@@ -9,6 +9,7 @@ use App\Form\ProductionType;
 use App\Repository\ProductionEventRepository;
 use App\Repository\ProductionRepository;
 use App\Service\CalendarColorService;
+use App\Service\WordPressPushService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -38,7 +39,7 @@ class ProductionController extends AbstractController
     }
 
     #[Route('/new', name: 'app_production_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager, TranslatorInterface $t): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, TranslatorInterface $t, WordPressPushService $wordPressPush): Response
     {
         $production = new Production();
         $form = $this->createForm(ProductionType::class, $production);
@@ -48,6 +49,8 @@ class ProductionController extends AbstractController
             try {
                 $entityManager->persist($production);
                 $entityManager->flush();
+
+                $wordPressPush->pushProduction($production);
 
                 $this->addFlash('success', $t->trans('production.created_successfully'));
                 return $this->redirectToRoute('app_production_index', [], Response::HTTP_SEE_OTHER);
@@ -63,7 +66,7 @@ class ProductionController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_production_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Production $production, EntityManagerInterface $entityManager, TranslatorInterface $t): Response
+    public function edit(Request $request, Production $production, EntityManagerInterface $entityManager, TranslatorInterface $t, WordPressPushService $wordPressPush): Response
     {
         $form = $this->createForm(ProductionType::class, $production);
         $form->handleRequest($request);
@@ -85,6 +88,8 @@ class ProductionController extends AbstractController
 
                 $entityManager->persist($production);
                 $entityManager->flush();
+
+                $wordPressPush->pushProduction($production);
 
                 $this->addFlash('success', $t->trans('production.updated_successfully'));
                 return $this->redirectToRoute('app_production_edit', ['id' => $production->getId()]);
