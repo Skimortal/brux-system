@@ -37,7 +37,7 @@ final class RunLayout
                 continue;
             }
             if (\count($indices) > 1 && $count > 1) {
-                $runs[] = self::run(array_map(static fn (int $i) => ['day' => $days[$i], 'entry' => $entry, 'index' => $i], $indices));
+                $runs[] = self::run(array_map(static fn (int $i) => ['day' => $days[$i], 'entry' => $entry, 'index' => $i], $indices), true);
                 continue;
             }
             $index = $indices[0];
@@ -104,7 +104,7 @@ final class RunLayout
         }
     }
 
-    private static function run(array $segments): array
+    private static function run(array $segments, bool $single = false): array
     {
         $first = $segments[0]['index'];
 
@@ -112,6 +112,8 @@ final class RunLayout
             'col' => $first,
             'span' => \count($segments),
             'row' => 0,
+            // one entry spanning several days (rather than several entries on consecutive days)
+            'single' => $single,
             'segments' => array_map(static fn ($s) => ['day' => $s['day'], 'entry' => $s['entry']], $segments),
         ];
     }

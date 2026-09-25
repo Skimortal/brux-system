@@ -12,7 +12,9 @@
                  data-quick-create-appointment-url-value="{{ cal_path(query, {panel: 'a-new'}) }}"
                  data-quick-create-loan-url-value="{{ cal_path(query, {panel: 'kl-new'}) }}"
                  data-action="click->quick-create#open">
-                {% if query.view == 'month' %}
+                {% if query.effectiveLayout == 'split' %}
+                    {{ include('calendar/_split.html.twig') }}
+                {% elseif query.view == 'month' %}
                     {{ include('calendar/_month.html.twig') }}
                 {% else %}
                     {{ include('calendar/_lanes.html.twig') }}

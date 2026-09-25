@@ -10,7 +10,8 @@ use Symfony\Component\HttpFoundation\Request;
 final class CalendarQuery
 {
     public const VIEWS = ['day' => 'Tag', 'week' => 'Woche', 'month' => 'Monat'];
-    public const LAYOUTS = ['rooms' => 'Räume', 'all' => 'Gesamt'];
+    /** split: one calendar per room side by side; rows: rooms as rows of one calendar; all: one calendar. */
+    public const LAYOUTS = ['split' => 'Räume', 'rows' => 'Zeilen', 'all' => 'Gesamt'];
 
     /**
      * @param EntryGroup[] $hidden
@@ -18,7 +19,7 @@ final class CalendarQuery
     public function __construct(
         public readonly \DateTimeImmutable $date,
         public readonly string $view = 'week',
-        public readonly string $layout = 'rooms',
+        public readonly string $layout = 'split',
         public readonly array $hidden = [],
         public readonly ?string $panel = null,
         public readonly string $side = 'keys',
@@ -34,7 +35,10 @@ final class CalendarQuery
             $date = $parsed;
         }
         $view = $request->query->getString('view', 'week');
-        $layout = $request->query->getString('layout', 'rooms');
+        $layout = $request->query->getString('layout', 'split');
+        if ($layout === 'rooms') {
+            $layout = 'rows';
+        }
         $hidden = [];
         foreach (explode(',', $request->query->getString('hide')) as $value) {
             $group = EntryGroup::tryFrom(trim($value));
@@ -48,11 +52,25 @@ final class CalendarQuery
         return new self(
             $date,
             \array_key_exists($view, self::VIEWS) ? $view : 'week',
-            \array_key_exists($layout, self::LAYOUTS) ? $layout : 'rooms',
+            \array_key_exists($layout, self::LAYOUTS) ? $layout : 'split',
             $hidden,
             $panel !== '' ? $panel : null,
             \in_array($side, ['keys', 'todos'], true) ? $side : 'keys',
         );
+    }
+
+    /** @return array<string, string> layouts offered for the current view */
+    public function availableLayouts(): array
+    {
+        return $this->view === 'month'
+            ? ['split' => self::LAYOUTS['split'], 'all' => self::LAYOUTS['all']]
+            : self::LAYOUTS;
+    }
+
+    /** Layout actually used: the month view has no room rows. */
+    public function effectiveLayout(): string
+    {
+        return $this->view === 'month' && $this->layout === 'rows' ? 'all' : $this->layout;
     }
 
     public function isHidden(EntryGroup $group): bool
@@ -118,7 +136,7 @@ final class CalendarQuery
         foreach ($overrides as $key => $value) {
             $params[$key] = $value;
         }
-        $defaults = ['view' => 'week', 'layout' => 'rooms', 'side' => 'keys', 'hide' => ''];
+        $defaults = ['view' => 'week', 'layout' => 'split', 'side' => 'keys', 'hide' => ''];
 
         return array_filter(
             $params,

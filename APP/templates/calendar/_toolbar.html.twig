@@ -12,13 +12,12 @@
             <a href="{{ cal_path(query, {view: key}) }}" {% if query.view == key %}aria-current="true"{% endif %}>{{ label }}</a>
         {% endfor %}
     </nav>
-    {% if query.view != 'month' %}
-        <nav class="seg-links" aria-label="Aufteilung">
-            {% for key, label in constant('App\\Calendar\\CalendarQuery::LAYOUTS') %}
-                <a href="{{ cal_path(query, {layout: key}) }}" {% if query.layout == key %}aria-current="true"{% endif %}>{{ label }}</a>
-            {% endfor %}
-        </nav>
-    {% endif %}
+    <nav class="seg-links" aria-label="Aufteilung">
+        {% for key, label in query.availableLayouts %}
+            <a href="{{ cal_path(query, {layout: key}) }}" {% if query.effectiveLayout == key %}aria-current="true"{% endif %}>{{ label }}</a>
+        {% endfor %}
+    </nav>
+    <button type="button" class="btn btn-icon btn-sm side-toggle" data-controller="side-toggle" data-action="side-toggle#toggle" aria-label="Rechte Spalte ein-/ausblenden" title="Rechte Spalte ein-/ausblenden">{{ ux_icon('lucide:layout-list') }}</button>
     <button type="button" class="btn btn-primary btn-sm" data-action="quick-create#openDefault" data-date="{{ query.view == 'day' or not ('now'|date('Y-m-d') >= query.rangeStart|date('Y-m-d') and 'now'|date('Y-m-d') < query.rangeEnd|date('Y-m-d')) ? query.date|date('Y-m-d') : 'now'|date('Y-m-d') }}">{{ ux_icon('lucide:plus') }} Neu</button>
 </div>
 <div class="cal-filters">

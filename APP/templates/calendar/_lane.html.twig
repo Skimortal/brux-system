@@ -1,0 +1,21 @@
+{# One row of day cells with joined runs; used for room rows and for room calendars. #}
+<div class="cal-lane{{ lane.key == 'house' ? ' is-house' }}">
+    <div class="cal-lane-bg">
+        {% for day in cal.days %}
+            <div class="cal-bgcell{{ cal.isToday(day) ? ' is-today' }}" data-date="{{ day|date('Y-m-d') }}" data-room="{{ lane.roomId ?? '' }}" data-label="{{ day|de_date('EE d.M.') }} · {{ lane.label }}"></div>
+        {% endfor %}
+    </div>
+    <div class="cal-lane-fg">
+        {% for run in lane.runs %}
+            {{ include('calendar/_run.html.twig') }}
+        {% endfor %}
+        {% for index, day in cal.days %}
+            <div class="cal-cell" style="grid-column: {{ index + 1 }}; grid-row: {{ lane.runRows + 1 }}"
+                 data-date="{{ day|date('Y-m-d') }}" data-room="{{ lane.roomId ?? '' }}" data-label="{{ day|de_date('EE d.M.') }} · {{ lane.label }}">
+                {% for e in lane.days[index] %}
+                    {{ include('calendar/_entry.html.twig', {e: e, day: day}) }}
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+</div>

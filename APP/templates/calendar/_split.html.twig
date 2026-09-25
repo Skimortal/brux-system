@@ -1,0 +1,23 @@
+{# One calendar per room, side by side (layout "split"). #}
+<div class="cal-split is-{{ query.view }}">
+    {% for room in cal.split %}
+        <section class="cal-room" aria-label="Kalender {{ room.label }}">
+            <header class="cal-room-head"><strong>{{ room.label }}</strong></header>
+            {% if query.view == 'month' %}
+                {{ include('calendar/_month.html.twig', {weeks: room.weeks, room_id: room.roomId, room_label: room.label}) }}
+            {% else %}
+                <div class="cal-room-grid" style="--days: {{ cal.days|length }}">
+                    {% for day in cal.days %}
+                        <div class="cal-head{{ cal.isToday(day) ? ' is-today' }}">
+                            <a href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}"><span>{{ day|de_date('EE') }}</span><span class="num">{{ day|date('j') }}</span></a>
+                        </div>
+                    {% endfor %}
+                    {% set lane = room.lane %}
+                    {{ include('calendar/_lane.html.twig') }}
+                </div>
+            {% endif %}
+        </section>
+    {% else %}
+        <div class="empty">Keine Räume für den Kalender. <a href="{{ path('app_room_index') }}" data-turbo-frame="_top">Räume einrichten</a></div>
+    {% endfor %}
+</div>

@@ -22,7 +22,19 @@ final class CalendarEntry
         public readonly bool $fromWordPress = false,
         public readonly bool $cancelled = false,
         public readonly ?string $icon = null,
+        /** Rooms an entry belongs to when it has several (key loans: the rooms the key opens). */
+        public readonly ?array $roomIds = null,
     ) {
+    }
+
+    /** Whether the entry shows up in the calendar of the given room. Entries without a room show up everywhere. */
+    public function belongsToRoom(int $roomId): bool
+    {
+        if ($this->roomIds !== null) {
+            return \in_array($roomId, $this->roomIds, true);
+        }
+
+        return $this->roomId === null || $this->roomId === $roomId;
     }
 
     public function isPast(\DateTimeInterface $now): bool

@@ -1,12 +1,14 @@
+{# weeks: from cal.monthWeeks or a room calendar; room_id/room_label optional #}
+{% set weeks = weeks ?? cal.monthWeeks %}
 <div class="cal-month">
     {% for label in ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] %}
         <div class="cal-head">{{ label }}</div>
     {% endfor %}
-    {% for week in cal.monthWeeks %}
+    {% for week in weeks %}
         <div class="cal-mweek">
             <div class="cal-lane-bg">
                 {% for day in week.days %}
-                    <div class="cal-mday{{ cal.inCurrentMonth(day) ? '' : ' is-other' }}{{ cal.isToday(day) ? ' is-today' }}" data-date="{{ day|date('Y-m-d') }}" data-room="" data-label="{{ day|de_date('EE d.M.') }}">
+                    <div class="cal-mday{{ cal.inCurrentMonth(day) ? '' : ' is-other' }}{{ cal.isToday(day) ? ' is-today' }}" data-date="{{ day|date('Y-m-d') }}" data-room="{{ room_id ?? '' }}" data-label="{{ day|de_date('EE d.M.') }}{{ room_label is defined ? ' · ' ~ room_label : '' }}">
                         <a class="mnum" href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}">{{ day|date('j') }}</a>
                     </div>
                 {% endfor %}
@@ -18,7 +20,7 @@
                 {% set limit = max(1, 4 - week.rows) %}
                 {% for index, day in week.days %}
                     {% set entries = week.perDay[index] %}
-                    <div class="cal-cell" style="grid-column: {{ index + 1 }}; grid-row: {{ week.rows + 1 }}" data-date="{{ day|date('Y-m-d') }}" data-room="" data-label="{{ day|de_date('EE d.M.') }}">
+                    <div class="cal-cell" style="grid-column: {{ index + 1 }}; grid-row: {{ week.rows + 1 }}" data-date="{{ day|date('Y-m-d') }}" data-room="{{ room_id ?? '' }}" data-label="{{ day|de_date('EE d.M.') }}">
                         {% for e in entries|slice(0, limit) %}
                             {{ include('calendar/_entry.html.twig', {e: e, day: day, compact: true}) }}
                         {% endfor %}

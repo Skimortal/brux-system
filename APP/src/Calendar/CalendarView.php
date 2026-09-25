@@ -21,6 +21,8 @@ final class CalendarView
         public readonly int $keyRows,
         public readonly array $entries,
         public readonly \DateTimeImmutable $now,
+        /** @var array<int, array{label: string, roomId: int, lane: ?array, weeks: ?array}> one calendar per room (layout "split") */
+        public readonly array $split = [],
     ) {
     }
 

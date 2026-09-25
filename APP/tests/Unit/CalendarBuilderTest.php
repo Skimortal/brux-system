@@ -39,7 +39,7 @@ final class CalendarBuilderTest extends TestCase
         $rooms->method('findBy')->willReturn([$room]);
 
         $builder = new CalendarBuilder($appointments, $performances, $schedules, $loans, $rooms, new MockClock('2026-10-14 12:00'));
-        $view = $builder->build(new CalendarQuery(new \DateTimeImmutable('2026-10-15')));
+        $view = $builder->build(new CalendarQuery(new \DateTimeImmutable('2026-10-15'), layout: 'rows'));
 
         $byTitle = [];
         foreach ($view->entries as $entry) {
@@ -53,6 +53,13 @@ final class CalendarBuilderTest extends TestCase
         self::assertSame(['house', 'room-1'], array_column($view->lanes, 'key'));
         self::assertCount(2, $view->lanes[1]['days'][3]);
         self::assertCount(1, $view->lanes[0]['days'][3]);
+
+        // room calendars side by side: the room shows its own entries and those without a room
+        $split = $builder->build(new CalendarQuery(new \DateTimeImmutable('2026-10-15')));
+        self::assertSame([], $split->lanes);
+        self::assertCount(1, $split->split);
+        self::assertSame('Schwarz', $split->split[0]['label']);
+        self::assertCount(3, $split->split[0]['lane']['days'][3]);
     }
 
     private function appointment(string $title, string $start, string $end, ?Room $room): Appointment

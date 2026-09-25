@@ -4,6 +4,12 @@
     <a class="cal-run-title" href="{{ cal_path(query, {panel: first.panel}) }}" data-turbo-frame="side" data-turbo-action="advance" data-action="quick-create#select" data-panel="{{ first.panel }}">
         {% if first.icon %}{{ ux_icon(first.icon) }}{% endif %}<span>{{ first.title }}</span>{% if first.fromWordPress %}<span class="wp">WP</span>{% endif %}
     </a>
+    {% if run.single %}
+        <a class="cal-run-seg cal-run-single{{ first.conflict ? ' has-conflict' }}{{ query.panel == first.panel ? ' is-selected' }}" href="{{ cal_path(query, {panel: first.panel}) }}" data-turbo-frame="side" data-turbo-action="advance"
+           data-action="quick-create#select" data-panel="{{ first.panel }}" style="grid-column: 1 / -1" title="{{ first.title }} · {{ first.timeLabel }}">
+            <span class="meta">{{ first.allDay ? '' : first.timeLabel ~ (first.meta ? ' · ' : '') }}{{ first.meta }}</span>
+        </a>
+    {% else %}
     {% for seg in run.segments %}
         {% set e = seg.entry %}
         <a class="cal-run-seg{{ e.conflict ? ' has-conflict' }}{{ query.panel == e.panel ? ' is-selected' }}" href="{{ cal_path(query, {panel: e.panel}) }}" data-turbo-frame="side" data-turbo-action="advance"
@@ -12,4 +18,5 @@
             {% if e.meta and not (compact ?? false) %}<span class="meta">{{ e.meta }}</span>{% endif %}
         </a>
     {% endfor %}
+    {% endif %}
 </div>

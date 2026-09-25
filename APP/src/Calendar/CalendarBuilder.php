@@ -48,16 +48,18 @@ final class CalendarBuilder
         usort($entries, static fn (CalendarEntry $a, CalendarEntry $b) => [$a->allDay ? 0 : 1, $a->start] <=> [$b->allDay ? 0 : 1, $b->start]);
         $this->markConflicts($entries);
 
-        [$bars, $rows] = $query->isHidden(EntryGroup::KEYS) ? [[], 0] : $this->keyBars($days, $from, $to, $now);
+        $layout = $query->effectiveLayout();
+        [$bars, $rows] = $query->isHidden(EntryGroup::KEYS) || $layout === 'split' ? [[], 0] : $this->keyBars($days, $from, $to, $now);
 
         return new CalendarView(
             $query,
             $days,
-            $this->lanes($query, $days, $entries),
+            $layout === 'split' ? [] : $this->lanes($query, $days, $entries),
             $bars,
             $rows,
             array_values($entries),
             $now,
+            $layout === 'split' ? $this->split($query, $days, $entries, $from, $to, $now) : [],
         );
     }
 
@@ -260,6 +262,85 @@ final class CalendarBuilder
         unset($lane);
 
         return array_values($lanes);
+    }
+
+    /**
+     * One calendar per room (rooms shown on the dashboard), as in the previous room view:
+     * entries without a room appear in every room, key loans in the rooms the key opens.
+     *
+     * @param \DateTimeImmutable[] $days
+     * @param CalendarEntry[]      $entries
+     */
+    private function split(CalendarQuery $query, array $days, array $entries, \DateTimeImmutable $from, \DateTimeImmutable $to, \DateTimeImmutable $now): array
+    {
+        if (!$query->isHidden(EntryGroup::KEYS)) {
+            $entries = array_merge($entries, $this->keyEntries($from, $to, $now));
+        }
+        $rooms = $this->rooms->findBy(['showOnDashboard' => true], ['position' => 'ASC', 'name' => 'ASC'])
+            ?: $this->rooms->findBy([], ['position' => 'ASC', 'name' => 'ASC']);
+
+        $calendars = [];
+        /** @var Room $room */
+        foreach ($rooms as $room) {
+            $roomEntries = array_values(array_filter($entries, static fn (CalendarEntry $e) => $e->belongsToRoom((int) $room->getId())));
+            $calendar = ['label' => (string) $room->getName(), 'roomId' => $room->getId(), 'lane' => null, 'weeks' => null];
+            if ($query->view === 'month') {
+                $calendar['weeks'] = [];
+                foreach (array_chunk($days, 7) as $weekDays) {
+                    $end = end($weekDays)->modify('+1 day');
+                    $arranged = RunLayout::arrange($weekDays, array_values(array_filter($roomEntries, static fn (CalendarEntry $e) => $e->start < $end && $e->end > $weekDays[0])));
+                    $calendar['weeks'][] = ['days' => $weekDays, 'runs' => $arranged['runs'], 'rows' => $arranged['rows'], 'perDay' => $arranged['days']];
+                }
+            } else {
+                $arranged = RunLayout::arrange($days, $roomEntries);
+                $calendar['lane'] = ['key' => 'room-' . $room->getId(), 'label' => $calendar['label'], 'sub' => null, 'roomId' => $room->getId(), 'days' => $arranged['days'], 'runs' => $arranged['runs'], 'runRows' => $arranged['rows']];
+            }
+            $calendars[] = $calendar;
+        }
+
+        return $calendars;
+    }
+
+    /**
+     * Key loans as calendar entries for the room calendars.
+     *
+     * @return CalendarEntry[]
+     */
+    private function keyEntries(\DateTimeImmutable $from, \DateTimeImmutable $to, \DateTimeImmutable $now): array
+    {
+        $entries = [];
+        foreach ($this->keyLoans->findOverlapping($from, $to) as $loan) {
+            $key = $loan->getKey();
+            $overdue = $loan->isOverdue($now);
+            $end = $loan->getReturnedAt() ?? $loan->getDueAt();
+            if ($end === null || $overdue) {
+                $end = $to;
+            }
+            $start = $loan->getStartAt()->setTime(0, 0);
+            $end = $end->setTime(0, 0)->modify('+1 day');
+            $meta = match (true) {
+                $overdue => 'überfällig seit ' . $loan->getDueAt()?->format('d.m.'),
+                $loan->isReturned() => 'zurück',
+                $loan->isPlannedAt($now) => 'geplant ab ' . $loan->getStartAt()->format('d.m. H:i'),
+                $loan->getDueAt() !== null => 'bis ' . $loan->getDueAt()->format('d.m. H:i'),
+                default => 'ohne Rückgabedatum',
+            };
+            $entries[] = new CalendarEntry(
+                panel: 'k-' . $key?->getId(),
+                group: EntryGroup::KEYS,
+                colorKey: $overdue ? 'key-overdue' : 'key',
+                title: sprintf('%s → %s', $key?->getName(), $loan->getHolderLabel()),
+                start: $start,
+                end: $end,
+                allDay: true,
+                meta: $meta,
+                icon: 'lucide:key-round',
+                // keys without rooms show up in every room calendar, like entries without a room
+                roomIds: $key !== null && \count($key->getRooms()) > 0 ? array_values(array_map(static fn (Room $r) => (int) $r->getId(), $key->getRooms()->toArray())) : null,
+            );
+        }
+
+        return $entries;
     }
 
     /**
