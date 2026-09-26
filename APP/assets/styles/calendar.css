@@ -261,3 +261,29 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 :root[data-side="collapsed"] .cal-side, :root[data-side="collapsed"] .pane-handle { display: none; }
 :root[data-side="collapsed"] .side-toggle { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 @media (max-width: 900px) { .side-toggle { display: none; } }
+
+/* appointment dialog */
+.modal-backdrop {
+    position: fixed; inset: 0; z-index: 80; background: rgba(20, 20, 18, 0.45);
+    display: flex; align-items: flex-start; justify-content: center; padding: 5vh 24px; overflow: auto;
+    animation: fade-in .12s ease-out;
+}
+.modal {
+    width: min(960px, 100%); max-height: 90vh; display: flex; flex-direction: column;
+    background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); overflow: hidden;
+}
+.modal .panel-head { padding: 18px 24px 14px; }
+.modal .panel-body { padding: 18px 24px 22px; }
+.modal .panel-foot { padding: 12px 24px; }
+.modal .appt-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.appt-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.modal .appt-col + .appt-col { border-left: 1px solid var(--line-soft); padding-left: 28px; }
+.modal .appt-col + .appt-col > .panel-section:first-child, .modal .appt-col + .appt-col > [data-appointment-form-target="assign"] { border-top: 0; padding-top: 0; }
+html.has-modal { overflow: hidden; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 900px) {
+    .modal-backdrop { padding: 0; }
+    .modal { width: 100%; max-height: none; min-height: 100%; border-radius: 0; }
+    .modal .appt-cols { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    .modal .appt-col + .appt-col { border-left: 0; padding-left: 0; }
+}

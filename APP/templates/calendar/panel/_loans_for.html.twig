@@ -1,10 +1,10 @@
 <div class="panel-section">
     <div class="between">
         <h3>Schlüssel für diesen Termin</h3>
-        <a class="btn btn-xs" href="{{ cal_path(query, new_params) }}&{{ extra }}">{{ ux_icon('lucide:key-round') }} Verleihen</a>
+        <a class="btn btn-xs" href="{{ cal_path(query, new_params) }}&{{ extra }}" data-turbo-frame="_top">{{ ux_icon('lucide:key-round') }} Verleihen</a>
     </div>
     {% for loan in loans %}
-        <a class="loan-item{{ loan.overdue(now) ? ' is-overdue' : (loan.activeAt(now) ? ' is-active' : '') }}" href="{{ cal_path(query, {panel: 'kl-' ~ loan.id}) }}" style="color:inherit">
+        <a class="loan-item{{ loan.overdue(now) ? ' is-overdue' : (loan.activeAt(now) ? ' is-active' : '') }}" href="{{ cal_path(query, {panel: 'kl-' ~ loan.id}) }}" data-turbo-frame="_top" style="color:inherit">
             <span class="between"><strong>{{ loan.key.name }}</strong><span class="small muted">{{ loan.returned ? 'zurück' : (loan.plannedAt(now) ? 'geplant' : 'ausgegeben') }}</span></span>
             <span class="small">an {{ loan.holderLabel }} · {{ loan.startAt|de_date('EE d.M. HH:mm') }}{% if loan.dueAt %} – {{ loan.dueAt|de_date('EE d.M. HH:mm') }}{% endif %}</span>
         </a>

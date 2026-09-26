@@ -1,18 +1,18 @@
 {# One joined bar over consecutive days; every day stays its own link. #}
 {% set first = run.segments|first.entry %}
 <div class="cal-run t-{{ first.colorKey }}{{ first.isPast(cal.now) ? ' is-past' }}" style="grid-column: {{ run.col + 1 }} / span {{ run.span }}; grid-row: {{ run.row + 1 }}; --span: {{ run.span }}">
-    <a class="cal-run-title" href="{{ cal_path(query, {panel: first.panel}) }}" data-turbo-frame="side" data-turbo-action="advance" data-action="quick-create#select" data-panel="{{ first.panel }}">
+    <a class="cal-run-title" href="{{ cal_path(query, {panel: first.panel}) }}" data-turbo-frame="{{ first.panel starts with 'a-' ? 'modal' : 'side' }}" data-turbo-action="advance" data-action="quick-create#select" data-panel="{{ first.panel }}">
         {% if first.icon %}{{ ux_icon(first.icon) }}{% endif %}<span>{{ first.title }}</span>{% if first.fromWordPress %}<span class="wp">WP</span>{% endif %}
     </a>
     {% if run.single %}
-        <a class="cal-run-seg cal-run-single{{ first.conflict ? ' has-conflict' }}{{ query.panel == first.panel ? ' is-selected' }}" href="{{ cal_path(query, {panel: first.panel}) }}" data-turbo-frame="side" data-turbo-action="advance"
+        <a class="cal-run-seg cal-run-single{{ first.conflict ? ' has-conflict' }}{{ query.panel == first.panel ? ' is-selected' }}" href="{{ cal_path(query, {panel: first.panel}) }}" data-turbo-frame="{{ first.panel starts with 'a-' ? 'modal' : 'side' }}" data-turbo-action="advance"
            data-action="quick-create#select" data-panel="{{ first.panel }}" style="grid-column: 1 / -1" title="{{ first.title }} · {{ first.timeLabel }}">
             <span class="meta">{{ first.allDay ? '' : first.timeLabel ~ (first.meta ? ' · ' : '') }}{{ first.meta }}</span>
         </a>
     {% else %}
     {% for seg in run.segments %}
         {% set e = seg.entry %}
-        <a class="cal-run-seg{{ e.conflict ? ' has-conflict' }}{{ query.panel == e.panel ? ' is-selected' }}" href="{{ cal_path(query, {panel: e.panel}) }}" data-turbo-frame="side" data-turbo-action="advance"
+        <a class="cal-run-seg{{ e.conflict ? ' has-conflict' }}{{ query.panel == e.panel ? ' is-selected' }}" href="{{ cal_path(query, {panel: e.panel}) }}" data-turbo-frame="{{ e.panel starts with 'a-' ? 'modal' : 'side' }}" data-turbo-action="advance"
            data-action="quick-create#select" data-panel="{{ e.panel }}" title="{{ e.title }} · {{ seg.day|de_date('EE d.M.') }} · {{ e.timeLabelOn(seg.day) }}{{ e.conflict ? ' · ' ~ e.conflict }}">
             <span class="t">{{ e.timeLabelOn(seg.day) }}{% if e.conflict %} <span class="conflict-mark">!</span>{% endif %}</span>
             {% if e.meta and not (compact ?? false) %}<span class="meta">{{ e.meta }}</span>{% endif %}

@@ -1,9 +1,14 @@
 {# chip, chip_class, title, when #}
 <div class="panel-head">
     <div class="top">
-        <a class="btn btn-ghost btn-sm" href="{{ cal_path(query, {panel: null}) }}" style="padding-left:6px">{{ ux_icon('lucide:arrow-left') }} Schlüssel &amp; Todos</a>
-        <span class="badge {{ chip_class ?? '' }}">{{ chip }}</span>
+        {% if modal ?? false %}
+            <span class="badge {{ chip_class ?? '' }}">{{ chip }}</span>
+            <a class="btn btn-ghost btn-icon btn-sm" href="{{ cal_path(query, {panel: null}) }}" data-turbo-frame="modal" data-modal-target="close" aria-label="Schließen" title="Schließen (Esc)">{{ ux_icon('lucide:x') }}</a>
+        {% else %}
+            <a class="btn btn-ghost btn-sm" href="{{ cal_path(query, {panel: null}) }}" style="padding-left:6px">{{ ux_icon('lucide:arrow-left') }} Schlüssel &amp; Todos</a>
+            <span class="badge {{ chip_class ?? '' }}">{{ chip }}</span>
+        {% endif %}
     </div>
-    <h2>{{ title }}</h2>
+    <h2 id="{{ (modal ?? false) ? 'modal-title' : 'panel-title' }}">{{ title }}</h2>
     {% if when is defined and when %}<div class="when">{{ when }}</div>{% endif %}
 </div>

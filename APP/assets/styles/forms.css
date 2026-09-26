@@ -68,3 +68,12 @@
 .ts-wrapper .ts-control, .ts-wrapper.single.input-active .ts-control, .ts-wrapper .ts-control input { background: var(--surface); color: var(--ink); }
 .ts-dropdown, .ts-dropdown .option, .ts-dropdown .optgroup-header { background: var(--surface); color: var(--ink); }
 .ts-dropdown .optgroup-header { color: var(--muted); font-size: 12px; }
+
+.row-card select, .row-card input:not([type=checkbox]):not([type=radio]) {
+    height: 38px; min-width: 0; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--surface); color: var(--ink); font-size: 14px;
+}
+.row-card select:focus, .row-card input:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus); }
+.appt-dates { display: flex; flex-direction: column; gap: 14px; }
+.modal .appt-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 900px) { .modal .appt-dates { grid-template-columns: minmax(0, 1fr); } }

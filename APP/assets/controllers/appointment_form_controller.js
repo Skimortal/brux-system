@@ -7,7 +7,7 @@ import { Controller } from '@hotwired/stimulus';
 const ASSIGNMENT_TYPES = ['production', 'closed_event', 'school_event', 'internal'];
 
 export default class extends Controller {
-    static targets = ['title', 'production', 'room', 'cleaning', 'productionOnly', 'assign', 'start', 'end', 'repeat', 'repeatUntil', 'needs'];
+    static targets = ['title', 'production', 'room', 'cleaning', 'productionOnly', 'assign', 'start', 'end', 'repeat', 'repeatUntil', 'needs', 'noDetails'];
 
     connect() {
         this.update();
@@ -25,6 +25,7 @@ export default class extends Controller {
         this.toggle(this.roomTargets, type !== 'cleaning');
         this.toggle(this.cleaningTargets, type === 'cleaning');
         this.toggle(this.assignTargets, ASSIGNMENT_TYPES.includes(type));
+        this.toggle(this.noDetailsTargets, type === 'private');
         if (this.hasRepeatUntilTarget && this.hasRepeatTarget) {
             this.toggle(this.repeatUntilTargets, this.repeatTarget.value !== '');
         }
