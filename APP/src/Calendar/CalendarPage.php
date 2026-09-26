@@ -93,7 +93,7 @@ final class CalendarPage
         }
         parse_str((string) parse_url($return, \PHP_URL_QUERY), $params);
         // a production page shows the month of the date; source and production only prefill a new panel
-        if (isset($overrides['date'], $params['monat'])) {
+        if (isset($overrides['date']) && str_starts_with($path, '/produktionen/')) {
             $params['monat'] = substr((string) $overrides['date'], 0, 7);
         }
         unset($overrides['date'], $params['from'], $params['production']);
