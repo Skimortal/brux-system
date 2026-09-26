@@ -62,10 +62,11 @@
     {% endif %}
 
     {% if production.contentHtml or production.excerptHtml %}
-        <details class="about">
-            <summary>Über die Produktion</summary>
-            <div class="about-text">{{ include('production/_about.html.twig') }}</div>
-        </details>
+        <div class="expandable is-compact" data-controller="expand">
+            <h3>Über die Produktion</h3>
+            <div class="expandable-text about-text" data-expand-target="text">{{ include('production/_about.html.twig') }}</div>
+            <button type="button" class="btn btn-ghost btn-sm expandable-toggle" data-expand-target="button" data-action="expand#toggle" hidden>Mehr anzeigen {{ ux_icon('lucide:chevron-down') }}</button>
+        </div>
     {% endif %}
 
     <div class="panel-section">

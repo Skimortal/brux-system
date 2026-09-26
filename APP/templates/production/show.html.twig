@@ -2,18 +2,38 @@
 {% set is_new = production.id is null %}
 
 {% block title %}{{ is_new ? 'Neue Produktion' : production.title }}{% endblock %}
-{% block page_title %}{{ is_new ? 'Neue Produktion' : production.title }}{% endblock %}
-{% block crumbs %}<div class="crumbs"><a href="{{ path('app_production_index') }}">Produktionen</a> /</div>{% endblock %}
-{% block subtitle %}
-    {% if not is_new %}
-        <div class="row-wrap sub">
-            {% if production.fromWordPress %}<span class="badge badge-accent">WordPress-ID {{ production.externalId }}</span>{% else %}<span class="badge">eigene Produktion</span>{% endif %}
-            {% if production.syncedAt %}<span class="small muted">zuletzt importiert {{ production.syncedAt|de_date('d.M.y HH:mm') }}</span>{% endif %}
+{% block content %}
+<div class="page">
+    <div class="crumbs small muted" style="margin-bottom:10px"><a href="{{ path('app_production_index') }}">Produktionen</a> /</div>
+    {% set has_text = production.contentHtml or production.excerptHtml %}
+    <header class="prod-hero{{ production.postThumbnailUrl ? ' has-image' : '' }}">
+        {% if production.postThumbnailUrl %}
+            <div class="prod-hero-image"><img src="{{ production.postThumbnailUrl }}" alt="" onerror="this.parentElement.remove()"></div>
+        {% endif %}
+        <div class="prod-hero-body">
+            <div class="prod-hero-top">
+                <div class="stack-sm">
+                    <h1>{{ is_new ? 'Neue Produktion' : production.title }}</h1>
+                    {% if not is_new %}
+                        <div class="row-wrap">
+                            {% if production.fromWordPress %}<span class="badge badge-accent">WordPress-ID {{ production.externalId }}</span>{% else %}<span class="badge">eigene Produktion</span>{% endif %}
+                            {% for label in production.requirementLabels %}<span class="badge badge-square">{{ label }}</span>{% endfor %}
+                            {% if production.syncedAt %}<span class="small muted">zuletzt importiert {{ production.syncedAt|de_date('d.M.y HH:mm') }}</span>{% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% if production.permalink %}<a class="btn" href="{{ production.permalink }}" target="_blank" rel="noopener">{{ ux_icon('lucide:globe') }} Auf Website ansehen</a>{% endif %}
+            </div>
+            {% if has_text %}
+                <div class="expandable" data-controller="expand">
+                    <div class="expandable-text about-text" data-expand-target="text">{{ include('production/_about.html.twig') }}</div>
+                    <button type="button" class="btn btn-ghost btn-sm expandable-toggle" data-expand-target="button" data-action="expand#toggle" hidden>Mehr anzeigen {{ ux_icon('lucide:chevron-down') }}</button>
+                </div>
+            {% endif %}
         </div>
-    {% endif %}
-{% endblock %}
-{% block actions %}
-    {% if production.permalink %}<a class="btn" href="{{ production.permalink }}" target="_blank" rel="noopener">{{ ux_icon('lucide:globe') }} Auf Website ansehen</a>{% endif %}
+    </header>
+    {{ block('page') }}
+</div>
 {% endblock %}
 
 {% block page %}
@@ -129,17 +149,6 @@
                             <div><span>{{ price.categoryLabel }}</span><span class="num">{{ price.priceLabel }} €</span><span class="num">{{ price.parentReserved ?? '–' }}</span></div>
                         {% endfor %}
                     </div>
-                </section>
-            {% endif %}
-            {% if production.postThumbnailUrl or production.contentHtml or production.excerptHtml %}
-                <section class="card">
-                    {% if production.postThumbnailUrl %}<img src="{{ production.postThumbnailUrl }}" alt="" loading="lazy" onerror="this.remove()" style="border-radius: 8px 8px 0 0; width:100%; display:block">{% endif %}
-                    {% if production.contentHtml or production.excerptHtml %}
-                        <details class="about card-body" {% if not production.postThumbnailUrl %}open{% endif %}>
-                            <summary>Über die Produktion <span class="badge badge-square">WordPress</span></summary>
-                            <div class="about-text">{{ include('production/_about.html.twig') }}</div>
-                        </details>
-                    {% endif %}
                 </section>
             {% endif %}
         {% endif %}

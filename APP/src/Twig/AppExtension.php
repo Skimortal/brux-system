@@ -19,6 +19,8 @@ final class AppExtension extends AbstractExtension
         return [
             // ICU patterns, e.g. "EEEE, d. MMMM y" or "EE d.M."
             new TwigFilter('de_date', $this->formatDate(...)),
+            // WordPress HTML as clean plain text with paragraphs
+            new TwigFilter('plain_text', $this->plainText(...)),
         ];
     }
 
@@ -27,6 +29,20 @@ final class AppExtension extends AbstractExtension
         return [
             new TwigFunction('cal_path', $this->calendarPath(...)),
         ];
+    }
+
+    public function plainText(?string $html): string
+    {
+        if ($html === null || trim($html) === '') {
+            return '';
+        }
+        $text = preg_replace('#<(br|/p|/h[1-6]|/li|/div|/blockquote|/figure)\b[^>]*>#i', "\n", $html) ?? $html;
+        $text = html_entity_decode(strip_tags($text), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
+        $text = str_replace("\u{00A0}", ' ', $text);
+        $lines = array_map('trim', preg_split('/\R/u', $text) ?: []);
+        $text = implode("\n", $lines);
+
+        return trim(preg_replace("/\n{3,}/", "\n\n", $text) ?? $text);
     }
 
     public function formatDate(?\DateTimeInterface $date, string $pattern = 'd.M.y'): string

@@ -235,7 +235,6 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 
 .panel-image { width: 100%; max-height: 220px; object-fit: cover; border-radius: var(--radius); display: block; }
 .about summary { cursor: pointer; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-.about-text { margin-top: 8px; font-size: 13.5px; color: var(--ink-2); max-height: 320px; overflow: auto; }
 
 /* room calendars side by side (layout "split") */
 .cal-split { --split-min: 520px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(var(--split-min), 100%), 1fr)); gap: 12px; padding: 12px; align-items: start; }
