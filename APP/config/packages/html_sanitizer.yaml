@@ -1,0 +1,31 @@
+framework:
+    html_sanitizer:
+        sanitizers:
+            # Descriptions edited here and pushed to the website: text structure,
+            # links and images only; classes, styles and scripts are dropped.
+            app.website_content:
+                allow_elements:
+                    p: []
+                    h2: []
+                    h3: []
+                    h4: []
+                    strong: []
+                    b: []
+                    em: []
+                    i: []
+                    u: []
+                    s: []
+                    br: []
+                    hr: []
+                    ul: []
+                    ol: []
+                    li: []
+                    blockquote: []
+                    figure: []
+                    figcaption: []
+                    a: [href, title, target]
+                    img: [src, alt, title, width, height]
+                allowed_link_schemes: [http, https, mailto, tel]
+                allowed_media_schemes: [http, https]
+                # WordPress markup with srcset lists gets long
+                max_input_length: 200000

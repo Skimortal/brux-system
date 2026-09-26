@@ -48,7 +48,13 @@ final class ProductionType extends AbstractType
                 'constraints' => [new Image(maxSize: '8M', mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], mimeTypesMessage: 'Bitte ein JPG-, PNG- oder WebP-Bild hochladen.')],
             ])
             ->add('excerptHtml', TextareaType::class, ['label' => 'Kurztext', 'required' => false, 'attr' => ['rows' => 3], 'disabled' => $locked('excerptHtml')])
-            ->add('contentHtml', TextareaType::class, ['label' => 'Beschreibung (HTML)', 'required' => false, 'attr' => ['rows' => 12, 'class' => 'mono'], 'disabled' => $locked('contentHtml')])
+            ->add('contentHtml', TextareaType::class, [
+                'label' => 'Beschreibung',
+                'required' => false,
+                'disabled' => $locked('contentHtml'),
+                'sanitize_html' => true,
+                'sanitizer' => 'app.website_content',
+            ])
             ->add('priceList', CollectionType::class, [
                 'entry_type' => ProductionPriceType::class,
                 'label' => 'Preise',

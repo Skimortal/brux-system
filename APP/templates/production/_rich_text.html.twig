@@ -1,0 +1,38 @@
+{# field: textarea form view, edited with the rich-text controller #}
+{% set editable = not field.vars.disabled %}
+{% set tool = 'btn btn-ghost btn-icon btn-sm' %}
+<div class="field rte{{ editable ? '' : ' is-readonly' }}{{ field.vars.errors|length ? ' has-error' }}" data-controller="rich-text" data-action="turbo:morph@window->rich-text#reload">
+    <div class="between">
+        <label class="field-label" for="{{ field.vars.id }}">{{ field.vars.label }}</label>
+        {% if editable %}
+            <button type="button" class="btn btn-ghost btn-xs" aria-pressed="false" data-rich-text-target="sourceButton" data-action="rich-text#toggleSource" title="Zwischen Editor und HTML-Quelltext wechseln">{{ ux_icon('lucide:code-xml') }} HTML</button>
+        {% endif %}
+    </div>
+    {% if editable %}
+        <div class="rte-toolbar" role="toolbar" aria-label="Formatierung" data-rich-text-target="toolbar">
+            <button type="button" class="{{ tool }}" title="Absatz" data-action="rich-text#run" data-rich-text-command-param="paragraph">{{ ux_icon('lucide:pilcrow') }}</button>
+            <button type="button" class="{{ tool }}" title="Überschrift" data-action="rich-text#run" data-rich-text-command-param="heading" data-rich-text-level-param="2">{{ ux_icon('lucide:heading-2') }}</button>
+            <button type="button" class="{{ tool }}" title="Zwischenüberschrift" data-action="rich-text#run" data-rich-text-command-param="heading" data-rich-text-level-param="3">{{ ux_icon('lucide:heading-3') }}</button>
+            <span class="rte-sep"></span>
+            <button type="button" class="{{ tool }}" title="Fett (⌘B)" data-action="rich-text#run" data-rich-text-command-param="bold">{{ ux_icon('lucide:bold') }}</button>
+            <button type="button" class="{{ tool }}" title="Kursiv (⌘I)" data-action="rich-text#run" data-rich-text-command-param="italic">{{ ux_icon('lucide:italic') }}</button>
+            <button type="button" class="{{ tool }}" title="Link" data-link-button data-action="rich-text#openLink">{{ ux_icon('lucide:link') }}</button>
+            <span class="rte-sep"></span>
+            <button type="button" class="{{ tool }}" title="Aufzählung" data-action="rich-text#run" data-rich-text-command-param="bulletList">{{ ux_icon('lucide:list') }}</button>
+            <button type="button" class="{{ tool }}" title="Nummerierte Liste" data-action="rich-text#run" data-rich-text-command-param="orderedList">{{ ux_icon('lucide:list-ordered') }}</button>
+            <button type="button" class="{{ tool }}" title="Zitat" data-action="rich-text#run" data-rich-text-command-param="blockquote">{{ ux_icon('lucide:quote') }}</button>
+            <span class="rte-sep"></span>
+            <button type="button" class="{{ tool }}" title="Rückgängig (⌘Z)" data-action="rich-text#run" data-rich-text-command-param="undo">{{ ux_icon('lucide:undo-2') }}</button>
+            <button type="button" class="{{ tool }}" title="Wiederholen" data-action="rich-text#run" data-rich-text-command-param="redo">{{ ux_icon('lucide:redo-2') }}</button>
+        </div>
+        <div class="rte-linkbar" data-rich-text-target="linkBar" hidden>
+            <input type="url" class="input" placeholder="https://…" aria-label="Link-Adresse" data-rich-text-target="linkInput" data-action="keydown->rich-text#linkKey">
+            <button type="button" class="btn btn-sm btn-primary" data-action="rich-text#applyLink">Übernehmen</button>
+            <button type="button" class="btn btn-sm btn-ghost" title="Link entfernen" data-action="rich-text#removeLink">{{ ux_icon('lucide:unlink') }}</button>
+        </div>
+    {% endif %}
+    <div class="rte-editor" data-rich-text-target="editor"></div>
+    {{ form_widget(field, {attr: {hidden: 'hidden', rows: 16, class: 'rte-source', 'data-rich-text-target': 'input'}}) }}
+    {{ form_errors(field) }}
+    {% if editable %}<div class="field-help">Wird beim Speichern bereinigt: Formatierung, Links und Bilder bleiben, Farben und Skripte nicht.</div>{% endif %}
+</div>

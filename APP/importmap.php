@@ -38,4 +38,144 @@ return [
     '@orchidjs/unicode-variants' => [
         'version' => '1.1.2',
     ],
+    '@tiptap/core' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/starter-kit' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-link' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/pm/transform' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/pm/commands' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/pm/state' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/pm/model' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/pm/schema-list' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/pm/view' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/pm/keymap' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-blockquote' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-bold' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-code' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-code-block' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-document' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-hard-break' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-heading' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-horizontal-rule' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-italic' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-list' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-paragraph' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-strike' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-text' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extension-underline' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/extensions' => [
+        'version' => '3.31.3',
+    ],
+    'linkifyjs' => [
+        'version' => '4.3.3',
+    ],
+    'prosemirror-transform' => [
+        'version' => '1.12.1',
+    ],
+    'prosemirror-commands' => [
+        'version' => '1.7.2',
+    ],
+    'prosemirror-state' => [
+        'version' => '1.4.4',
+    ],
+    'prosemirror-model' => [
+        'version' => '1.25.11',
+    ],
+    'prosemirror-schema-list' => [
+        'version' => '1.5.1',
+    ],
+    'prosemirror-view' => [
+        'version' => '1.42.3',
+    ],
+    'prosemirror-keymap' => [
+        'version' => '1.2.3',
+    ],
+    '@tiptap/core/jsx-runtime' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/pm/dropcursor' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/pm/gapcursor' => [
+        'version' => '3.31.3',
+    ],
+    '@tiptap/pm/history' => [
+        'version' => '3.31.3',
+    ],
+    'orderedmap' => [
+        'version' => '2.1.1',
+    ],
+    'w3c-keyname' => [
+        'version' => '2.2.8',
+    ],
+    'prosemirror-dropcursor' => [
+        'version' => '1.8.3',
+    ],
+    'prosemirror-gapcursor' => [
+        'version' => '1.4.1',
+    ],
+    'prosemirror-history' => [
+        'version' => '1.5.0',
+    ],
+    'prosemirror-view/style/prosemirror.min.css' => [
+        'version' => '1.42.3',
+        'type' => 'css',
+    ],
+    'rope-sequence' => [
+        'version' => '1.3.4',
+    ],
+    'prosemirror-gapcursor/style/gapcursor.min.css' => [
+        'version' => '1.4.1',
+        'type' => 'css',
+    ],
+    '@tiptap/extension-image' => [
+        'version' => '3.31.3',
+    ],
 ];

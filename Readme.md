@@ -68,6 +68,11 @@ WordPress. Sind beide Listen leer, führt das Haussystem vollständig: Vorstellu
 werden dann auch für WordPress-Produktionen hier angelegt und gelöscht. Eigene
 Produktionen (ohne WordPress-ID) sind immer vollständig bearbeitbar.
 
+Die Beschreibung wird mit einem Editor (TipTap) gepflegt und beim Speichern
+bereinigt (`APP/config/packages/html_sanitizer.yaml`): Absätze, Überschriften,
+Listen, Zitate, Links und Bilder bleiben, Klassen, Styles und Skripte nicht.
+Solange WordPress das Feld führt, zeigt der Editor den Text nur an.
+
 Hochgeladene Produktionsbilder liegen in `APP/public/uploads/productions/`
 (nicht im Git) und werden mit absoluter URL gespeichert, damit WordPress sie laden kann.
 

@@ -92,3 +92,29 @@
 .image-field-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
 @media (max-width: 600px) { .image-field { flex-direction: column; } .image-field-preview { width: 100%; } }
 
+
+/* rich text editor for website descriptions */
+.rte-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 4px; border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; background: var(--surface-2); }
+.rte-toolbar .btn.is-active { background: var(--ink); color: var(--surface); }
+.rte-toolbar.is-disabled { opacity: .45; pointer-events: none; }
+.rte-sep { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+.rte-linkbar { display: flex; gap: 6px; padding: 6px; border: 1px solid var(--line); border-bottom: 0; background: var(--surface-2); }
+.rte-linkbar .input { height: 32px; }
+.rte-editor .rte-content, .rte-source {
+    min-height: 220px; max-height: 560px; overflow: auto; padding: 12px 14px; border: 1px solid var(--line);
+    border-radius: 0 0 8px 8px; background: var(--surface); color: var(--ink); line-height: 1.55; font-size: 14.5px;
+}
+.field .rte-source { height: auto; min-height: 220px; font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; border-radius: 0 0 8px 8px; }
+.rte.is-readonly .rte-editor .rte-content { border-radius: 8px; background: var(--surface-2); min-height: 0; max-height: 360px; }
+.rte-editor .rte-content:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus); }
+.rte-content > * + * { margin-top: .7em; }
+.rte-content p, .rte-content ul, .rte-content ol, .rte-content blockquote, .rte-content figure { margin-bottom: 0; }
+.rte-content > :first-child { margin-top: 0; }
+.rte-content h2 { font-size: 19px; font-weight: 600; margin-top: 1em; }
+.rte-content h3 { font-size: 16px; font-weight: 600; margin-top: .9em; }
+.rte-content ul, .rte-content ol { padding-left: 1.4em; }
+.rte-content blockquote { border-left: 3px solid var(--line); padding-left: 12px; color: var(--ink-2); }
+.rte-content a { color: var(--ink); text-decoration: underline; }
+.rte-content img { max-width: 100%; max-height: 260px; width: auto; height: auto; border-radius: var(--radius); display: block; }
+.rte-content img.ProseMirror-selectednode { outline: 2px solid var(--accent); }
+.rte.has-error .rte-content { border-color: var(--danger-ink); }
