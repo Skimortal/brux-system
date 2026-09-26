@@ -163,7 +163,7 @@ final class CalendarBuilder
             allDay: $performance->isAllDay(),
             roomId: $performance->getRoom()?->getId(),
             meta: $meta !== [] ? implode(' · ', $meta) : null,
-            fromWordPress: true,
+            fromWordPress: $performance->getProduction()?->isFromWordPress() ?? false,
             cancelled: $performance->isCancelled(),
         );
     }
