@@ -86,7 +86,7 @@
                 </div>
             </section>
 
-            <section class="card" data-controller="collection" data-collection-index-value="{{ form.contactPersons|length }}" data-collection-placeholder-value="__cp__">
+            <section class="card" id="ansprechpersonen" data-controller="collection" data-collection-index-value="{{ form.contactPersons|length }}" data-collection-placeholder-value="__cp__">
                 <div class="card-head">
                     <h2>Ansprechpersonen</h2>
                     <button type="button" class="btn btn-sm" data-action="collection#add">{{ ux_icon('lucide:plus') }} Person</button>

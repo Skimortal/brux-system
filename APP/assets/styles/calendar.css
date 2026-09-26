@@ -234,7 +234,8 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
     .cal-toolbar h1 { font-size: 20px; width: 100%; order: -1; }
 }
 
-.panel-image { width: 100%; max-height: 150px; object-fit: cover; border-radius: var(--radius); display: block; }
+/* fixed height, so the panel does not jump when the image arrives */
+.panel-image { width: 100%; height: 150px; object-fit: cover; background: var(--surface-3); border-radius: var(--radius); display: block; }
 .about summary { cursor: pointer; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
 
 /* room calendars side by side (layout "split") */

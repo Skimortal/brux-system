@@ -110,7 +110,7 @@
                 <p class="small muted" style="margin-top:6px">Änderungen werden sofort gespeichert.</p>
             {{ form_end(panel.contacts_form) }}
         {% else %}
-            <p class="small muted">In der Produktion sind noch keine Ansprechpersonen hinterlegt. <a href="{{ path('app_production_show', {id: production.id}) }}" data-turbo-frame="_top">Zur Produktion</a></p>
+            <p class="small muted">In der Produktion sind noch keine Ansprechpersonen hinterlegt. {% if on_production %}<a href="#ansprechpersonen">Zu den Ansprechpersonen</a>{% else %}<a href="{{ path('app_production_show', {id: production.id}) }}#ansprechpersonen" data-turbo-frame="_top">Zur Produktion</a>{% endif %}</p>
         {% endif %}
     </div>
 
