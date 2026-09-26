@@ -9,5 +9,6 @@ docker exec brux_system_test_php bin/console asset-map:compile --env=prod
 docker exec brux_system_test_php bin/console cache:clear --env=prod
 docker exec brux_system_test_php bin/console cache:warmup --env=prod
 
-docker exec -w /var/www/html brux_system_test_nginx chown -R www-data:www-data var/ public/assets/
+docker exec -w /var/www/html brux_system_test_nginx mkdir -p public/uploads/productions
+docker exec -w /var/www/html brux_system_test_nginx chown -R www-data:www-data var/ public/assets/ public/uploads/
 docker restart brux_system_test_worker
