@@ -1,8 +1,13 @@
-{# chip, chip_class, title, when #}
+{# chip, chip_class, title, when; close_url when the panel sits on another page than the calendar #}
 <div class="panel-head">
     <div class="top">
-        <a class="btn btn-ghost btn-sm" href="{{ cal_path(query, {panel: null}) }}" style="padding-left:6px">{{ ux_icon('lucide:arrow-left') }} Schlüssel &amp; Todos</a>
-        <span class="badge {{ chip_class ?? '' }}">{{ chip }}</span>
+        {% if close_url is defined %}
+            <span class="badge {{ chip_class ?? '' }}">{{ chip }}</span>
+            <a class="btn btn-ghost btn-icon btn-sm" href="{{ close_url }}" data-turbo-frame="_top" aria-label="Schließen" title="Schließen">{{ ux_icon('lucide:x') }}</a>
+        {% else %}
+            <a class="btn btn-ghost btn-sm" href="{{ cal_path(query, {panel: null}) }}" style="padding-left:6px">{{ ux_icon('lucide:arrow-left') }} Schlüssel &amp; Todos</a>
+            <span class="badge {{ chip_class ?? '' }}">{{ chip }}</span>
+        {% endif %}
     </div>
     <h2 id="panel-title">{{ title }}</h2>
     {% if when is defined and when %}<div class="when">{{ when }}</div>{% endif %}

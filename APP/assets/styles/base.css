@@ -20,7 +20,7 @@ p { margin: 0; }
 
 a { color: var(--ink); text-decoration: underline; text-decoration-color: rgba(30, 30, 28, 0.3); text-underline-offset: 2px; }
 a:hover { color: #000; text-decoration-color: currentColor; }
-.btn, .chip, .rail a, .cal-item, .cal-bar, .key-row, .contact-card, .tabs a, .side-tabs a, .seg-links a, .popover-list a, .loan-item, .crumbs a, .cell-link, .mnum, .more, .rail-menu-pop a { text-decoration: none; }
+.btn, .chip, .rail a, .cal-item, .cal-bar, .key-row, .contact-card, .tabs a, .side-tabs a, .seg-links a, .popover-list a, .loan-item, .crumbs a, .cell-link, .mnum, .more, .rail-menu-pop a, .series-item { text-decoration: none; }
 
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }

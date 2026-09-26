@@ -142,7 +142,7 @@
                             <a class="btn btn-icon btn-sm" href="{{ path('app_production_show', {id: production.id, monat: month.modify('+1 month')|date('Y-m')}) }}" aria-label="Nächster Monat">{{ ux_icon('lucide:chevron-right') }}</a>
                         </div>
                     </div>
-                    {{ include('calendar/_month.html.twig', {query: cal.query, link_frame: '_top'}) }}
+                    {{ include('calendar/_month.html.twig', {query: cal.query, link_frame: '_top', panel_link: path('app_production_show', {id: production.id, monat: month|date('Y-m')}) ~ '&panel='}) }}
                     <div class="card-foot small"><a href="{{ path('app_calendar', {view: 'month', date: month|date('Y-m-d')}) }}" data-turbo-frame="_top">Im großen Kalender öffnen</a></div>
                 </section>
             </turbo-frame>
@@ -152,18 +152,18 @@
                 <div class="card-head">
                     <h2>Vorstellungen <span class="badge">{{ performances|length }}</span></h2>
                     {% if can_add_performance %}
-                        <a class="btn btn-sm" href="{{ path('app_calendar', {date: month|date('Y-m-d'), panel: 'pe-new', production: production.id}) }}" data-turbo-frame="_top">{{ ux_icon('lucide:plus') }} Vorstellung</a>
+                        <a class="btn btn-sm" href="{{ path('app_production_show', {id: production.id, monat: month|date('Y-m'), panel: 'pe-new', production: production.id, from: performances ? (performances|last).id : null}) }}">{{ ux_icon('lucide:plus') }} Vorstellung</a>
                     {% endif %}
                 </div>
                 <div>
                     {% for pe in performances %}
                         {% set past = pe.date and pe.date < today %}
-                        <a class="key-row" href="{{ path('app_calendar', {date: pe.date|date('Y-m-d'), panel: 'pe-' ~ pe.id}) }}" style="{{ past ? 'opacity:.55' }}">
+                        <a class="key-row{{ panel and panel.performance.id == pe.id ? ' is-selected' }}" href="{{ path('app_production_show', {id: production.id, panel: 'pe-' ~ pe.id, monat: pe.date ? pe.date|date('Y-m') : null}) }}" style="{{ past ? 'opacity:.55' }}">
                             <span class="grow">
                                 <span class="name" style="display:block">{{ pe.startsAt ? pe.startsAt|de_date('EE d. MMM y') : 'ohne Datum' }}{{ pe.timeFrom ? ' · ' ~ pe.timeFrom : '' }}</span>
                                 <span class="line" style="display:block">{{ pe.room ? pe.room.name : 'ohne Raum' }}{% if pe.quota %} · {{ pe.seatsTaken ?? 0 }}/{{ pe.quota }} reserviert{% endif %}{% if pe.appointment %} · Besetzung{% endif %}</span>
                             </span>
-                            {{ ux_icon('lucide:calendar') }}
+                            {{ ux_icon('lucide:chevron-right') }}
                         </a>
                     {% else %}
                         <div class="empty">Noch keine Vorstellungen.</div>
@@ -173,4 +173,13 @@
         {% endif %}
     </aside>
 </div>
+
+{% if panel %}
+    {# same panel as in the calendar, docked on the right #}
+    <aside class="cal-side prod-drawer" aria-labelledby="panel-title">
+        <div class="side-content has-panel is-wide">
+            {{ include('calendar/panel/_' ~ panel.kind ~ '.html.twig', {close_url: path('app_production_show', {id: production.id, monat: month|date('Y-m')})}) }}
+        </div>
+    </aside>
+{% endif %}
 {% endblock %}

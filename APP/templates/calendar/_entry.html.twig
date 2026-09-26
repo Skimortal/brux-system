@@ -1,6 +1,6 @@
 {# @var e \App\Calendar\CalendarEntry #}
 {% set compact = compact ?? false %}
-<a href="{{ cal_path(query, {panel: e.panel}) }}" data-turbo-frame="{{ link_frame ?? 'side' }}" data-turbo-action="advance"
+<a href="{{ (panel_link is defined and e.panel starts with 'pe-' ? panel_link ~ e.panel : cal_path(query, {panel: e.panel})) }}" data-turbo-frame="{{ link_frame ?? 'side' }}" data-turbo-action="advance"
    data-panel="{{ e.panel }}" data-action="{{ link_frame is defined ? '' : 'quick-create#select' }}"
    class="cal-item t-{{ e.colorKey }}{{ e.isPast(cal.now) ? ' is-past' }}{{ e.cancelled ? ' is-cancelled' }}{{ e.conflict ? ' has-conflict' }}{{ query.panel == e.panel ? ' is-selected' }}"
    title="{{ e.title }} · {{ day is defined ? e.timeLabelOn(day) : e.timeLabel }}{{ e.conflict ? ' · ' ~ e.conflict }}">

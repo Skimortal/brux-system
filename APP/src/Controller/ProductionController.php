@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Calendar\CalendarBuilder;
+use App\Calendar\CalendarPage;
+use App\Calendar\CalendarQuery;
 use App\Entity\Production;
 use App\Form\ProductionType;
 use App\Repository\ProductionRepository;
@@ -36,13 +38,13 @@ final class ProductionController extends AbstractController
     }
 
     #[Route('/neu', name: 'app_production_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar, SluggerInterface $slugger, FieldOwnership $ownership): Response
+    public function new(Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar, SluggerInterface $slugger, FieldOwnership $ownership, CalendarPage $page): Response
     {
-        return $this->edit(new Production(), $request, $em, $push, $calendar, $slugger, $ownership);
+        return $this->edit(new Production(), $request, $em, $push, $calendar, $slugger, $ownership, $page);
     }
 
     #[Route('/{id}', name: 'app_production_show', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-    public function edit(Production $production, Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar, SluggerInterface $slugger, FieldOwnership $ownership): Response
+    public function edit(Production $production, Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar, SluggerInterface $slugger, FieldOwnership $ownership, CalendarPage $page): Response
     {
         $form = $this->createForm(ProductionType::class, $production);
         $form->handleRequest($request);
@@ -81,6 +83,9 @@ final class ProductionController extends AbstractController
         }
         $month = $month->modify('first day of this month')->setTime(0, 0);
 
+        // a performance of this production opens in the side panel of this page
+        $panel = $production->getId() !== null ? $this->performancePanel($production, $request, $page) : null;
+
         return $this->render('production/show.html.twig', [
             'production' => $production,
             'form' => $form,
@@ -88,7 +93,12 @@ final class ProductionController extends AbstractController
             'today' => new \DateTimeImmutable('today'),
             'cal' => $production->getId() !== null ? $calendar->buildForProduction($production, $month) : null,
             'month' => $month,
-            'can_add_performance' => $production->getId() !== null && (!$production->isFromWordPress() || $ownership->canCreatePerformances()),
+            'can_add_performance' => $production->getId() !== null && $page->canAddPerformance($production),
+            'panel' => $panel,
+            'query' => CalendarQuery::fromRequest(new Request(['date' => ($panel['performance'] ?? null)?->getDate()?->format('Y-m-d') ?? $month->format('Y-m-d')]), $month),
+            'return_url' => $request->getRequestUri(),
+            'can_create_performances' => $ownership->canCreatePerformances(),
+            'now' => new \DateTimeImmutable(),
         ], new Response(null, $form->isSubmitted() ? 422 : 200));
     }
 
@@ -122,5 +132,19 @@ final class ProductionController extends AbstractController
         $image->move($this->getParameter('production_images_dir'), $name);
 
         return $request->getSchemeAndHttpHost() . '/uploads/productions/' . $name;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function performancePanel(Production $production, Request $request, CalendarPage $page): ?array
+    {
+        $id = $request->query->getString('panel');
+        if (!preg_match('/^pe-(\d+|new)$/', $id)) {
+            return null;
+        }
+        $panel = $page->panel($id, $request);
+
+        return $panel['performance']->getProduction() === $production || $id === 'pe-new' ? $panel : null;
     }
 }

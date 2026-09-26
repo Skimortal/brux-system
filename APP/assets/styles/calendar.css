@@ -317,3 +317,34 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .cal-run-seg .t { overflow: hidden; text-overflow: ellipsis; }
 .prod-cal .cal-run-seg { padding: 0 5px 3px; }
 .prod-cal .cal-run-seg .t { font-size: 10.5px; }
+
+/* all performances of a production inside the performance panel */
+.series { display: flex; flex-direction: column; gap: 8px; }
+.series-list { max-height: 196px; overflow: auto; border: 1px solid var(--line-soft); border-radius: var(--radius); }
+.series-item {
+    display: grid; grid-template-columns: 7.5em 4em minmax(0, 1fr) auto; gap: 8px; align-items: center;
+    padding: 7px 10px; font-size: 13px; color: var(--ink); border-bottom: 1px solid var(--line-soft);
+}
+.series-item:last-child { border-bottom: 0; }
+.series-item:hover { background: var(--surface-2); color: var(--ink); }
+.series-item .r { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.series-item .num { color: var(--muted); font-variant-numeric: tabular-nums; }
+.series-item.is-past { color: var(--faint); }
+.series-item.is-cancelled .d { text-decoration: line-through; }
+.series-item.is-current { background: var(--t-performance-bg); color: var(--t-performance-ink); font-weight: 600; }
+
+/* the performance panel docked on a production page */
+.prod-drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 50; height: 100vh;
+    width: max(var(--panel-w), min(600px, 42vw)); border-left: 1px solid var(--line); box-shadow: var(--shadow-pop);
+}
+@media (min-width: 901px) {
+    body:has(.prod-drawer) .page { padding-right: calc(max(var(--panel-w), min(600px, 42vw)) + 24px); }
+}
+.key-row.is-selected { background: var(--t-performance-bg); }
+@media (min-width: 901px) {
+    /* with the panel open the page is narrow: one column, performances first */
+    body:has(.prod-drawer) .grid-main-side { grid-template-columns: minmax(0, 1fr); }
+    body:has(.prod-drawer) .grid-main-side > aside { order: -1; }
+}
+@media (max-width: 900px) { .prod-drawer { width: auto; box-shadow: none; } }

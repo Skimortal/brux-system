@@ -16,13 +16,13 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 trait CalendarActionTrait
 {
     /**
-     * Redirects back to the calendar the form came from, optionally changing the panel.
+     * Redirects back to the page the form came from, optionally changing the panel.
      *
      * @param array<string, string|null> $overrides
      */
     private function backToCalendar(Request $request, CalendarPage $page, array $overrides = []): RedirectResponse
     {
-        return new RedirectResponse($page->url($page->queryFromReturn($request), $overrides), Response::HTTP_SEE_OTHER);
+        return new RedirectResponse($page->returnUrl($request, $overrides), Response::HTTP_SEE_OTHER);
     }
 
     private function requireCsrf(Request $request, CsrfTokenManagerInterface $csrf, string $id): void

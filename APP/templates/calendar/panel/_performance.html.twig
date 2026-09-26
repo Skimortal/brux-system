@@ -2,6 +2,9 @@
 {% set pe = panel.performance %}
 {% set production = panel.production %}
 {% set free = pe.seatsFree %}
+{# on a production page, links stay on that page; in the calendar they move the calendar #}
+{% set on_production = close_url is defined %}
+{% macro pe_href(target, on_production, query, extra) %}{% if on_production %}{{ path('app_production_show', {id: target.production.id, panel: 'pe-' ~ target.id, monat: target.date ? target.date|date('Y-m') : null}|merge(extra)) }}{% else %}{{ cal_path(query, {panel: 'pe-' ~ target.id, date: target.date ? target.date|date('Y-m-d') : null}|merge(extra)) }}{% endif %}{% endmacro %}
 {{ include('calendar/panel/_head.html.twig', {
     chip: panel.locked ? 'Vorstellung · aus WordPress' : 'Vorstellung',
     chip_class: 'badge-accent',
@@ -21,6 +24,26 @@
     {% if pe.lastPushError %}
         <div class="note note-danger">{{ ux_icon('lucide:triangle-alert') }}<span>Letzte Übertragung an die Website ist fehlgeschlagen: {{ pe.lastPushError }}</span></div>
     {% endif %}
+
+    <section class="series" data-controller="series">
+        <div class="between">
+            <h3>Alle Vorstellungen <span class="badge">{{ panel.series|length }}</span></h3>
+            {% if panel.can_add %}
+                <a class="btn btn-xs" href="{{ on_production ? path('app_production_show', {id: production.id, panel: 'pe-new', production: production.id, from: pe.id}) : cal_path(query, {panel: 'pe-new'}) ~ '&from=' ~ pe.id }}" data-turbo-frame="_top">{{ ux_icon('lucide:plus') }} Weitere Vorstellung</a>
+            {% endif %}
+        </div>
+        <div class="series-list" data-series-target="list">
+            {% for s in panel.series %}
+                {% set current = s.id == pe.id %}
+                <a class="series-item{{ current ? ' is-current' }}{{ s.date and s.date|date('Y-m-d') < now|date('Y-m-d') ? ' is-past' }}{{ s.cancelled ? ' is-cancelled' }}" href="{{ _self.pe_href(s, on_production, query, {})|trim }}" data-turbo-frame="_top"{% if current %} aria-current="true" data-series-target="current"{% endif %}>
+                    <span class="d">{{ s.date ? s.date|de_date('EE d. MMM') : 'ohne Datum' }}</span>
+                    <span class="mono">{{ s.allDay ? 'ganztägig' : s.timeFrom }}</span>
+                    <span class="r">{{ s.room ? s.room.name : '–' }}</span>
+                    <span class="num">{% if s.quota %}{{ s.seatsTaken ?? 0 }}/{{ s.quota }}{% endif %}</span>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
 
     {% if panel.editable %}
         <section class="panel-section">
@@ -107,7 +130,11 @@
 </div>
 <div class="panel-foot">
     {% if production.permalink %}<a class="btn btn-sm" href="{{ production.permalink }}" target="_blank" rel="noopener">{{ ux_icon('lucide:globe') }} Website</a>{% endif %}
-    <a class="btn btn-sm btn-ghost" href="{{ path('app_production_show', {id: production.id}) }}" data-turbo-frame="_top">Produktion öffnen</a>
+    {% if on_production %}
+        <a class="btn btn-sm btn-ghost" href="{{ path('app_calendar', {date: pe.date ? pe.date|date('Y-m-d') : null, panel: 'pe-' ~ pe.id}) }}" data-turbo-frame="_top">{{ ux_icon('lucide:calendar') }} Im Kalender zeigen</a>
+    {% else %}
+        <a class="btn btn-sm btn-ghost" href="{{ path('app_production_show', {id: production.id, monat: pe.date ? pe.date|date('Y-m') : null}) }}" data-turbo-frame="_top">Zur Produktion</a>
+    {% endif %}
     {% if not panel.locked and is_granted('ROLE_ADMIN') %}
         <form method="post" action="{{ path('app_performance_delete', {id: pe.id}) }}" data-turbo-frame="_top" data-turbo-confirm="Vorstellung löschen? Die Besetzung wird mitgelöscht." style="margin-left:auto">
             <input type="hidden" name="_token" value="{{ csrf_token('delete-performance-' ~ pe.id) }}">
