@@ -35,7 +35,8 @@ final class AppointmentController extends AbstractController
             $this->manager->create($appointment, $frequency, $until);
             $this->addFlash('success', $frequency ? 'Terminserie angelegt.' : 'Termin angelegt.');
 
-            return $this->backToCalendar($request, $this->page, ['panel' => 'a-' . $appointment->getId()]);
+            // the dialog closes after saving
+            return $this->backToCalendar($request, $this->page, ['panel' => null]);
         }
 
         $query = $this->page->queryFromReturn($request);
@@ -55,7 +56,8 @@ final class AppointmentController extends AbstractController
             $this->manager->update($appointment, $scope, $frequency, $until);
             $this->addFlash('success', $scope === 'series' ? 'Alle Termine der Serie gespeichert.' : 'Termin gespeichert.');
 
-            return $this->backToCalendar($request, $this->page, ['panel' => 'a-' . $appointment->getId()]);
+            // the dialog closes after saving
+            return $this->backToCalendar($request, $this->page, ['panel' => null]);
         }
 
         return $this->page->render($this->page->queryFromReturn($request), $request, ['appointment' => $form], Response::HTTP_UNPROCESSABLE_ENTITY);
