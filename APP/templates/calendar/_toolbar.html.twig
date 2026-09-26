@@ -28,27 +28,22 @@
         </a>
     {% endfor %}
     <div class="grow"></div>
+    <form class="report-form" method="get" action="{{ path('app_cleaning_report') }}" target="_blank" data-turbo="false" title="Monatsliste der Reinigung als PDF">
+        {% if cleaning_contacts|length > 1 %}
+            <select class="input" name="contact" aria-label="Reinigungskraft">
+                {% for c in cleaning_contacts %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+            </select>
+        {% elseif cleaning_contacts|length == 1 %}
+            <input type="hidden" name="contact" value="{{ cleaning_contacts|first.id }}">
+        {% endif %}
+        <input class="input" type="month" name="month" value="{{ query.date|date('Y-m') }}" required aria-label="Monat">
+        <button class="chip" type="submit" {% if cleaning_contacts is empty %}disabled title="Keine Kontakte mit der Rolle Reinigung"{% endif %}>{{ ux_icon('lucide:spray-can') }} Monatsliste</button>
+    </form>
     <form method="post" action="{{ path('app_wordpress_sync') }}" data-turbo-frame="_top" data-controller="busy">
         <input type="hidden" name="_token" value="{{ csrf_token('wordpress-sync') }}">
         <input type="hidden" name="_return" value="{{ return_url }}">
-        <button class="chip" type="submit" data-busy-target="button" title="Vorstellungen jetzt von der Website laden">
-            {{ ux_icon('lucide:refresh-cw') }} WordPress{% if last_sync %} · {{ last_sync|de_date(last_sync|date('Y-m-d') == 'now'|date('Y-m-d') ? "HH:mm" : "d.M. HH:mm") }}{% endif %}
+        <button class="chip" type="submit" data-busy-target="button" title="Letzter Import: {{ last_sync ? last_sync|de_date('d.M.y HH:mm') : 'noch nie' }}">
+            {{ ux_icon('lucide:refresh-cw') }} Veranstaltungen aus WP laden
         </button>
     </form>
-    <details class="rail-menu" style="position:relative">
-        <summary class="chip" style="list-style:none;cursor:pointer">{{ ux_icon('lucide:file-text') }} Reinigungsbericht</summary>
-        <form class="rail-menu-pop form" style="left:auto;right:0;top:40px;bottom:auto;padding:14px;gap:12px;z-index:50" method="get" action="{{ path('app_cleaning_report') }}" target="_blank" data-turbo="false">
-            <div class="field">
-                <label for="report-contact">Reinigungskraft</label>
-                <select id="report-contact" name="contact" required>
-                    {% for c in cleaning_contacts %}<option value="{{ c.id }}">{{ c.name }}</option>{% else %}<option value="">– keine Kontakte mit Rolle Reinigung –</option>{% endfor %}
-                </select>
-            </div>
-            <div class="field">
-                <label for="report-month">Monat</label>
-                <input id="report-month" type="month" name="month" value="{{ query.date|date('Y-m') }}" required>
-            </div>
-            <button class="btn btn-dark btn-sm" type="submit">{{ ux_icon('lucide:file-text') }} PDF öffnen</button>
-        </form>
-    </details>
 </div>

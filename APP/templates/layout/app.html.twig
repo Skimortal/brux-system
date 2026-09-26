@@ -19,6 +19,9 @@
             </a>
         {% endfor %}
         <div class="rail-spacer"></div>
+        <button type="button" class="rail-link" data-controller="theme" data-action="theme#toggle" style="background:none;border:0" aria-label="Hell/Dunkel umschalten">
+            <span class="theme-icon-dark">{{ ux_icon('lucide:moon') }}</span><span class="theme-icon-light">{{ ux_icon('lucide:sun') }}</span><span class="rail-tip" data-theme-target="label">Dunkler Modus</span>
+        </button>
         <a href="{{ path('app_settings') }}" class="rail-link" {% if current starts with 'app_settings' or current starts with 'app_room' or current starts with 'app_user' or current starts with 'app_event_category' or current starts with 'app_email_template' %}aria-current="page"{% endif %}>
             {{ ux_icon('lucide:settings') }}<span class="rail-tip">Verwaltung</span><span class="sr-only">Verwaltung</span>
         </a>
@@ -37,7 +40,6 @@
                     <div class="muted small">{{ app.user.email }}</div>
                 </div>
                 <a href="{{ path('app_profile') }}" role="menuitem">{{ ux_icon('lucide:user') }} Mein Profil</a>
-                <button type="button" role="menuitem" data-controller="theme" data-action="theme#toggle">{{ ux_icon('lucide:sparkles') }} <span data-theme-target="label">Dunkler Modus</span></button>
                 <div class="menu-sep"></div>
                 <a href="{{ path('app_logout') }}" role="menuitem" data-turbo="false">{{ ux_icon('lucide:log-out') }} Abmelden</a>
             </div>

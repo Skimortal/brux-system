@@ -18,7 +18,7 @@ final class CalendarQuery
      */
     public function __construct(
         public readonly \DateTimeImmutable $date,
-        public readonly string $view = 'week',
+        public readonly string $view = 'month',
         public readonly string $layout = 'split',
         public readonly array $hidden = [],
         public readonly ?string $panel = null,
@@ -34,7 +34,7 @@ final class CalendarQuery
         if ($raw !== '' && ($parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $raw)) !== false) {
             $date = $parsed;
         }
-        $view = $request->query->getString('view', 'week');
+        $view = $request->query->getString('view', 'month');
         $layout = $request->query->getString('layout', 'split');
         if ($layout === 'rooms') {
             $layout = 'rows';
@@ -51,7 +51,7 @@ final class CalendarQuery
 
         return new self(
             $date,
-            \array_key_exists($view, self::VIEWS) ? $view : 'week',
+            \array_key_exists($view, self::VIEWS) ? $view : 'month',
             \array_key_exists($layout, self::LAYOUTS) ? $layout : 'split',
             $hidden,
             $panel !== '' ? $panel : null,
@@ -136,7 +136,7 @@ final class CalendarQuery
         foreach ($overrides as $key => $value) {
             $params[$key] = $value;
         }
-        $defaults = ['view' => 'week', 'layout' => 'split', 'side' => 'keys', 'hide' => ''];
+        $defaults = ['view' => 'month', 'layout' => 'split', 'side' => 'keys', 'hide' => ''];
 
         return array_filter(
             $params,

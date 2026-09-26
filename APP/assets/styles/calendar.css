@@ -126,8 +126,9 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .cal-mday.is-today .mnum { background: var(--accent); color: #fff; }
 .cal-mday .mnum { display: inline-block; font-size: 13px; font-weight: 600; padding: 1px 6px; border-radius: 5px; color: var(--ink); pointer-events: auto; }
 .cal-mweek .cal-cell { padding: 0 5px; }
-.cal-mweek .cal-item { padding: 3px 6px; flex-direction: row; align-items: baseline; gap: 5px; white-space: nowrap; overflow: hidden; }
-.cal-mweek .cal-item .title { overflow: hidden; text-overflow: ellipsis; }
+.cal-mweek .cal-item { padding: 3px 6px; display: block; font-size: 12px; line-height: 1.25; }
+.cal-mweek .cal-item .small { font-size: 11px; margin-right: 3px; }
+.cal-mweek .cal-item .title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
 .cal-mweek .more { font-size: 12px; color: var(--muted); padding-left: 4px; text-decoration: none; }
 .cal-mweek .cal-run-title { padding: 3px 7px 0; font-size: 12.5px; }
 .cal-mweek .cal-run-seg { padding: 0 7px 3px; }
@@ -238,7 +239,7 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 
 /* room calendars side by side (layout "split") */
 .cal-split { --split-min: 520px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(var(--split-min), 100%), 1fr)); gap: 12px; padding: 12px; align-items: start; }
-.cal-split.is-month { --split-min: 420px; }
+.cal-split.is-month { --split-min: 520px; }
 .cal-split.is-day { --split-min: 240px; }
 .cal-room { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; min-width: 0; }
 .cal-room-head { padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: 14px; background: var(--surface); position: sticky; top: 0; z-index: 4; }
@@ -287,3 +288,25 @@ html.has-modal { overflow: hidden; }
     .modal .appt-cols { grid-template-columns: minmax(0, 1fr); gap: 14px; }
     .modal .appt-col + .appt-col { border-left: 0; padding-left: 0; }
 }
+
+/* right column: todos above the key list */
+.side-block { border-bottom: 1px solid var(--line); }
+.side-block-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 18px 8px; }
+.side-block-head h2 { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.side-block-head .count { font-weight: 400; color: var(--muted); }
+.todo-add { display: flex; gap: 6px; padding: 0 18px 8px; }
+.todo-add .input { height: 36px; flex-grow: 1; }
+.todo-add .btn { height: 36px; width: 36px; }
+.todo-list { max-height: 32vh; overflow: auto; }
+.todo-list .todo-row { padding: 7px 18px; }
+.key-filter { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 2px 18px 10px; border-bottom: 1px solid var(--line-soft); }
+.key-filter-item { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.key-filter-item input { width: 16px; height: 16px; margin: 0; accent-color: var(--ink); }
+.key-filter-item .count { color: var(--muted); }
+.key-filter-item.is-borrowed .count { color: var(--warn-ink); }
+.key-row .rooms { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.key-row[hidden] { display: none; }
+
+.report-form { display: flex; align-items: center; gap: 4px; }
+.report-form .input { height: 30px; font-size: 12.5px; padding: 0 8px; width: auto; }
+.report-form select.input { max-width: 170px; }

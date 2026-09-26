@@ -1,73 +1,70 @@
+{# Right column without a selected entry: todos on top, then the key list with its filter. #}
 {% set borrowed = keys|filter(k => k.status(now).value == 'borrowed') %}
 {% set available = keys|filter(k => k.status(now).value == 'available') %}
 {% set lost = keys|filter(k => k.status(now).value == 'lost') %}
-<nav class="side-tabs">
-    <a href="{{ cal_path(query, {side: 'keys'}) }}" {% if query.side == 'keys' %}aria-current="true"{% endif %}>{{ ux_icon('lucide:key-round') }} Schlüssel</a>
-    <a href="{{ cal_path(query, {side: 'todos'}) }}" {% if query.side == 'todos' %}aria-current="true"{% endif %}>{{ ux_icon('lucide:list-todo') }} Todos <span class="count">{{ todos|length }}</span></a>
-</nav>
-
-{% if query.side == 'todos' %}
-    <form class="side-section" method="post" action="{{ path('app_todo_create') }}" data-turbo-frame="_top" style="flex-direction:row">
-        <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
-        <input type="hidden" name="_return" value="{{ return_url }}">
-        <input class="input grow" name="description" placeholder="Neues Todo …" maxlength="255" required aria-label="Neues Todo">
-        <button class="btn btn-dark" type="submit">Anlegen</button>
-    </form>
-    <div class="side-scroll">
-        {% for todo in todos %}
-            <div class="todo-row">
-                <form class="done" method="post" action="{{ path('app_todo_done', {id: todo.id}) }}" data-turbo-frame="_top">
-                    <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
-                    <input type="hidden" name="_return" value="{{ return_url }}">
-                    <button type="submit" aria-label="Als erledigt markieren" title="Erledigt">{{ ux_icon('lucide:check') }}</button>
-                </form>
-                <form class="edit" method="post" action="{{ path('app_todo_update', {id: todo.id}) }}" data-turbo-frame="_top" data-controller="autosubmit">
-                    <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
-                    <input type="hidden" name="_return" value="{{ return_url }}">
-                    <input name="description" value="{{ todo.description }}" maxlength="255" aria-label="Todo bearbeiten" data-action="change->autosubmit#submit">
-                </form>
-            </div>
-        {% else %}
-            <div class="empty">Keine offenen Todos.</div>
-        {% endfor %}
-    </div>
-{% else %}
-    <div class="side-section">
-        <div class="row-wrap">
-            <span class="badge badge-warn">{{ borrowed|length }} verliehen</span>
-            {% set overdue = borrowed|filter(k => k.overdue(now)) %}
-            {% if overdue|length %}<span class="badge badge-danger">{{ overdue|length }} überfällig</span>{% endif %}
-            <span class="badge badge-ok">{{ available|length }} verfügbar</span>
-            {% if lost|length %}<span class="badge">{{ lost|length }} verloren</span>{% endif %}
+<div class="side-scroll">
+    <section class="side-block" aria-labelledby="todos-title">
+        <div class="side-block-head">
+            <h2 id="todos-title">{{ ux_icon('lucide:list-todo') }} Todos <span class="count">{{ todos|length }}</span></h2>
         </div>
-        <a class="btn btn-sm" href="{{ cal_path(query, {panel: 'kl-new'}) }}">{{ ux_icon('lucide:plus') }} Schlüssel verleihen</a>
-    </div>
-    <div class="side-scroll">
-        {% for group in [{label: 'Verliehen', keys: borrowed}, {label: 'Verfügbar', keys: available}, {label: 'Verloren', keys: lost}] %}
-            {% if group.keys|length %}
-                <div class="section-label" style="padding: 12px 18px 6px">{{ group.label }}</div>
-                {% for key in group.keys %}
-                    {% set active = key.activeLoan(now) %}
-                    {% set next = key.nextLoan(now) %}
-                    <a class="key-row" href="{{ cal_path(query, {panel: 'k-' ~ key.id}) }}">
-                        {% set color = key.lost ? '#45413a' : (key.overdue(now) ? 'var(--danger-ink)' : (active ? 'var(--t-key-dot)' : '#3f8f5a')) %}
-                        <span class="dot" style="background: {{ color }}"></span>
-                        <span class="grow" style="min-width:0">
-                            <span class="name" style="display:block">{{ key.name }}</span>
-                            <span class="line{{ key.overdue(now) ? ' is-danger' }}" style="display:block">
-                                {% if key.lost %}verloren
-                                {% elseif active %}bei {{ active.holderLabel }}{% if key.overdue(now) %} · überfällig seit {{ active.dueAt|date('d.m.') }}{% elseif active.dueAt %} bis {{ active.dueAt|de_date('EE d.M. HH:mm') }}{% endif %}
-                                {% else %}{{ key.roomNames ?: 'im Haus' }}{% if next %} · {{ next.startAt|de_date('EE d.M.') }} an {{ next.holderLabel }}{% endif %}
-                                {% endif %}
-                            </span>
-                        </span>
-                        {{ ux_icon('lucide:chevron-right', {class: 'muted'}) }}
-                    </a>
-                {% endfor %}
-            {% endif %}
-        {% endfor %}
-        {% if keys is empty %}
+        <form class="todo-add" method="post" action="{{ path('app_todo_create') }}" data-turbo-frame="_top">
+            <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+            <input type="hidden" name="_return" value="{{ return_url }}">
+            <input class="input" name="description" placeholder="Neues Todo …" maxlength="255" required aria-label="Neues Todo">
+            <button class="btn btn-dark btn-icon" type="submit" aria-label="Todo anlegen" title="Anlegen">{{ ux_icon('lucide:plus') }}</button>
+        </form>
+        <div class="todo-list">
+            {% for todo in todos %}
+                <div class="todo-row">
+                    <form class="done" method="post" action="{{ path('app_todo_done', {id: todo.id}) }}" data-turbo-frame="_top">
+                        <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+                        <input type="hidden" name="_return" value="{{ return_url }}">
+                        <button type="submit" aria-label="Als erledigt markieren" title="Erledigt">{{ ux_icon('lucide:check') }}</button>
+                    </form>
+                    <form class="edit" method="post" action="{{ path('app_todo_update', {id: todo.id}) }}" data-turbo-frame="_top" data-controller="autosubmit">
+                        <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+                        <input type="hidden" name="_return" value="{{ return_url }}">
+                        <input name="description" value="{{ todo.description }}" maxlength="255" aria-label="Todo bearbeiten" data-action="change->autosubmit#submit">
+                    </form>
+                </div>
+            {% else %}
+                <p class="small muted" style="padding: 4px 18px 10px">Keine offenen Todos.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="side-block" aria-labelledby="keys-title" data-controller="key-filter">
+        <div class="side-block-head">
+            <h2 id="keys-title">{{ ux_icon('lucide:key-round') }} Schlüssel</h2>
+            <a class="btn btn-xs" href="{{ cal_path(query, {panel: 'kl-new'}) }}">{{ ux_icon('lucide:plus') }} Verleihen</a>
+        </div>
+        <div class="key-filter" role="group" aria-label="Schlüssel filtern">
+            {% set overdue = borrowed|filter(k => k.overdue(now)) %}
+            <label class="key-filter-item is-borrowed"><input type="checkbox" value="borrowed" checked data-action="key-filter#update" data-key-filter-target="box"> Verliehen <span class="count">{{ borrowed|length }}{% if overdue|length %} · {{ overdue|length }} überfällig{% endif %}</span></label>
+            <label class="key-filter-item is-available"><input type="checkbox" value="available" checked data-action="key-filter#update" data-key-filter-target="box"> Verfügbar <span class="count">{{ available|length }}</span></label>
+            <label class="key-filter-item is-lost"><input type="checkbox" value="lost" checked data-action="key-filter#update" data-key-filter-target="box"> Verloren <span class="count">{{ lost|length }}</span></label>
+        </div>
+        {% for key in borrowed|merge(available)|merge(lost) %}
+            {% set status = key.status(now).value %}
+            {% set active = key.activeLoan(now) %}
+            {% set next = key.nextLoan(now) %}
+            <a class="key-row" href="{{ cal_path(query, {panel: 'k-' ~ key.id}) }}" data-status="{{ status }}" data-key-filter-target="row">
+                {% set color = key.lost ? 'var(--ink-2)' : (key.overdue(now) ? 'var(--danger-ink)' : (active ? 'var(--t-key-dot)' : '#3f8f5a')) %}
+                <span class="dot" style="background: {{ color }}"></span>
+                <span class="grow" style="min-width:0">
+                    <span class="name" style="display:block">{{ key.name }}{% if key.roomNames %} <span class="rooms">({{ key.roomNames }})</span>{% endif %}</span>
+                    <span class="line{{ key.overdue(now) ? ' is-danger' }}" style="display:block">
+                        {% if key.lost %}Verloren
+                        {% elseif active %}{{ active.holderLabel }} · verliehen{% if key.overdue(now) %} · überfällig seit {{ active.dueAt|date('d.m.') }}{% elseif active.dueAt %} bis {{ active.dueAt|de_date('d.M.yy') }}{% endif %}
+                        {% else %}Verfügbar{% if next %} · {{ next.startAt|de_date('EE d.M.') }} an {{ next.holderLabel }}{% endif %}
+                        {% endif %}
+                    </span>
+                </span>
+                {{ ux_icon('lucide:chevron-right', {class: 'muted'}) }}
+            </a>
+        {% else %}
             <div class="empty">Noch keine Schlüssel. <a href="{{ path('app_key_new') }}" data-turbo-frame="_top">Schlüssel anlegen</a></div>
-        {% endif %}
-    </div>
-{% endif %}
+        {% endfor %}
+        <p class="small muted" data-key-filter-target="empty" hidden style="padding: 10px 18px">Kein Schlüssel passt zum Filter.</p>
+    </section>
+</div>

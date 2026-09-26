@@ -89,3 +89,7 @@
     .grid-2, .grid-main-side { grid-template-columns: minmax(0, 1fr); }
     h1 { font-size: 26px; }
 }
+
+.theme-icon-light { display: none; }
+:root[data-theme="dark"] .theme-icon-light { display: inline; }
+:root[data-theme="dark"] .theme-icon-dark { display: none; }
