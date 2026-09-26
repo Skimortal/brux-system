@@ -310,3 +310,16 @@ html.has-modal { overflow: hidden; }
 .report-form { display: flex; align-items: center; gap: 4px; }
 .report-form .input { height: 30px; font-size: 12.5px; padding: 0 8px; width: auto; }
 .report-form select.input { max-width: 170px; }
+
+/* month calendar on the production page */
+.prod-cal .cal-month { min-width: 0; }
+.prod-cal .cal-head { position: static; padding: 6px 6px; }
+.prod-cal .cal-mweek { min-height: 78px; }
+.prod-cal .cal-mweek:last-child { border-bottom: 0; }
+.prod-cal .cal-mday { padding: 4px; cursor: default; }
+.prod-cal .cal-mweek .cal-lane-fg { padding-top: 26px; }
+.prod-cal-title { min-width: 120px; text-align: center; font-weight: 600; font-size: 14px; }
+.prod-cal .card-head { padding: 12px 16px; }
+.cal-run-seg .t { overflow: hidden; text-overflow: ellipsis; }
+.prod-cal .cal-run-seg { padding: 0 5px 3px; }
+.prod-cal .cal-run-seg .t { font-size: 10.5px; }

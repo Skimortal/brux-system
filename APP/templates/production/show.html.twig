@@ -86,6 +86,22 @@
     </div>
 
     <aside class="stack-lg">
+        {% if cal %}
+            <turbo-frame id="production-calendar" data-turbo-action="advance">
+                <section class="card prod-cal">
+                    <div class="card-head">
+                        <h2>Kalender</h2>
+                        <div class="row">
+                            <a class="btn btn-icon btn-sm" href="{{ path('app_production_show', {id: production.id, monat: month.modify('-1 month')|date('Y-m')}) }}" aria-label="Voriger Monat">{{ ux_icon('lucide:chevron-left') }}</a>
+                            <span class="prod-cal-title">{{ month|de_date('MMMM y') }}</span>
+                            <a class="btn btn-icon btn-sm" href="{{ path('app_production_show', {id: production.id, monat: month.modify('+1 month')|date('Y-m')}) }}" aria-label="Nächster Monat">{{ ux_icon('lucide:chevron-right') }}</a>
+                        </div>
+                    </div>
+                    {{ include('calendar/_month.html.twig', {query: cal.query, link_frame: '_top'}) }}
+                    <div class="card-foot small"><a href="{{ path('app_calendar', {view: 'month', date: month|date('Y-m-d')}) }}" data-turbo-frame="_top">Im großen Kalender öffnen</a></div>
+                </section>
+            </turbo-frame>
+        {% endif %}
         {% if not is_new %}
             <section class="card">
                 <div class="card-head"><h2>Vorstellungen</h2><span class="badge">{{ performances|length }}</span></div>

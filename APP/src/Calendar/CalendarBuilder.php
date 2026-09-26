@@ -63,6 +63,36 @@ final class CalendarBuilder
         );
     }
 
+    /**
+     * Month calendar of a single production: its performances and production appointments.
+     */
+    public function buildForProduction(\App\Entity\Production $production, \DateTimeImmutable $month): CalendarView
+    {
+        $query = new CalendarQuery($month->modify('first day of this month'), 'month', 'all');
+        $from = $query->rangeStart();
+        $to = $query->rangeEnd();
+
+        $entries = [];
+        foreach ($this->performances->findBetween($from, $to) as $performance) {
+            if ($performance->getProduction() === $production && ($entry = $this->performanceEntry($performance)) !== null) {
+                $entries[] = $entry;
+            }
+        }
+        foreach ($this->appointments->findOverlapping($from, $to) as $appointment) {
+            if ($appointment->getProduction() === $production && $appointment->getProductionEvent() === null) {
+                $entries[] = $this->appointmentEntry($appointment);
+            }
+        }
+        usort($entries, static fn (CalendarEntry $a, CalendarEntry $b) => $a->start <=> $b->start);
+
+        $days = [];
+        for ($day = $from; $day < $to; $day = $day->modify('+1 day')) {
+            $days[] = $day;
+        }
+
+        return new CalendarView($query, $days, [], [], 0, $entries, $this->clock->now());
+    }
+
     /** @return CalendarEntry[] */
     public function collectEntries(\DateTimeImmutable $from, \DateTimeImmutable $to): array
     {

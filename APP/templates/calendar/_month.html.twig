@@ -9,7 +9,7 @@
             <div class="cal-lane-bg">
                 {% for day in week.days %}
                     <div class="cal-mday{{ cal.inCurrentMonth(day) ? '' : ' is-other' }}{{ cal.isToday(day) ? ' is-today' }}" data-date="{{ day|date('Y-m-d') }}" data-room="{{ room_id ?? '' }}" data-label="{{ day|de_date('EE d.M.') }}{{ room_label is defined ? ' · ' ~ room_label : '' }}">
-                        <a class="mnum" href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}">{{ day|date('j') }}</a>
+                        <a class="mnum" href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}"{% if link_frame is defined %} data-turbo-frame="{{ link_frame }}"{% endif %}>{{ day|date('j') }}</a>
                     </div>
                 {% endfor %}
             </div>
@@ -25,7 +25,7 @@
                             {{ include('calendar/_entry.html.twig', {e: e, day: day, compact: true}) }}
                         {% endfor %}
                         {% if entries|length > limit %}
-                            <a class="more" href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}">+{{ entries|length - limit }} weitere</a>
+                            <a class="more" href="{{ cal_path(query, {view: 'day', date: day|date('Y-m-d')}) }}"{% if link_frame is defined %} data-turbo-frame="{{ link_frame }}"{% endif %}>+{{ entries|length - limit }} weitere</a>
                         {% endif %}
                     </div>
                 {% endfor %}

@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Calendar\CalendarBuilder;
 use App\Entity\Production;
 use App\Form\ProductionType;
 use App\Repository\ProductionRepository;
@@ -32,13 +33,13 @@ final class ProductionController extends AbstractController
     }
 
     #[Route('/neu', name: 'app_production_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $em, WordPressPushService $push): Response
+    public function new(Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar): Response
     {
-        return $this->edit(new Production(), $request, $em, $push);
+        return $this->edit(new Production(), $request, $em, $push, $calendar);
     }
 
     #[Route('/{id}', name: 'app_production_show', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-    public function edit(Production $production, Request $request, EntityManagerInterface $em, WordPressPushService $push): Response
+    public function edit(Production $production, Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar): Response
     {
         $form = $this->createForm(ProductionType::class, $production);
         $form->handleRequest($request);
@@ -60,11 +61,23 @@ final class ProductionController extends AbstractController
         $performances = $production->getEvents()->toArray();
         usort($performances, static fn ($a, $b) => [$a->getDate(), $a->getTimeFrom()] <=> [$b->getDate(), $b->getTimeFrom()]);
 
+        // month calendar: requested month, else the month of the next (or last) performance
+        $month = \DateTimeImmutable::createFromFormat('!Y-m', $request->query->getString('monat')) ?: null;
+        if ($month === null) {
+            $today = new \DateTimeImmutable('today');
+            $upcoming = array_values(array_filter($performances, static fn ($p) => $p->getDate() !== null && $p->getDate() >= $today));
+            $reference = $upcoming[0] ?? (end($performances) ?: null);
+            $month = $reference?->getDate() !== null ? \DateTimeImmutable::createFromInterface($reference->getDate()) : $today;
+        }
+        $month = $month->modify('first day of this month')->setTime(0, 0);
+
         return $this->render('production/show.html.twig', [
             'production' => $production,
             'form' => $form,
             'performances' => $performances,
             'today' => new \DateTimeImmutable('today'),
+            'cal' => $production->getId() !== null ? $calendar->buildForProduction($production, $month) : null,
+            'month' => $month,
         ], new Response(null, $form->isSubmitted() ? 422 : 200));
     }
 
