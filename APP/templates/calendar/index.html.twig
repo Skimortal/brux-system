@@ -11,6 +11,7 @@
             <div class="cal-board" data-controller="quick-create scroll-keeper"
                  data-quick-create-appointment-url-value="{{ cal_path(query, {panel: 'a-new'}) }}"
                  data-quick-create-loan-url-value="{{ cal_path(query, {panel: 'kl-new'}) }}"
+                 data-quick-create-performance-url-value="{{ cal_path(query, {panel: 'pe-new'}) }}"
                  data-action="click->quick-create#open">
                 {% if query.effectiveLayout == 'split' %}
                     {{ include('calendar/_split.html.twig') }}
@@ -27,7 +28,7 @@
          title="Ziehen, um die Breite zu ändern · Doppelklick setzt zurück"
          data-controller="pane-resize"
          data-action="pointerdown->pane-resize#start pointermove->pane-resize#move pointerup->pane-resize#end pointercancel->pane-resize#end dblclick->pane-resize#reset keydown->pane-resize#key"></div>
-    {% set in_modal = panel and panel.kind == 'appointment' %}
+    {% set in_modal = panel and panel.kind in ['appointment', 'performance_new', 'performance_edit'] %}
     <turbo-frame id="side" class="cal-side{{ panel and not in_modal ? ' has-panel' : '' }}" data-turbo-action="advance">
         {% if panel and not in_modal %}
             {{ include('calendar/panel/_' ~ panel.kind ~ '.html.twig') }}

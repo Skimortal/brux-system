@@ -1,0 +1,43 @@
+{# f: PerformanceType view, pe: the performance #}
+{% import 'production/_rows.html.twig' as rows %}
+{% set is_new = pe.id is null %}
+{{ form_start(f, {
+    action: is_new ? path('app_performance_new') : path('app_performance_update', {id: pe.id}),
+    attr: {id: 'performance-form', class: 'form', 'data-turbo-frame': '_top', novalidate: 'novalidate'}
+}) }}
+    <input type="hidden" name="_return" value="{{ return_url }}">
+    {{ form_errors(f) }}
+    {% if f.production is defined %}{{ form_row(f.production) }}{% endif %}
+    <div class="form-grid-3">
+        {{ form_row(f.date) }}
+        {{ form_row(f.timeFrom) }}
+        {{ form_row(f.timeTo) }}
+    </div>
+    {{ form_row(f.room) }}
+    <div class="form-grid-2">
+        <div class="field">
+            <span class="field-label">Status</span>
+            <div class="seg">{% for c in f.status %}{{ form_widget(c) }}<label for="{{ c.vars.id }}">{{ c.vars.label }}</label>{% endfor %}</div>
+            {% do f.status.setRendered %}
+        </div>
+        <div class="field">
+            <span class="field-label">Online-Reservierung</span>
+            <div class="seg">{% for c in f.reservationStatus %}{{ form_widget(c) }}<label for="{{ c.vars.id }}">{{ c.vars.label }}</label>{% endfor %}</div>
+            {% do f.reservationStatus.setRendered %}
+        </div>
+    </div>
+    <div class="form-grid-3">
+        {{ form_row(f.quota) }}
+        {{ form_row(f.incomingTotal) }}
+        {{ form_row(f.freeSeats) }}
+    </div>
+    {{ form_row(f.reservationNote) }}
+    <div class="field">
+        <span class="field-label">Kategorien</span>
+        <div class="toggles">
+            {% for c in f.categories %}<span class="toggle">{{ form_widget(c) }}<label for="{{ c.vars.id }}">{{ c.vars.label }}</label></span>{% endfor %}
+        </div>
+        {% do f.categories.setRendered %}
+    </div>
+    {{ rows.prices(f.priceList, 'Keine eigenen Preise; es gelten die Preise der Produktion.') }}
+{{ form_end(f) }}

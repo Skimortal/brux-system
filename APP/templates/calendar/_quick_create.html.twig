@@ -10,10 +10,14 @@
                 <span><span>{{ type.label }}</span><span class="d">{{ type.description }}</span></span>
             </a>
         {% endfor %}
+        <a href="#" data-quick-create-target="link" data-kind="performance" data-turbo-frame="modal" data-turbo-action="advance">
+            <span class="swatch swatch-performance"></span>
+            <span><span>Vorstellung</span><span class="d">{{ can_create_performances ? 'Termin einer Produktion mit Plätzen und Preisen' : 'einer eigenen Produktion (nicht aus WordPress)' }}</span></span>
+        </a>
         <a href="#" data-quick-create-target="link" data-kind="loan" data-turbo-frame="side" data-turbo-action="advance">
             <span class="swatch swatch-key"></span>
             <span><span>Schlüssel verleihen</span><span class="d">an wen, von wann bis wann</span></span>
         </a>
     </div>
-    <div class="popover-foot">Vorstellungen kommen aus WordPress und erscheinen nach dem Import automatisch.</div>
+    {% if not can_create_performances %}<div class="popover-foot">Vorstellungen von WordPress-Produktionen kommen aus WordPress und erscheinen nach dem Import automatisch.</div>{% endif %}
 </div>

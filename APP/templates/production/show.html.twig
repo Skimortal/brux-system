@@ -43,12 +43,37 @@
         {% if production.lastPushError %}
             <div class="note note-danger">{{ ux_icon('lucide:triangle-alert') }}<span>Letzte Übertragung an die Website fehlgeschlagen: {{ production.lastPushError }}</span></div>
         {% endif %}
-        {{ form_start(form, {attr: {class: 'stack-lg', novalidate: 'novalidate'}}) }}
+        {{ form_start(form, {attr: {class: 'stack-lg', novalidate: 'novalidate', enctype: 'multipart/form-data'}}) }}
+            {% set wp_locked = form.title.vars.disabled %}
+            <section class="card">
+                <div class="card-head">
+                    <h2>Website-Inhalt</h2>
+                    {% if production.fromWordPress %}<span class="badge {{ wp_locked ? 'badge-accent' : 'badge-ok' }}">{{ ux_icon(wp_locked ? 'lucide:lock' : 'lucide:check') }} {{ wp_locked ? 'wird in WordPress gepflegt' : 'hier gepflegt' }}</span>{% endif %}
+                </div>
+                <div class="card-body form">
+                    {% if wp_locked %}
+                        <div class="note">{{ ux_icon('lucide:lock') }}<span>Titel, Texte, Bild und Preise kommen derzeit von der Website und werden beim Import überschrieben. Sobald dieses System führend ist, sind die Felder hier bearbeitbar.</span></div>
+                    {% endif %}
+                    {{ form_row(form.title) }}
+                    {{ form_row(form.permalink) }}
+                    <div class="image-field">
+                        <div class="image-field-preview">
+                            {% if production.postThumbnailUrl %}<img src="{{ production.postThumbnailUrl }}" alt="" onerror="this.remove()">{% else %}<span class="muted">{{ ux_icon('lucide:image') }}</span>{% endif %}
+                        </div>
+                        <div class="stack grow">
+                            {{ form_row(form.postThumbnailUrl) }}
+                            {{ form_row(form.imageFile) }}
+                        </div>
+                    </div>
+                    {{ form_row(form.excerptHtml) }}
+                    {{ form_row(form.contentHtml, {help: wp_locked ? null : 'Absätze und einfache Formatierung (<p>, <strong>, <em>, <a>) werden auf der Website übernommen.'}) }}
+                    {{ rows.prices(form.priceList, 'Noch keine Preise.') }}
+                </div>
+            </section>
+
             <section class="card">
                 <div class="card-head"><h2>Technik &amp; Bühne</h2></div>
                 <div class="card-body form">
-                    {% if form.title is defined %}{{ form_row(form.title) }}{% endif %}
-                    {% if form.permalink is defined %}{{ form_row(form.permalink) }}{% endif %}
                     <div class="field">
                         <span class="field-label">Benötigt</span>
                         <div class="toggles">
@@ -124,7 +149,12 @@
         {% endif %}
         {% if not is_new %}
             <section class="card">
-                <div class="card-head"><h2>Vorstellungen</h2><span class="badge">{{ performances|length }}</span></div>
+                <div class="card-head">
+                    <h2>Vorstellungen <span class="badge">{{ performances|length }}</span></h2>
+                    {% if can_add_performance %}
+                        <a class="btn btn-sm" href="{{ path('app_calendar', {date: month|date('Y-m-d'), panel: 'pe-new', production: production.id}) }}" data-turbo-frame="_top">{{ ux_icon('lucide:plus') }} Vorstellung</a>
+                    {% endif %}
+                </div>
                 <div>
                     {% for pe in performances %}
                         {% set past = pe.date and pe.date < today %}
@@ -140,17 +170,6 @@
                     {% endfor %}
                 </div>
             </section>
-            {% if production.priceList|length %}
-                <section class="card">
-                    <div class="card-head"><h2>Preise</h2><span class="badge badge-accent">WordPress</span></div>
-                    <div class="price-table" style="border:0;border-radius:0">
-                        <div><span>Kategorie</span><span class="num">Preis</span><span class="num">Kontingent</span></div>
-                        {% for price in production.priceList %}
-                            <div><span>{{ price.categoryLabel }}</span><span class="num">{{ price.priceLabel }} €</span><span class="num">{{ price.parentReserved ?? '–' }}</span></div>
-                        {% endfor %}
-                    </div>
-                </section>
-            {% endif %}
         {% endif %}
     </aside>
 </div>

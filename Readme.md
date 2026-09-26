@@ -61,7 +61,15 @@ bin/console cache:clear --env=prod
 Welche Felder WordPress gehören, steht in `APP/config/services.yaml`
 (`wordpress_owned_fields`). Diese Felder sind im Haussystem nur lesbar und werden
 beim Import überschrieben. Soll das Haussystem ein Feld führen, entfernt man es
-aus der Liste.
+aus der Liste. Die Formulare schalten das Feld dann frei (Produktion: Titel,
+Link, Bild samt Upload, Kurztext, Beschreibung, Preise; Vorstellung: Datum,
+Zeiten, Raum, Status, Plätze, Kategorien, Preise), und Speichern überträgt es an
+WordPress. Sind beide Listen leer, führt das Haussystem vollständig: Vorstellungen
+werden dann auch für WordPress-Produktionen hier angelegt und gelöscht. Eigene
+Produktionen (ohne WordPress-ID) sind immer vollständig bearbeitbar.
+
+Hochgeladene Produktionsbilder liegen in `APP/public/uploads/productions/`
+(nicht im Git) und werden mit absoluter URL gespeichert, damit WordPress sie laden kann.
 
 Import: Cronjob `app:sync-brux-api` (siehe `docs/cron-setup.md`), Button im
 Kalender, und nach dem ersten Login, wenn der letzte Import älter als 24 h ist.

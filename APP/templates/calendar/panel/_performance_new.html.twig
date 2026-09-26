@@ -1,0 +1,15 @@
+{{ include('calendar/panel/_head.html.twig', {
+    modal: modal ?? false,
+    chip: 'Neue Vorstellung',
+    chip_class: 'badge-square t-performance',
+    title: panel.performance.production ? panel.performance.production.title : 'Neue Vorstellung',
+}) }}
+<div class="panel-body">
+    {% if not can_create_performances %}
+        <div class="note">{{ ux_icon('lucide:info') }}<span>Solange WordPress führend ist, werden hier nur Vorstellungen eigener Produktionen angelegt.</span></div>
+    {% endif %}
+    {{ include('calendar/panel/_performance_form.html.twig', {f: panel.form, pe: panel.performance}) }}
+</div>
+<div class="panel-foot">
+    <button type="submit" form="performance-form" class="btn btn-primary">{{ ux_icon('lucide:save') }} Vorstellung anlegen</button>
+</div>

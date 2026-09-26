@@ -3,7 +3,7 @@
 {% set production = panel.production %}
 {% set free = pe.seatsFree %}
 {{ include('calendar/panel/_head.html.twig', {
-    chip: 'Vorstellung · aus WordPress',
+    chip: panel.locked ? 'Vorstellung · aus WordPress' : 'Vorstellung',
     chip_class: 'badge-accent',
     title: production.title,
     when: pe.startsAt|de_date('EEEE, d. MMMM') ~ (pe.allDay ? '' : ' · ' ~ pe.startsAt|date('H:i') ~ ' Uhr') ~ (pe.room ? ' · ' ~ pe.room.name : ''),
@@ -61,6 +61,10 @@
         </div>
     {% endif %}
 
+    {% if panel.editable %}
+        <a class="btn" href="{{ cal_path(query, {panel: 'pe-' ~ pe.id ~ '-edit'}) }}" data-turbo-frame="modal">{{ ux_icon('lucide:pencil') }} Termin, Plätze &amp; Preise bearbeiten</a>
+    {% endif %}
+
     {% if production.contentHtml or production.excerptHtml %}
         <div class="expandable is-compact" data-controller="expand">
             <h3>Über die Produktion</h3>
@@ -100,4 +104,11 @@
 <div class="panel-foot">
     {% if production.permalink %}<a class="btn btn-sm" href="{{ production.permalink }}" target="_blank" rel="noopener">{{ ux_icon('lucide:globe') }} Website</a>{% endif %}
     <a class="btn btn-sm btn-ghost" href="{{ path('app_production_show', {id: production.id}) }}" data-turbo-frame="_top">Produktion öffnen</a>
+    {% if not panel.locked and is_granted('ROLE_ADMIN') %}
+        <form method="post" action="{{ path('app_performance_delete', {id: pe.id}) }}" data-turbo-frame="_top" data-turbo-confirm="Vorstellung löschen? Die Besetzung wird mitgelöscht." style="margin-left:auto">
+            <input type="hidden" name="_token" value="{{ csrf_token('delete-performance-' ~ pe.id) }}">
+            <input type="hidden" name="_return" value="{{ return_url }}">
+            <button class="btn btn-sm btn-ghost btn-danger" type="submit">{{ ux_icon('lucide:trash-2') }} Löschen</button>
+        </form>
+    {% endif %}
 </div>

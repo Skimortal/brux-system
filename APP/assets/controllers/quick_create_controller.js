@@ -6,7 +6,7 @@ import { Controller } from '@hotwired/stimulus';
  */
 export default class extends Controller {
     static targets = ['popover', 'label', 'link'];
-    static values = { appointmentUrl: String, loanUrl: String };
+    static values = { appointmentUrl: String, loanUrl: String, performanceUrl: String };
 
     connect() {
         this.escape = (event) => { if (event.key === 'Escape') this.close(); };
@@ -43,9 +43,10 @@ export default class extends Controller {
                 link.href = url.pathname + url.search;
                 return;
             }
-            const url = new URL(this.appointmentUrlValue, window.location.origin);
-            url.searchParams.set('type', link.dataset.type);
-            url.searchParams.set('start', start);
+            const performance = link.dataset.kind === 'performance';
+            const url = new URL(performance ? this.performanceUrlValue : this.appointmentUrlValue, window.location.origin);
+            if (!performance) url.searchParams.set('type', link.dataset.type);
+            url.searchParams.set('start', performance ? `${date}T19:30` : start);
             if (room) url.searchParams.set('room', room); else url.searchParams.delete('room');
             link.href = url.pathname + url.search;
         });

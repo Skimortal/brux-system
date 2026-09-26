@@ -5,6 +5,7 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     avatars_dir: '%kernel.project_dir%/public/uploads/avatars'
+    production_images_dir: '%kernel.project_dir%/public/uploads/productions'
     wordpress_api_url: '%env(WORDPRESS_API_URL)%'
     # Fields that WordPress owns while it is the leading system. They are read-only here
     # for records that come from WordPress and are overwritten by every sync. Remove a

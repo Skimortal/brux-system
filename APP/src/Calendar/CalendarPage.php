@@ -8,6 +8,11 @@ use App\Enum\AppointmentTypeEnum;
 use App\Form\AppointmentType;
 use App\Form\KeyLoanType;
 use App\Form\PerformanceContactsType;
+use App\Form\PerformanceType;
+use App\Entity\ProductionEvent;
+use App\Enum\EventReservationStatus;
+use App\Enum\EventStatus;
+use App\Repository\ProductionRepository;
 use App\Repository\AppointmentRepository;
 use App\Repository\CleaningScheduleRepository;
 use App\Repository\ContactRepository;
@@ -52,6 +57,7 @@ final class CalendarPage
         private readonly AppointmentManager $appointmentManager,
         private readonly FieldOwnership $ownership,
         private readonly BruxApiSyncService $sync,
+        private readonly ProductionRepository $productions,
     ) {
     }
 
@@ -91,6 +97,7 @@ final class CalendarPage
             'last_sync' => $this->sync->getLastSyncTime(),
             'cleaning_contacts' => $this->contacts->findByRole(ContactRole::CLEANING),
             'return_url' => $this->url($query),
+            'can_create_performances' => $this->ownership->canCreatePerformances(),
             'now' => $this->clock->now(),
         ]);
 
@@ -109,7 +116,11 @@ final class CalendarPage
         $id = $parts[1] ?? null;
 
         return match ($kind) {
-            'pe' => $this->performancePanel((int) $id, $overrides),
+            'pe' => match (true) {
+                $id === 'new' => $this->newPerformancePanel($request, $overrides),
+                ($parts[2] ?? '') === 'edit' => $this->editPerformancePanel((int) $id, $overrides),
+                default => $this->performancePanel((int) $id, $overrides),
+            },
             'a' => $id === 'new' ? $this->newAppointmentPanel($request, $overrides) : $this->appointmentPanel((int) $id, $overrides),
             'cr' => $this->cleaningPanel((int) $id, $parts[2] ?? ''),
             'k' => $this->keyPanel((int) $id),
@@ -129,11 +140,71 @@ final class CalendarPage
             'performance' => $performance,
             'production' => $performance->getProduction(),
             'locked' => $this->ownership->isLocked($performance, 'date'),
+            'editable' => $this->hasEditableFields($performance),
             'contacts_form' => ($overrides['contacts'] ?? $this->forms->create(PerformanceContactsType::class, $performance))->createView(),
             'staffing_form' => ($overrides['staffing'] ?? $this->forms->create(AppointmentType::class, $staffing, ['staffing' => true]))->createView(),
             'staffing' => $staffing,
             'loans' => $this->loans->findBy(['productionEvent' => $performance], ['startAt' => 'ASC']),
         ];
+    }
+
+    /** @param array<string, FormInterface> $overrides */
+    private function editPerformancePanel(int $id, array $overrides): array
+    {
+        $performance = $this->performances->find($id) ?? throw new NotFoundHttpException('Vorstellung nicht gefunden.');
+        if (!$this->hasEditableFields($performance)) {
+            return $this->performancePanel($id, $overrides);
+        }
+
+        return [
+            'kind' => 'performance_edit',
+            'performance' => $performance,
+            'locked' => $this->ownership->isLocked($performance, 'date'),
+            'form' => ($overrides['performance'] ?? $this->forms->create(PerformanceType::class, $performance))->createView(),
+        ];
+    }
+
+    /** @param array<string, FormInterface> $overrides */
+    private function newPerformancePanel(Request $request, array $overrides): array
+    {
+        $performance = $this->newPerformance($request);
+
+        return [
+            'kind' => 'performance_new',
+            'performance' => $performance,
+            'form' => ($overrides['performance'] ?? $this->forms->create(PerformanceType::class, $performance))->createView(),
+        ];
+    }
+
+    /**
+     * Defaults for a new performance: production and date from the query.
+     */
+    public function newPerformance(Request $request): ProductionEvent
+    {
+        $start = \DateTime::createFromFormat('Y-m-d\TH:i', $request->query->getString('start')) ?: null;
+        $date = $start ?? (\DateTime::createFromFormat('!Y-m-d', $request->query->getString('date')) ?: new \DateTime('today'));
+        $room = $request->query->getInt('room') > 0 ? $this->rooms->find($request->query->getInt('room')) : null;
+        $production = $request->query->getInt('production') > 0 ? $this->productions->find($request->query->getInt('production')) : null;
+
+        return (new ProductionEvent())
+            ->setProduction($production)
+            ->setDate((clone $date)->setTime(0, 0))
+            ->setTimeFrom($start?->format('H:i') ?? '19:30')
+            ->setRoom($room)
+            ->setStatus(EventStatus::ACTIVE)
+            ->setReservationStatus(EventReservationStatus::INACTIVE);
+    }
+
+    /** Whether any field of this performance can be edited here. */
+    private function hasEditableFields(ProductionEvent $performance): bool
+    {
+        foreach (['date', 'timeFrom', 'timeTo', 'room', 'status', 'reservationStatus', 'quota', 'incomingTotal', 'freeSeats', 'reservationNote', 'categories', 'priceList'] as $field) {
+            if (!$this->ownership->isLocked($performance, $field)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** @param array<string, FormInterface> $overrides */

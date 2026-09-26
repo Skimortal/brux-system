@@ -22,3 +22,35 @@
         <div><button type="button" class="btn btn-ghost btn-sm btn-danger" data-action="collection#remove">{{ ux_icon('lucide:trash-2') }} Entfernen</button></div>
     </div>
 {% endmacro %}
+
+{# price row of a production (production) or performance (event) #}
+{% macro price(f) %}
+    <div class="row-card price-row" data-collection-target="item">
+        <div class="price-row-fields" style="--cols: {{ f.reservedSeats is defined ? 3 : 2 }}">
+            {{ form_row(f.categoryLabel) }}
+            {{ form_row(f.priceLabel) }}
+            {% if f.parentReserved is defined %}{{ form_row(f.parentReserved) }}{% endif %}
+            {% if f.reservedSeats is defined %}{{ form_row(f.reservedSeats) }}{{ form_row(f.incomingReservations) }}{% endif %}
+            {% if not f.vars.disabled %}
+                <button type="button" class="btn btn-ghost btn-icon btn-sm btn-danger" data-action="collection#remove" aria-label="Preis entfernen" title="Entfernen">{{ ux_icon('lucide:trash-2') }}</button>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+{# editable price list with add button; read-only when WordPress owns it #}
+{% macro prices(collection, empty_text) %}
+    {% import _self as rows %}
+    <div class="field" data-controller="collection" data-collection-index-value="{{ collection|length }}" data-collection-placeholder-value="__price__">
+        <div class="between">
+            <span class="field-label">{{ collection.vars.label }}</span>
+            {% if not collection.vars.disabled %}<button type="button" class="btn btn-sm" data-action="collection#add">{{ ux_icon('lucide:plus') }} Preis</button>{% endif %}
+        </div>
+        <div class="rows" data-collection-target="list">
+            {% for f in collection %}{{ rows.price(f) }}{% endfor %}
+        </div>
+        <p class="muted small" data-collection-target="empty" {% if collection|length %}hidden{% endif %}>{{ empty_text }}</p>
+        {% if not collection.vars.disabled %}<template data-collection-target="prototype">{{ rows.price(collection.vars.prototype) }}</template>{% endif %}
+        {% do collection.setRendered %}
+    </div>
+{% endmacro %}

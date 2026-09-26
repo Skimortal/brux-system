@@ -1,0 +1,19 @@
+{% set pe = panel.performance %}
+{{ include('calendar/panel/_head.html.twig', {
+    modal: modal ?? false,
+    close_panel: 'pe-' ~ pe.id,
+    chip: 'Vorstellung bearbeiten',
+    chip_class: 'badge-square t-performance',
+    title: pe.production.title,
+    when: pe.startsAt ? pe.startsAt|de_date('EEEE, d. MMMM y') ~ (pe.allDay ? '' : ' · ' ~ pe.startsAt|date('H:i') ~ ' Uhr') : null,
+}) }}
+<div class="panel-body">
+    {% if panel.locked %}
+        <div class="note">{{ ux_icon('lucide:lock') }}<span>Gesperrte Felder werden von WordPress gepflegt und beim Import überschrieben.</span></div>
+    {% endif %}
+    {{ include('calendar/panel/_performance_form.html.twig', {f: panel.form, pe: pe}) }}
+</div>
+<div class="panel-foot">
+    <button type="submit" form="performance-form" class="btn btn-primary">{{ ux_icon('lucide:save') }} Speichern</button>
+    <a class="btn btn-sm btn-ghost" href="{{ cal_path(query, {panel: 'pe-' ~ pe.id}) }}" data-turbo-frame="_top">Abbrechen</a>
+</div>

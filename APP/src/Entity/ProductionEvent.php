@@ -362,7 +362,8 @@ class ProductionEvent extends Base
             return max(0, $this->quota - $this->freeSeats);
         }
 
-        return null;
+        // quota without any reservation numbers: nothing booked yet
+        return $this->quota !== null ? 0 : null;
     }
 
     public function getSeatsFree(): ?int
@@ -372,6 +373,9 @@ class ProductionEvent extends Base
         }
         if ($this->quota !== null && $this->incomingTotal !== null) {
             return max(0, $this->quota - $this->incomingTotal);
+        }
+        if ($this->quota !== null) {
+            return $this->quota;
         }
 
         return null;

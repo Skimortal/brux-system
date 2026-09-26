@@ -6,13 +6,16 @@ use App\Calendar\CalendarBuilder;
 use App\Entity\Production;
 use App\Form\ProductionType;
 use App\Repository\ProductionRepository;
+use App\Service\FieldOwnership;
 use App\Service\WordPressPushService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[Route('/produktionen')]
 final class ProductionController extends AbstractController
@@ -33,19 +36,26 @@ final class ProductionController extends AbstractController
     }
 
     #[Route('/neu', name: 'app_production_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar): Response
+    public function new(Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar, SluggerInterface $slugger, FieldOwnership $ownership): Response
     {
-        return $this->edit(new Production(), $request, $em, $push, $calendar);
+        return $this->edit(new Production(), $request, $em, $push, $calendar, $slugger, $ownership);
     }
 
     #[Route('/{id}', name: 'app_production_show', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-    public function edit(Production $production, Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar): Response
+    public function edit(Production $production, Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar, SluggerInterface $slugger, FieldOwnership $ownership): Response
     {
         $form = $this->createForm(ProductionType::class, $production);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $this->keepSingleMainContact($production);
+            if ($form->has('imageFile') && ($image = $form->get('imageFile')->getData()) !== null) {
+                $production->setPostThumbnailUrl($this->storeImage($image, $request, $slugger));
+            }
+            $index = 0;
+            foreach ($production->getPriceList() as $price) {
+                $price->setPriceIndex($index++)->setProduction($production);
+            }
             $em->persist($production);
             $em->flush();
             $result = $push->pushProduction($production);
@@ -78,6 +88,7 @@ final class ProductionController extends AbstractController
             'today' => new \DateTimeImmutable('today'),
             'cal' => $production->getId() !== null ? $calendar->buildForProduction($production, $month) : null,
             'month' => $month,
+            'can_add_performance' => $production->getId() !== null && (!$production->isFromWordPress() || $ownership->canCreatePerformances()),
         ], new Response(null, $form->isSubmitted() ? 422 : 200));
     }
 
@@ -98,5 +109,18 @@ final class ProductionController extends AbstractController
                 $main = $person;
             }
         }
+    }
+
+    /**
+     * Stores an uploaded production image and returns its absolute URL, so the
+     * website can load it once this system pushes the production.
+     */
+    private function storeImage(UploadedFile $image, Request $request, SluggerInterface $slugger): string
+    {
+        $name = $slugger->slug(pathinfo($image->getClientOriginalName(), \PATHINFO_FILENAME))->lower()
+            . '-' . uniqid() . '.' . ($image->guessExtension() ?: 'jpg');
+        $image->move($this->getParameter('production_images_dir'), $name);
+
+        return $request->getSchemeAndHttpHost() . '/uploads/productions/' . $name;
     }
 }

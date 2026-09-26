@@ -1,9 +1,9 @@
-{# chip, chip_class, title, when #}
+{# chip, chip_class, title, when, close_panel (panel to return to from a modal) #}
 <div class="panel-head">
     <div class="top">
         {% if modal ?? false %}
             <span class="badge {{ chip_class ?? '' }}">{{ chip }}</span>
-            <a class="btn btn-ghost btn-icon btn-sm" href="{{ cal_path(query, {panel: null}) }}" data-turbo-frame="modal" data-modal-target="close" aria-label="Schließen" title="Schließen (Esc)">{{ ux_icon('lucide:x') }}</a>
+            <a class="btn btn-ghost btn-icon btn-sm" href="{{ cal_path(query, {panel: close_panel ?? null}) }}" data-turbo-frame="{{ (close_panel ?? null) ? '_top' : 'modal' }}" data-modal-target="close" aria-label="Schließen" title="Schließen (Esc)">{{ ux_icon('lucide:x') }}</a>
         {% else %}
             <a class="btn btn-ghost btn-sm" href="{{ cal_path(query, {panel: null}) }}" style="padding-left:6px">{{ ux_icon('lucide:arrow-left') }} Schlüssel &amp; Todos</a>
             <span class="badge {{ chip_class ?? '' }}">{{ chip }}</span>

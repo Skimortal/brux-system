@@ -37,4 +37,13 @@ final class ProductionEventTest extends TestCase
         self::assertSame(24, $event->getSeatsFree());
         self::assertTrue((new ProductionEvent())->setReservationNote(' https://example.test/ ')->hasReservationLink());
     }
+
+    public function testQuotaAloneMeansNothingBooked(): void
+    {
+        $event = (new ProductionEvent())->setQuota(50);
+
+        self::assertSame(0, $event->getSeatsTaken());
+        self::assertSame(50, $event->getSeatsFree());
+        self::assertNull((new ProductionEvent())->getSeatsFree());
+    }
 }
