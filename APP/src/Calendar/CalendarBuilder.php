@@ -311,33 +311,26 @@ final class CalendarBuilder
         $entries = [];
         foreach ($this->keyLoans->findOverlapping($from, $to) as $loan) {
             $key = $loan->getKey();
-            $overdue = $loan->isOverdue($now);
-            $end = $loan->getReturnedAt() ?? $loan->getDueAt();
-            if ($end === null || $overdue) {
-                $end = $to;
+            // keys without rooms show up in every room calendar, like entries without a room
+            $roomIds = $key !== null && \count($key->getRooms()) > 0
+                ? array_values(array_map(static fn (Room $r) => (int) $r->getId(), $key->getRooms()->toArray()))
+                : null;
+            foreach (self::loanSegments($loan, $now) as $segment) {
+                if ($segment['end'] <= $from || $segment['start'] >= $to) {
+                    continue;
+                }
+                $entries[] = new CalendarEntry(
+                    panel: 'k-' . $key?->getId(),
+                    group: EntryGroup::KEYS,
+                    colorKey: $segment['state'] === 'overdue' ? 'key-overdue' : 'key',
+                    title: $segment['label'],
+                    start: $segment['start'],
+                    end: $segment['end'],
+                    allDay: true,
+                    icon: 'lucide:key-round',
+                    roomIds: $roomIds,
+                );
             }
-            $start = $loan->getStartAt()->setTime(0, 0);
-            $end = $end->setTime(0, 0)->modify('+1 day');
-            $meta = match (true) {
-                $overdue => 'überfällig seit ' . $loan->getDueAt()?->format('d.m.'),
-                $loan->isReturned() => 'zurück',
-                $loan->isPlannedAt($now) => 'geplant ab ' . $loan->getStartAt()->format('d.m. H:i'),
-                $loan->getDueAt() !== null => 'bis ' . $loan->getDueAt()->format('d.m. H:i'),
-                default => 'ohne Rückgabedatum',
-            };
-            $entries[] = new CalendarEntry(
-                panel: 'k-' . $key?->getId(),
-                group: EntryGroup::KEYS,
-                colorKey: $overdue ? 'key-overdue' : 'key',
-                title: sprintf('%s → %s', $key?->getName(), $loan->getHolderLabel()),
-                start: $start,
-                end: $end,
-                allDay: true,
-                meta: $meta,
-                icon: 'lucide:key-round',
-                // keys without rooms show up in every room calendar, like entries without a room
-                roomIds: $key !== null && \count($key->getRooms()) > 0 ? array_values(array_map(static fn (Room $r) => (int) $r->getId(), $key->getRooms()->toArray())) : null,
-            );
         }
 
         return $entries;
@@ -356,51 +349,87 @@ final class CalendarBuilder
         $rowEnds = [];
         $lastIndex = \count($days) - 1;
         foreach ($this->keyLoans->findOverlapping($from, $to) as $loan) {
-            $start = $loan->getStartAt();
-            $end = $loan->getReturnedAt() ?? $loan->getDueAt();
-            $overdue = $loan->isOverdue($now);
-            // keys that are still out (open-ended or overdue) stay visible until they come back
-            if ($end === null || $overdue) {
-                $end = $to;
-            }
-            $startIndex = max(0, (int) floor(($start->getTimestamp() - $from->getTimestamp()) / 86400));
-            $endIndex = min($lastIndex, (int) floor(($end->getTimestamp() - 1 - $from->getTimestamp()) / 86400));
-            if ($startIndex > $lastIndex || $endIndex < 0) {
-                continue;
-            }
-            $endIndex = max($startIndex, $endIndex);
+            foreach (self::loanSegments($loan, $now) as $segment) {
+                $startIndex = max(0, (int) floor(($segment['start']->getTimestamp() - $from->getTimestamp()) / 86400));
+                $endIndex = min($lastIndex, (int) floor(($segment['end']->getTimestamp() - 1 - $from->getTimestamp()) / 86400));
+                if ($startIndex > $lastIndex || $endIndex < 0 || $segment['end'] <= $from || $segment['start'] >= $to) {
+                    continue;
+                }
+                $endIndex = max($startIndex, $endIndex);
 
-            $row = 0;
-            while (isset($rowEnds[$row]) && $rowEnds[$row] >= $startIndex) {
-                ++$row;
-            }
-            $rowEnds[$row] = $endIndex;
+                $row = 0;
+                while (isset($rowEnds[$row]) && $rowEnds[$row] >= $startIndex) {
+                    ++$row;
+                }
+                $rowEnds[$row] = $endIndex;
 
-            $state = match (true) {
-                $loan->isReturned() => 'returned',
-                $overdue => 'overdue',
-                $loan->isPlannedAt($now) => 'planned',
-                default => 'active',
-            };
-            $label = sprintf('%s → %s', $loan->getKey()?->getName(), $loan->getHolderLabel());
-            if ($state === 'overdue') {
-                $label .= ' · überfällig seit ' . $loan->getDueAt()?->format('d.m.');
-            } elseif ($loan->getDueAt() !== null && $state !== 'returned') {
-                $label .= ' · bis ' . $loan->getDueAt()->format('d.m. H:i');
+                $bars[] = [
+                    'loan' => $loan,
+                    'col' => $startIndex,
+                    'span' => $endIndex - $startIndex + 1,
+                    'row' => $row,
+                    'label' => $segment['label'],
+                    'state' => $segment['state'],
+                    'clippedStart' => $segment['start'] < $from,
+                    'clippedEnd' => $segment['end'] > $to,
+                ];
             }
-
-            $bars[] = [
-                'loan' => $loan,
-                'col' => $startIndex,
-                'span' => $endIndex - $startIndex + 1,
-                'row' => $row,
-                'label' => $label,
-                'state' => $state,
-                'clippedStart' => $start < $from,
-                'clippedEnd' => $end > $to,
-            ];
         }
 
         return [$bars, \count($rowEnds)];
     }
+
+    /** Loans up to this length are drawn as one bar; longer ones only at handover and due date. */
+    private const SHORT_LOAN_DAYS = 7;
+
+    /**
+     * What a loan contributes to the calendar. Short loans are one bar from handover to
+     * return. Long-term loans (keys held for months) would cover every week, so like the
+     * previous version they only show on the day of handover and the day they are due or
+     * come back; who holds which key is in the key list.
+     *
+     * @return array<int, array{start: \DateTimeImmutable, end: \DateTimeImmutable, label: string, state: string}>
+     */
+    public static function loanSegments(KeyLoan $loan, \DateTimeImmutable $now): array
+    {
+        $key = (string) $loan->getKey()?->getName();
+        $holder = $loan->getHolderLabel();
+        $start = $loan->getStartAt();
+        $end = $loan->getReturnedAt() ?? $loan->getDueAt();
+        $overdue = $loan->isOverdue($now);
+        $state = match (true) {
+            $loan->isReturned() => 'returned',
+            $overdue => 'overdue',
+            $loan->isPlannedAt($now) => 'planned',
+            default => 'active',
+        };
+
+        if ($end !== null && !$overdue && $end->getTimestamp() - $start->getTimestamp() <= self::SHORT_LOAN_DAYS * 86400) {
+            $label = sprintf('%s → %s', $key, $holder);
+            if ($state !== 'returned') {
+                $label .= ' · bis ' . $end->format('d.m. H:i');
+            }
+
+            return [['start' => $start, 'end' => max($end, $start->modify('+1 hour')), 'label' => $label, 'state' => $state]];
+        }
+
+        $day = static fn (\DateTimeImmutable $d) => [$d->setTime(0, 0), $d->setTime(0, 0)->modify('+1 day')];
+        [$outStart, $outEnd] = $day($start);
+        $segments = [[
+            'start' => $outStart,
+            'end' => $outEnd,
+            'label' => sprintf('%s · Ausgabe an %s', $key, $holder) . ($loan->getDueAt() ? ' (bis ' . $loan->getDueAt()->format('d.m.y') . ')' : ''),
+            'state' => $state === 'planned' ? 'planned' : 'active',
+        ]];
+        if ($loan->getReturnedAt() !== null) {
+            [$s, $e] = $day($loan->getReturnedAt());
+            $segments[] = ['start' => $s, 'end' => $e, 'label' => sprintf('%s · zurück von %s', $key, $holder), 'state' => 'returned'];
+        } elseif ($loan->getDueAt() !== null) {
+            [$s, $e] = $day($loan->getDueAt());
+            $segments[] = ['start' => $s, 'end' => $e, 'label' => sprintf('%s · Rückgabe von %s', $key, $holder), 'state' => $overdue ? 'overdue' : 'active'];
+        }
+
+        return $segments;
+    }
+
 }

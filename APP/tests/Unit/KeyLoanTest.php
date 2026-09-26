@@ -57,4 +57,26 @@ final class KeyLoanTest extends TestCase
     {
         self::assertFalse($this->loan('2026-09-01')->isOverdue($this->now));
     }
+
+    public function testShortLoanIsOneBarLongLoanOnlyHandoverAndDue(): void
+    {
+        $key = (new KeyManagement())->setName('Foyer');
+        $short = $this->loan('2026-10-16 17:00', '2026-10-18 23:00');
+        $key->addLoan($short);
+        $segments = \App\Calendar\CalendarBuilder::loanSegments($short, $this->now);
+        self::assertCount(1, $segments);
+
+        $long = $this->loan('2025-03-01', '2027-12-02');
+        $key->addLoan($long);
+        $segments = \App\Calendar\CalendarBuilder::loanSegments($long, $this->now);
+        self::assertCount(2, $segments);
+        self::assertSame('2025-03-01', $segments[0]['start']->format('Y-m-d'));
+        self::assertSame('2027-12-02', $segments[1]['start']->format('Y-m-d'));
+        self::assertStringContainsString('Rückgabe von', $segments[1]['label']);
+
+        $overdue = $this->loan('2026-10-10', '2026-10-12');
+        $key->addLoan($overdue);
+        $segments = \App\Calendar\CalendarBuilder::loanSegments($overdue, $this->now);
+        self::assertSame('overdue', $segments[1]['state']);
+    }
 }
