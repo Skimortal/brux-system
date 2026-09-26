@@ -40,4 +40,7 @@
         {% do f.categories.setRendered %}
     </div>
     {{ rows.prices(f.priceList, 'Keine eigenen Preise; es gelten die Preise der Produktion.') }}
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ ux_icon('lucide:save') }} {{ is_new ? 'Vorstellung anlegen' : 'Speichern' }}</button>
+    </div>
 {{ form_end(f) }}

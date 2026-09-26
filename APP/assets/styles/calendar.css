@@ -184,6 +184,7 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 
 /* side column */
 .cal-side { display: flex; flex-direction: column; min-height: 0; height: 100vh; background: var(--surface); min-width: 0; }
+.side-content { display: contents; }
 .side-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-bottom: 1px solid var(--line); flex-shrink: 0; }
 .side-tabs a { height: 52px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; }
 .side-tabs a[aria-current="true"] { color: var(--ink); border-bottom-color: var(--accent); }
@@ -229,11 +230,11 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
     .cal-main { padding: 12px 12px 0; }
     .cal-board { max-height: calc(100vh - 220px); }
     .cal-side { height: auto; border-left: 0; border-top: 1px solid var(--line); }
-    .cal-side.has-panel { position: fixed; inset: 0 0 64px 0; z-index: 40; height: auto; }
+    .cal-side:has(> .side-content.has-panel) { position: fixed; inset: 0 0 64px 0; z-index: 40; height: auto; }
     .cal-toolbar h1 { font-size: 20px; width: 100%; order: -1; }
 }
 
-.panel-image { width: 100%; max-height: 220px; object-fit: cover; border-radius: var(--radius); display: block; }
+.panel-image { width: 100%; max-height: 150px; object-fit: cover; border-radius: var(--radius); display: block; }
 .about summary { cursor: pointer; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
 
 /* room calendars side by side (layout "split") */
@@ -262,30 +263,24 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 :root[data-side="collapsed"] .side-toggle { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 @media (max-width: 900px) { .side-toggle { display: none; } }
 
-/* appointment dialog */
-.modal-backdrop {
-    position: fixed; inset: 0; z-index: 80; background: rgba(20, 20, 18, 0.45);
-    display: flex; align-items: flex-start; justify-content: center; padding: 5vh 24px; overflow: auto;
-    animation: fade-in .12s ease-out;
-}
-.modal {
-    width: min(960px, 100%); max-height: 90vh; display: flex; flex-direction: column;
-    background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); overflow: hidden;
-}
-.modal .panel-head { padding: 18px 24px 14px; }
-.modal .panel-body { padding: 18px 24px 22px; }
-.modal .panel-foot { padding: 12px 24px; }
-.modal .appt-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+/* entry forms: the side column widens to a comfortable form width and splits into
+   two columns when the person drags it wider */
+.cal-side { container-type: inline-size; }
 .appt-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.modal .appt-col + .appt-col { border-left: 1px solid var(--line-soft); padding-left: 28px; }
-.modal .appt-col + .appt-col > .panel-section:first-child, .modal .appt-col + .appt-col > [data-appointment-form-target="assign"] { border-top: 0; padding-top: 0; }
-html.has-modal { overflow: hidden; }
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@media (max-width: 900px) {
-    .modal-backdrop { padding: 0; }
-    .modal { width: 100%; max-height: none; min-height: 100%; border-radius: 0; }
-    .modal .appt-cols { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-    .modal .appt-col + .appt-col { border-left: 0; padding-left: 0; }
+@media (min-width: 901px) {
+    .cal-shell:has(.side-content.is-wide) { grid-template-columns: minmax(0, 1fr) 12px max(var(--panel-w), min(600px, 42vw)); }
+    :root[data-side="collapsed"] .cal-shell:has(.side-content.has-panel) { grid-template-columns: minmax(0, 1fr) 12px var(--panel-w); }
+    :root[data-side="collapsed"] .cal-shell:has(.side-content.is-wide) { grid-template-columns: minmax(0, 1fr) 12px max(var(--panel-w), min(600px, 42vw)); }
+    :root[data-side="collapsed"] .cal-shell:has(.side-content.has-panel) .cal-side { display: flex; }
+    :root[data-side="collapsed"] .cal-shell:has(.side-content.has-panel) .pane-handle { display: block; }
+}
+@container (min-width: 520px) {
+    .appt-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+}
+@container (min-width: 820px) {
+    .appt-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+    .appt-col + .appt-col { border-left: 1px solid var(--line-soft); padding-left: 28px; }
+    .appt-col + .appt-col > .panel-section:first-child, .appt-col + .appt-col > [data-appointment-form-target="assign"] { border-top: 0; padding-top: 0; }
 }
 
 /* right column: todos above the key list */

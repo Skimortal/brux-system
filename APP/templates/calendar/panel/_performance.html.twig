@@ -22,47 +22,51 @@
         <div class="note note-danger">{{ ux_icon('lucide:triangle-alert') }}<span>Letzte Übertragung an die Website ist fehlgeschlagen: {{ pe.lastPushError }}</span></div>
     {% endif %}
 
-    <dl class="dl">
-        <dt>Datum</dt><dd>{{ pe.startsAt|de_date('EEEE, d. MMMM y') }}</dd>
-        <dt>Uhrzeit</dt><dd class="mono">{{ pe.allDay ? 'ganztägig' : pe.timeFrom ~ (pe.timeTo ? ' – ' ~ pe.timeTo : '') ~ ' Uhr' }}</dd>
-        <dt>Raum</dt><dd>{{ pe.room ? pe.room.name : '–' }}</dd>
-        <dt>Status</dt><dd>{% if pe.status %}<span class="badge {{ pe.status.value == 'aktiv' ? 'badge-ok' : '' }}">{{ pe.status.label }}</span>{% else %}–{% endif %}</dd>
-        <dt>Reservierung</dt><dd>{{ pe.reservationStatus ? pe.reservationStatus.label : '–' }}</dd>
-        {% if production.requirementLabels|length %}<dt>Bedarf</dt><dd>{{ production.requirementLabels|join(' · ') }}</dd>{% endif %}
-    </dl>
-
-    {% if pe.quota is not null %}
-        <div class="stats">
-            <div class="stat"><span class="label">Kontingent</span><span class="value">{{ pe.quota }}</span></div>
-            <div class="stat"><span class="label">Reserviert</span><span class="value">{{ pe.seatsTaken ?? '–' }}</span></div>
-            <div class="stat {{ free is null ? '' : (free > 10 ? 'ok' : (free > 0 ? 'warn' : 'danger')) }}"><span class="label">Frei</span><span class="value">{{ free ?? '–' }}</span></div>
-        </div>
-    {% endif %}
-
-    {% if pe.priceList|length %}
-        <div class="price-table">
-            <div><span>Kategorie</span><span class="num">Preis</span><span class="num">Reserv.</span></div>
-            {% for price in pe.priceList %}
-                <div><span>{{ price.categoryLabel }}</span><span class="num">{{ price.priceLabel }} €</span><span class="num">{{ price.incomingReservations ?? 0 }}</span></div>
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    {% if pe.categories|length or pe.reservationNote %}
-        <div class="row-wrap">
-            {% for category in pe.categories %}
-                <span class="badge {{ category.slug in ['ausverkauft-event', 'abgesagt-event'] ? 'badge-danger' : (category.slug == 'featured-event' ? 'badge-warn' : 'badge-info') }}">{{ category.name }}</span>
-            {% endfor %}
-            {% if pe.reservationLink %}
-                <a class="btn btn-sm" href="{{ pe.reservationNote|trim }}" target="_blank" rel="noopener" style="margin-left:auto">{{ ux_icon('lucide:external-link') }} Zur Reservierung</a>
-            {% elseif pe.reservationNote %}
-                <span class="small muted">{{ pe.reservationNote }}</span>
-            {% endif %}
-        </div>
-    {% endif %}
-
     {% if panel.editable %}
-        <a class="btn" href="{{ cal_path(query, {panel: 'pe-' ~ pe.id ~ '-edit'}) }}" data-turbo-frame="modal">{{ ux_icon('lucide:pencil') }} Termin, Plätze &amp; Preise bearbeiten</a>
+        <section class="panel-section">
+            <div class="between"><h3>Termin, Plätze &amp; Preise</h3>{% if production.requirementLabels|length %}<span class="small muted">Bedarf: {{ production.requirementLabels|join(' · ') }}</span>{% endif %}</div>
+            {% if panel.locked %}<p class="small muted">Gesperrte Felder werden von WordPress gepflegt und beim Import überschrieben.</p>{% endif %}
+            {{ include('calendar/panel/_performance_form.html.twig', {f: panel.performance_form, pe: pe}) }}
+        </section>
+    {% else %}
+        <dl class="dl">
+            <dt>Datum</dt><dd>{{ pe.startsAt|de_date('EEEE, d. MMMM y') }}</dd>
+            <dt>Uhrzeit</dt><dd class="mono">{{ pe.allDay ? 'ganztägig' : pe.timeFrom ~ (pe.timeTo ? ' – ' ~ pe.timeTo : '') ~ ' Uhr' }}</dd>
+            <dt>Raum</dt><dd>{{ pe.room ? pe.room.name : '–' }}</dd>
+            <dt>Status</dt><dd>{% if pe.status %}<span class="badge {{ pe.status.value == 'aktiv' ? 'badge-ok' : '' }}">{{ pe.status.label }}</span>{% else %}–{% endif %}</dd>
+            <dt>Reservierung</dt><dd>{{ pe.reservationStatus ? pe.reservationStatus.label : '–' }}</dd>
+            {% if production.requirementLabels|length %}<dt>Bedarf</dt><dd>{{ production.requirementLabels|join(' · ') }}</dd>{% endif %}
+        </dl>
+
+        {% if pe.quota is not null %}
+            <div class="stats">
+                <div class="stat"><span class="label">Kontingent</span><span class="value">{{ pe.quota }}</span></div>
+                <div class="stat"><span class="label">Reserviert</span><span class="value">{{ pe.seatsTaken ?? '–' }}</span></div>
+                <div class="stat {{ free is null ? '' : (free > 10 ? 'ok' : (free > 0 ? 'warn' : 'danger')) }}"><span class="label">Frei</span><span class="value">{{ free ?? '–' }}</span></div>
+            </div>
+        {% endif %}
+
+        {% if pe.priceList|length %}
+            <div class="price-table">
+                <div><span>Kategorie</span><span class="num">Preis</span><span class="num">Reserv.</span></div>
+                {% for price in pe.priceList %}
+                    <div><span>{{ price.categoryLabel }}</span><span class="num">{{ price.priceLabel }} €</span><span class="num">{{ price.incomingReservations ?? 0 }}</span></div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if pe.categories|length or pe.reservationNote %}
+            <div class="row-wrap">
+                {% for category in pe.categories %}
+                    <span class="badge {{ category.slug in ['ausverkauft-event', 'abgesagt-event'] ? 'badge-danger' : (category.slug == 'featured-event' ? 'badge-warn' : 'badge-info') }}">{{ category.name }}</span>
+                {% endfor %}
+                {% if pe.reservationLink %}
+                    <a class="btn btn-sm" href="{{ pe.reservationNote|trim }}" target="_blank" rel="noopener" style="margin-left:auto">{{ ux_icon('lucide:external-link') }} Zur Reservierung</a>
+                {% elseif pe.reservationNote %}
+                    <span class="small muted">{{ pe.reservationNote }}</span>
+                {% endif %}
+            </div>
+        {% endif %}
     {% endif %}
 
     {% if production.contentHtml or production.excerptHtml %}

@@ -75,8 +75,6 @@
 }
 .row-card select:focus, .row-card input:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus); }
 .appt-dates { display: flex; flex-direction: column; gap: 14px; }
-.modal .appt-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-@media (max-width: 900px) { .modal .appt-dates { grid-template-columns: minmax(0, 1fr); } }
 
 /* price rows: category, price and seat numbers in one line */
 .price-row-fields { display: grid; grid-template-columns: minmax(0, 2fr) repeat(auto-fit, minmax(70px, 1fr)); gap: 8px; align-items: end; }

@@ -72,6 +72,9 @@ final class PerformanceController extends AbstractController
             return $this->backToCalendar($request, $this->page, ['panel' => 'pe-' . $performance->getId(), 'date' => $performance->getDate()?->format('Y-m-d')]);
         }
 
+        // the form keeps the submitted values; header and calendar show the stored ones
+        $em->refresh($performance);
+
         return $this->page->render($this->page->queryFromReturn($request), $request, ['performance' => $form], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 

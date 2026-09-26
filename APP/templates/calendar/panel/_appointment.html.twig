@@ -3,7 +3,6 @@
 {% set f = panel.form %}
 {% set is_new = a.id is null %}
 {{ include('calendar/panel/_head.html.twig', {
-    modal: modal ?? false,
     chip: is_new ? 'Neuer Termin' : a.type.label,
     chip_class: 'badge-square t-' ~ a.type.value,
     title: is_new ? 'Neuer Termin' : a.displayTitle,
@@ -82,6 +81,6 @@
         </form>
     {% endif %}
     <div class="grow"></div>
-    <a class="btn btn-sm btn-ghost" href="{{ cal_path(query, {panel: null}) }}" data-turbo-frame="{{ (modal ?? false) ? 'modal' : 'side' }}">{{ is_new ? 'Abbrechen' : 'Schließen' }}</a>
+    <a class="btn btn-sm btn-ghost" href="{{ cal_path(query, {panel: null}) }}" data-turbo-frame="side">{{ is_new ? 'Abbrechen' : 'Schließen' }}</a>
     <button class="btn btn-primary" type="submit" form="appointment-form">{{ ux_icon('lucide:save') }} {{ is_new ? 'Anlegen' : 'Speichern' }}</button>
 </div>

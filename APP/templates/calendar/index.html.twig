@@ -28,22 +28,16 @@
          title="Ziehen, um die Breite zu ändern · Doppelklick setzt zurück"
          data-controller="pane-resize"
          data-action="pointerdown->pane-resize#start pointermove->pane-resize#move pointerup->pane-resize#end pointercancel->pane-resize#end dblclick->pane-resize#reset keydown->pane-resize#key"></div>
-    {% set in_modal = panel and panel.kind in ['appointment', 'performance_new', 'performance_edit'] %}
-    <turbo-frame id="side" class="cal-side{{ panel and not in_modal ? ' has-panel' : '' }}" data-turbo-action="advance">
-        {% if panel and not in_modal %}
-            {{ include('calendar/panel/_' ~ panel.kind ~ '.html.twig') }}
-        {% else %}
-            {{ include('calendar/_home.html.twig') }}
-        {% endif %}
+    {% set wide = panel and panel.kind in ['appointment', 'performance', 'performance_new', 'loan'] %}
+    <turbo-frame id="side" class="cal-side" data-turbo-action="advance">
+        {# frame navigation swaps only the content, so the state markers live on this wrapper #}
+        <div class="side-content{{ panel ? ' has-panel' : '' }}{{ wide ? ' is-wide' : '' }}">
+            {% if panel %}
+                {{ include('calendar/panel/_' ~ panel.kind ~ '.html.twig') }}
+            {% else %}
+                {{ include('calendar/_home.html.twig') }}
+            {% endif %}
+        </div>
     </turbo-frame>
 </div>
-<turbo-frame id="modal" data-turbo-action="advance">
-    {% if in_modal %}
-        <div class="modal-backdrop" data-controller="modal" data-action="click->modal#backdrop keydown@document->modal#escape">
-            <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-                {{ include('calendar/panel/_' ~ panel.kind ~ '.html.twig', {modal: true}) }}
-            </div>
-        </div>
-    {% endif %}
-</turbo-frame>
 {% endblock %}

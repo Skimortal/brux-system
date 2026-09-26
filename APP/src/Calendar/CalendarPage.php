@@ -116,11 +116,7 @@ final class CalendarPage
         $id = $parts[1] ?? null;
 
         return match ($kind) {
-            'pe' => match (true) {
-                $id === 'new' => $this->newPerformancePanel($request, $overrides),
-                ($parts[2] ?? '') === 'edit' => $this->editPerformancePanel((int) $id, $overrides),
-                default => $this->performancePanel((int) $id, $overrides),
-            },
+            'pe' => $id === 'new' ? $this->newPerformancePanel($request, $overrides) : $this->performancePanel((int) $id, $overrides),
             'a' => $id === 'new' ? $this->newAppointmentPanel($request, $overrides) : $this->appointmentPanel((int) $id, $overrides),
             'cr' => $this->cleaningPanel((int) $id, $parts[2] ?? ''),
             'k' => $this->keyPanel((int) $id),
@@ -140,27 +136,12 @@ final class CalendarPage
             'performance' => $performance,
             'production' => $performance->getProduction(),
             'locked' => $this->ownership->isLocked($performance, 'date'),
-            'editable' => $this->hasEditableFields($performance),
+            'editable' => $editable = $this->hasEditableFields($performance),
+            'performance_form' => $editable ? ($overrides['performance'] ?? $this->forms->create(PerformanceType::class, $performance))->createView() : null,
             'contacts_form' => ($overrides['contacts'] ?? $this->forms->create(PerformanceContactsType::class, $performance))->createView(),
             'staffing_form' => ($overrides['staffing'] ?? $this->forms->create(AppointmentType::class, $staffing, ['staffing' => true]))->createView(),
             'staffing' => $staffing,
             'loans' => $this->loans->findBy(['productionEvent' => $performance], ['startAt' => 'ASC']),
-        ];
-    }
-
-    /** @param array<string, FormInterface> $overrides */
-    private function editPerformancePanel(int $id, array $overrides): array
-    {
-        $performance = $this->performances->find($id) ?? throw new NotFoundHttpException('Vorstellung nicht gefunden.');
-        if (!$this->hasEditableFields($performance)) {
-            return $this->performancePanel($id, $overrides);
-        }
-
-        return [
-            'kind' => 'performance_edit',
-            'performance' => $performance,
-            'locked' => $this->ownership->isLocked($performance, 'date'),
-            'form' => ($overrides['performance'] ?? $this->forms->create(PerformanceType::class, $performance))->createView(),
         ];
     }
 
