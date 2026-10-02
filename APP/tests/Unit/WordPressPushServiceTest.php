@@ -41,6 +41,7 @@ final class WordPressPushServiceTest extends TestCase
         self::assertSame('Basic ' . base64_encode('brux_api_crud:app pass word'), $create['auth']);
         self::assertNull($create['body']['external_id']);
         self::assertSame('Neue Eigenproduktion', $create['body']['title']);
+        self::assertSame('draft', $create['body']['post_status']);
         self::assertArrayNotHasKey('events', $create['body']);
 
         self::assertSame(3145, $createEvent['body']['production_external_id']);
@@ -81,6 +82,35 @@ final class WordPressPushServiceTest extends TestCase
         self::assertArrayNotHasKey('date', $body);
         self::assertArrayNotHasKey('categories', $body);
         self::assertArrayNotHasKey('prices', $body);
+    }
+
+    public function testDeletedPerformanceRenumbersTheLaterOnes(): void
+    {
+        $production = (new Production())->setTitle('Aus WordPress')->setExternalId(1977);
+        $events = [];
+        foreach ([0, 1, 2] as $index) {
+            $production->addEvent($events[] = (new ProductionEvent())->setEventIndex($index));
+        }
+
+        $result = $this->service([['success' => true]])->deleteProductionEvent($events[1]);
+
+        self::assertSame('success', $result['status']);
+        self::assertSame('DELETE', $this->requests[0]['method']);
+        self::assertSame('https://wp.test/wp-json/brux-crud/v1/productions/1977/events/1', $this->requests[0]['url']);
+        self::assertSame([0, null, 1], array_map(static fn ($e) => $e->getEventIndex(), $events));
+    }
+
+    public function testRejectedDeleteKeepsTheNumbering(): void
+    {
+        $production = (new Production())->setTitle('Aus WordPress')->setExternalId(1977);
+        $production->addEvent($first = (new ProductionEvent())->setEventIndex(0));
+        $production->addEvent($second = (new ProductionEvent())->setEventIndex(1));
+
+        $result = $this->service([new MockResponse(json_encode(['message' => 'Reservierungen vorhanden']), ['http_code' => 409])])
+            ->deleteProductionEvent($first);
+
+        self::assertSame('error', $result['status']);
+        self::assertSame([0, 1], [$first->getEventIndex(), $second->getEventIndex()]);
     }
 
     public function testRejectionIsReportedAndRecorded(): void

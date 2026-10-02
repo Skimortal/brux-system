@@ -21,6 +21,31 @@ class ProductionRepository extends ServiceEntityRepository
         return $this->findOneBy(['externalId' => $externalId]);
     }
 
+    /**
+     * A production created here whose push reached WordPress without the answer coming
+     * back, so it has no WordPress id yet. Matched by title to avoid a duplicate on import.
+     */
+    public function findUnconfirmedPush(string $title): ?Production
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.externalId IS NULL')
+            ->andWhere('p.lastPushAt IS NOT NULL')
+            ->andWhere('p.title = :title')
+            ->setParameter('title', $title)
+            ->orderBy('p.id')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /** @return Production[] productions whose last push failed */
+    public function findFailedPushes(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.lastPushError IS NOT NULL')
+            ->getQuery()
+            ->getResult();
+    }
 
     /**
      * Productions with their next performance and number of performances.

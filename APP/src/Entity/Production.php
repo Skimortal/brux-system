@@ -19,6 +19,12 @@ class Production extends Base
         'stage' => 'Bühne',
     ];
 
+    /** Publication state of the production's page on the website (WordPress post_status). */
+    public const WEBSITE_STATUS_LABELS = [
+        'publish' => 'veröffentlicht',
+        'draft' => 'Entwurf',
+    ];
+
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     private ?int $externalId = null;
 
@@ -48,6 +54,9 @@ class Production extends Base
 
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $grandstand = null;
+
+    #[ORM\Column(length: 20, options: ['default' => 'draft'])]
+    private string $websiteStatus = 'draft';
 
     #[ORM\OneToMany(targetEntity: ProductionTechnician::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $technicians;
@@ -185,6 +194,18 @@ class Production extends Base
     public function setGrandstand(?string $grandstand): static
     {
         $this->grandstand = $grandstand;
+
+        return $this;
+    }
+
+    public function getWebsiteStatus(): string
+    {
+        return $this->websiteStatus;
+    }
+
+    public function setWebsiteStatus(string $websiteStatus): static
+    {
+        $this->websiteStatus = $websiteStatus;
 
         return $this;
     }

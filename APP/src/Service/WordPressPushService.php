@@ -17,9 +17,6 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 class WordPressPushService
 {
-    /** Event categories that WordPress maintains itself. */
-    private const SERVER_CATEGORIES = ['ausverkauft-event'];
-
     public function __construct(
         private HttpClientInterface $httpClient,
         private EntityManagerInterface $entityManager,
@@ -113,6 +110,74 @@ class WordPressPushService
         return $result;
     }
 
+    /**
+     * Removes a production from WordPress (into the trash) before it is deleted here;
+     * WordPress refuses while it holds reservations for it.
+     */
+    public function deleteProduction(Production $production): array
+    {
+        if ($production->getExternalId() === null) {
+            return ['status' => 'skipped', 'message' => 'Nicht in WordPress'];
+        }
+
+        return $this->request('DELETE', '/productions/' . $production->getExternalId());
+    }
+
+    /**
+     * Removes a performance from WordPress before it is deleted here. WordPress renumbers
+     * the later performances of the production, so the local indexes follow.
+     */
+    public function deleteProductionEvent(ProductionEvent $event): array
+    {
+        $production = $event->getProduction();
+        $eventIndex = $event->getEventIndex();
+        if ($production?->getExternalId() === null || $eventIndex === null) {
+            return ['status' => 'skipped', 'message' => 'Nicht in WordPress'];
+        }
+
+        $result = $this->request('DELETE', '/productions/' . $production->getExternalId() . '/events/' . $eventIndex);
+        if ($result['status'] === 'success') {
+            $event->setEventIndex(null);
+            foreach ($production->getEvents() as $other) {
+                if ($other->getEventIndex() !== null && $other->getEventIndex() > $eventIndex) {
+                    $other->setEventIndex($other->getEventIndex() - 1);
+                }
+            }
+            $this->entityManager->flush();
+        }
+
+        return $result;
+    }
+
+    /**
+     * Pushes productions again whose last push failed. Runs before an import, so a
+     * production WordPress created without us learning its id gets linked (WordPress
+     * recognises it by our id) instead of imported a second time.
+     *
+     * @param Production[] $productions
+     */
+    public function retryProductions(array $productions): void
+    {
+        foreach ($productions as $production) {
+            $this->pushProduction($production);
+        }
+    }
+
+    /**
+     * Pushes performances again whose last push failed. Runs after an import, which has
+     * already linked performances WordPress created without us learning their index.
+     *
+     * @param ProductionEvent[] $events
+     */
+    public function retryProductionEvents(array $events): void
+    {
+        foreach ($events as $event) {
+            if ($event->getLastPushError() !== null) {
+                $this->pushProductionEvent($event);
+            }
+        }
+    }
+
     private function buildProductionPayload(Production $production): array
     {
         $payload = [
@@ -122,6 +187,7 @@ class WordPressPushService
             'needs_sound_technician' => $production->isNeedsSoundTechnician(),
             'needs_setup_technician' => $production->isNeedsSetupTechnician(),
             'grandstand' => $production->getGrandstand(),
+            'post_status' => $production->getWebsiteStatus(),
             'technicians' => [],
             'contact_persons' => [],
         ];
@@ -222,7 +288,7 @@ class WordPressPushService
             $payload['categories'] = [];
             foreach ($event->getCategories() as $category) {
                 $slug = $category->getSlug();
-                if ($slug !== null && !\in_array($slug, self::SERVER_CATEGORIES, true)) {
+                if ($slug !== null && !\in_array($slug, BruxApiSyncService::SERVER_CATEGORIES, true)) {
                     $payload['categories'][] = $slug;
                 }
             }

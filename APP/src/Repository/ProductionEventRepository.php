@@ -2,7 +2,6 @@
 
 namespace App\Repository;
 
-use App\Entity\Production;
 use App\Entity\ProductionEvent;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -36,6 +35,15 @@ class ProductionEventRepository extends ServiceEntityRepository
             ->setParameter('to', \DateTimeImmutable::createFromInterface($to))
             ->orderBy('pe.date', 'ASC')
             ->addOrderBy('pe.timeFrom', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return ProductionEvent[] performances whose last push failed */
+    public function findFailedPushes(): array
+    {
+        return $this->createQueryBuilder('pe')
+            ->andWhere('pe.lastPushError IS NOT NULL')
             ->getQuery()
             ->getResult();
     }

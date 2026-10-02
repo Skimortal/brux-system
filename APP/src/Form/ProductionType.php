@@ -37,6 +37,12 @@ final class ProductionType extends AbstractType
         // website content: disabled while WordPress owns it
         $builder
             ->add('title', TextType::class, ['label' => 'Titel', 'disabled' => $locked('title'), 'constraints' => [new NotBlank(message: 'Bitte einen Titel eingeben.')]])
+            ->add('websiteStatus', ChoiceType::class, [
+                'label' => 'Auf der Website',
+                'expanded' => true,
+                'choices' => array_flip(Production::WEBSITE_STATUS_LABELS),
+                'disabled' => $locked('websiteStatus'),
+            ])
             ->add('permalink', UrlType::class, ['label' => 'Link zur Website', 'required' => false, 'default_protocol' => 'https', 'disabled' => $locked('permalink')])
             ->add('postThumbnailUrl', UrlType::class, ['label' => 'Bild-URL', 'required' => false, 'default_protocol' => 'https', 'disabled' => $locked('postThumbnailUrl')])
             ->add('imageFile', FileType::class, [

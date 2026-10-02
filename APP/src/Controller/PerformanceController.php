@@ -82,13 +82,20 @@ final class PerformanceController extends AbstractController
 
     #[Route('/{id}/loeschen', name: 'app_performance_delete', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function delete(ProductionEvent $performance, Request $request, EntityManagerInterface $em, FieldOwnership $ownership): Response
+    public function delete(ProductionEvent $performance, Request $request, EntityManagerInterface $em, FieldOwnership $ownership, WordPressPushService $push): Response
     {
         if (!$this->isCsrfTokenValid('delete-performance-' . $performance->getId(), $request->request->getString('_token'))) {
             throw $this->createAccessDeniedException();
         }
         if ($ownership->isLocked($performance, 'date')) {
             throw $this->createAccessDeniedException('Vorstellungen dieser Produktion werden in WordPress gelöscht.');
+        }
+        // otherwise the next import would bring it back
+        $result = $push->deleteProductionEvent($performance);
+        if ($result['status'] === 'error') {
+            $this->addFlash('danger', 'Nicht gelöscht, die Website hat abgelehnt: ' . ($result['message'] ?? ''));
+
+            return $this->backToCalendar($request, $this->page);
         }
         if (($staffing = $performance->getAppointment()) !== null) {
             $em->remove($staffing);

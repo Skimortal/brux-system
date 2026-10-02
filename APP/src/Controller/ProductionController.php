@@ -104,8 +104,19 @@ final class ProductionController extends AbstractController
 
     #[Route('/{id}/loeschen', name: 'app_production_delete', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function delete(Production $production, Request $request, EntityManagerInterface $em): Response
+    public function delete(Production $production, Request $request, EntityManagerInterface $em, WordPressPushService $push): Response
     {
+        if (!$this->isCsrfTokenValid('delete-production-' . $production->getId(), $request->request->getString('_token'))) {
+            throw $this->createAccessDeniedException();
+        }
+        // otherwise the next import would bring it back
+        $result = $push->deleteProduction($production);
+        if ($result['status'] === 'error') {
+            $this->addFlash('danger', 'Nicht gelöscht, die Website hat abgelehnt: ' . ($result['message'] ?? ''));
+
+            return $this->redirectToRoute('app_production_show', ['id' => $production->getId()], 303);
+        }
+
         return $this->deleteEntity($request, $em, $production, 'delete-production-' . $production->getId(), 'app_production_index', 'Produktion');
     }
 

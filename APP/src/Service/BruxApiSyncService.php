@@ -24,6 +24,9 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 class BruxApiSyncService
 {
+    /** Event categories that WordPress sets itself. */
+    public const SERVER_CATEGORIES = ['ausverkauft-event'];
+
     public function __construct(
         private HttpClientInterface $httpClient,
         private EntityManagerInterface $entityManager,
@@ -33,6 +36,7 @@ class BruxApiSyncService
         private EventCategoryRepository $eventCategoryRepository,
         private FieldOwnership $ownership,
         private AppointmentManager $appointmentManager,
+        private WordPressPushService $push,
         private LoggerInterface $logger,
         private string $apiUrl,
     ) {}
@@ -51,6 +55,7 @@ class BruxApiSyncService
             'errors' => [],
         ];
         $syncedAt = new \DateTimeImmutable();
+        $this->push->retryProductions($this->productionRepository->findFailedPushes());
 
         try {
             $response = $this->httpClient->request('GET', $this->apiUrl, ['timeout' => 30]);
@@ -73,6 +78,7 @@ class BruxApiSyncService
             }
 
             $this->entityManager->flush();
+            $this->push->retryProductionEvents($this->productionEventRepository->findFailedPushes());
         } catch (\Throwable $e) {
             $stats['errors'][] = 'API-Fehler: ' . $e->getMessage();
             $this->logger->error('API sync error', ['error' => $e->getMessage()]);
@@ -98,34 +104,38 @@ class BruxApiSyncService
             throw new \RuntimeException('Production has no ID');
         }
 
-        $production = $this->productionRepository->findOneBy(['externalId' => $externalId]);
-        if ($production === null) {
-            $production = new Production();
-            $production->setExternalId($externalId);
+        $title = (string) $this->decode($data['title'] ?? '');
+        $production = $this->productionRepository->findOneBy(['externalId' => $externalId])
+            ?? $this->productionRepository->findUnconfirmedPush($title);
+        $isNew = $production === null;
+        if ($isNew) {
+            $production = (new Production())->setWebsiteStatus('publish');
             ++$stats['productions_created'];
         } else {
             ++$stats['productions_updated'];
         }
+        $production->setExternalId($externalId);
+        $takes = fn (string $field): bool => $isNew || $this->owns('production', $field);
 
-        if ($this->owns('production', 'title') || $production->getTitle() === null) {
-            $production->setTitle((string) $this->decode($data['title'] ?? ''));
+        if ($takes('title')) {
+            $production->setTitle($title);
         }
-        if ($this->owns('production', 'permalink')) {
+        if ($takes('permalink')) {
             $production->setPermalink($data['permalink'] ?? null);
         }
-        if ($this->owns('production', 'postThumbnailUrl')) {
+        if ($takes('postThumbnailUrl')) {
             $production->setPostThumbnailUrl($data['post_thumbnail_url'] ?? null);
         }
-        if ($this->owns('production', 'contentHtml')) {
+        if ($takes('contentHtml')) {
             $production->setContentHtml($data['content_html'] ?? null);
         }
-        if ($this->owns('production', 'excerptHtml')) {
+        if ($takes('excerptHtml')) {
             $production->setExcerptHtml($data['excerpt_html'] ?? null);
         }
         $production->setSyncedAt($syncedAt);
         $this->entityManager->persist($production);
 
-        if ($this->owns('production', 'priceList') && isset($data['prices']) && \is_array($data['prices'])) {
+        if ($takes('priceList') && isset($data['prices']) && \is_array($data['prices'])) {
             $this->syncProductionPrices($production, $data['prices']);
         }
         if (isset($data['events']) && \is_array($data['events'])) {
@@ -162,56 +172,60 @@ class BruxApiSyncService
                 $eventIndex = isset($eventData['event_index']) ? (int) $eventData['event_index'] : null;
 
                 $event = $this->findEvent($production, $eventIndex, $date, $eventData['time_from'] ?? null);
-                if ($event === null) {
+                $isNew = $event === null;
+                if ($isNew) {
                     $event = new ProductionEvent();
                     $production->addEvent($event);
                     ++$stats['events_created'];
                 } else {
                     ++$stats['events_updated'];
                 }
+                $takes = fn (string $field): bool => $isNew || $this->owns('production_event', $field);
 
                 $event->setEventIndex($eventIndex);
-                if ($this->owns('production_event', 'date') || $event->getDate() === null) {
+                if ($takes('date')) {
                     $event->setDate($date);
                 }
-                if ($this->owns('production_event', 'timeFrom')) {
+                if ($takes('timeFrom')) {
                     $event->setTimeFrom($eventData['time_from'] ?? null);
                 }
-                if ($this->owns('production_event', 'timeTo')) {
+                if ($takes('timeTo')) {
                     $event->setTimeTo($eventData['time_to'] ?? null);
                 }
-                if ($this->owns('production_event', 'room') && !empty($eventData['room'])) {
+                if ($takes('room') && !empty($eventData['room'])) {
                     $event->setRoom($this->findOrCreateRoom((string) $eventData['room']));
                 }
-                if ($this->owns('production_event', 'status') && !empty($eventData['status'])) {
+                if ($takes('status') && !empty($eventData['status'])) {
                     $event->setStatus(EventStatus::tryFrom($eventData['status']));
                 }
-                if ($this->owns('production_event', 'reservationStatus') && !empty($eventData['reservation_status'])) {
+                if ($takes('reservationStatus') && !empty($eventData['reservation_status'])) {
                     $event->setReservationStatus(EventReservationStatus::tryFrom($eventData['reservation_status']));
                 }
-                if ($this->owns('production_event', 'quota')) {
+                if ($takes('quota')) {
                     $event->setQuota($eventData['quota'] ?? null);
                 }
-                if ($this->owns('production_event', 'incomingTotal')) {
+                if ($takes('incomingTotal')) {
                     $event->setIncomingTotal($eventData['incoming_total'] ?? null);
                 }
-                if ($this->owns('production_event', 'freeSeats')) {
+                if ($takes('freeSeats')) {
                     $event->setFreeSeats($eventData['free_seats'] ?? null);
                 }
-                if ($this->owns('production_event', 'reservationNote')) {
+                if ($takes('reservationNote')) {
                     $event->setReservationNote($eventData['reservation_note'] ?? null);
                 }
-                if ($this->owns('production_event', 'reservations')) {
+                if ($takes('reservations')) {
                     $event->setReservations(\is_array($eventData['reservations'] ?? null) ? $eventData['reservations'] : []);
                 }
                 $event->setSyncedAt($syncedAt);
                 $this->entityManager->persist($event);
 
-                if ($this->owns('production_event', 'categories') && isset($eventData['categories']) && \is_array($eventData['categories'])) {
-                    $this->syncEventCategories($event, $eventData['categories'], $stats);
+                if (isset($eventData['categories']) && \is_array($eventData['categories'])) {
+                    $this->syncEventCategories($event, $eventData['categories'], $stats, $takes('categories'));
                 }
-                if ($this->owns('production_event', 'priceList') && isset($eventData['prices']) && \is_array($eventData['prices'])) {
-                    $this->syncEventPrices($event, $eventData['prices']);
+                if (isset($eventData['prices']) && \is_array($eventData['prices'])) {
+                    $takes('priceList')
+                        ? $this->syncEventPrices($event, $eventData['prices'])
+                        : $this->syncIncomingReservations($event, $eventData['prices']);
                 }
 
                 // keep the staffing appointment on the (possibly moved) performance
@@ -268,13 +282,21 @@ class BruxApiSyncService
         return $room;
     }
 
-    private function syncEventCategories(ProductionEvent $event, array $categoriesData, array &$stats): void
+    /**
+     * Takes all categories, or only the ones WordPress sets itself (sold out) when the
+     * categories are maintained here.
+     */
+    private function syncEventCategories(ProductionEvent $event, array $categoriesData, array &$stats, bool $all): void
     {
-        $event->getCategories()->clear();
+        foreach ($event->getCategories()->toArray() as $category) {
+            if ($all || \in_array($category->getSlug(), self::SERVER_CATEGORIES, true)) {
+                $event->removeCategory($category);
+            }
+        }
 
         foreach ($categoriesData as $categoryData) {
             $externalId = $categoryData['id'] ?? null;
-            if (!$externalId) {
+            if (!$externalId || (!$all && !\in_array($categoryData['slug'] ?? null, self::SERVER_CATEGORIES, true))) {
                 continue;
             }
             $category = $this->eventCategoryRepository->findByExternalId($externalId);
@@ -306,6 +328,22 @@ class BruxApiSyncService
             $price->setIncomingReservations($priceData['incoming_reservations'] ?? null);
             $event->addPriceList($price);
             $this->entityManager->persist($price);
+        }
+    }
+
+    /** Updates the reservation counts WordPress keeps per price, leaving the prices as they are here. */
+    private function syncIncomingReservations(ProductionEvent $event, array $pricesData): void
+    {
+        $incoming = [];
+        foreach ($pricesData as $priceData) {
+            if (isset($priceData['price_index'])) {
+                $incoming[(int) $priceData['price_index']] = $priceData['incoming_reservations'] ?? null;
+            }
+        }
+        foreach ($event->getPriceList() as $price) {
+            if ($price->getPriceIndex() !== null && \array_key_exists($price->getPriceIndex(), $incoming)) {
+                $price->setIncomingReservations($incoming[$price->getPriceIndex()]);
+            }
         }
     }
 

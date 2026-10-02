@@ -7,12 +7,12 @@ parameters:
     avatars_dir: '%kernel.project_dir%/public/uploads/avatars'
     production_images_dir: '%kernel.project_dir%/public/uploads/productions'
     wordpress_api_url: '%env(WORDPRESS_API_URL)%'
-    # Fields that WordPress owns while it is the leading system. They are read-only here
-    # for records that come from WordPress and are overwritten by every sync. Remove a
-    # field from this list once this system should own it.
+    # Fields that WordPress owns. They are read-only here for records that come from
+    # WordPress and are overwritten by every import. Since 2026-10 this system leads;
+    # only what WordPress generates or computes itself is left.
     wordpress_owned_fields:
-        production: [title, permalink, postThumbnailUrl, contentHtml, excerptHtml, priceList]
-        production_event: [date, timeFrom, timeTo, room, status, reservationStatus, quota, incomingTotal, freeSeats, reservationNote, reservations, categories, priceList]
+        production: [permalink]
+        production_event: [incomingTotal, freeSeats, reservations]
 
 services:
     # default configuration for services in *this* file
