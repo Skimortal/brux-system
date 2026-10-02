@@ -1,0 +1,148 @@
+<?php
+
+namespace App\Tests\Unit;
+
+use App\Entity\EventCategory;
+use App\Entity\Production;
+use App\Entity\ProductionEvent;
+use App\Service\FieldOwnership;
+use App\Service\WordPressPushService;
+use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
+
+final class WordPressPushServiceTest extends TestCase
+{
+    /** @var list<array{method: string, url: string, body: ?array, auth: ?string}> */
+    private array $requests = [];
+
+    public function testNewProductionIsCreatedWithItsPerformances(): void
+    {
+        $production = (new Production())->setTitle('Neue Eigenproduktion');
+        $event = (new ProductionEvent())->setDate(new \DateTime('2027-03-15'))->setTimeFrom('20:00')->setEventIndex(4);
+        $event->addCategory((new EventCategory())->setName('Premiere')->setSlug('premiere-event'));
+        $event->addCategory((new EventCategory())->setName('Ausverkauft')->setSlug('ausverkauft-event'));
+        $production->addEvent($event);
+
+        $result = $this->service([
+            ['success' => true, 'action' => 'created', 'external_id' => 3145],
+            ['success' => true, 'action' => 'created', 'event_index' => 0],
+        ])->pushProduction($production);
+
+        self::assertSame('success', $result['status']);
+        self::assertSame(3145, $production->getExternalId());
+        self::assertSame(0, $event->getEventIndex());
+
+        [$create, $createEvent] = $this->requests;
+        self::assertSame('PUT', $create['method']);
+        self::assertSame('https://wp.test/wp-json/brux-crud/v1/production', $create['url']);
+        self::assertSame('Basic ' . base64_encode('brux_api_crud:app pass word'), $create['auth']);
+        self::assertNull($create['body']['external_id']);
+        self::assertSame('Neue Eigenproduktion', $create['body']['title']);
+        self::assertArrayNotHasKey('events', $create['body']);
+
+        self::assertSame(3145, $createEvent['body']['production_external_id']);
+        self::assertNull($createEvent['body']['event_index'], 'a local index means nothing to WordPress');
+        self::assertSame('2027-03-15', $createEvent['body']['date']);
+        self::assertSame(['premiere-event'], $createEvent['body']['categories']);
+        self::assertArrayNotHasKey('incoming_total', $createEvent['body']);
+        self::assertArrayNotHasKey('free_seats', $createEvent['body']);
+        self::assertArrayNotHasKey('reservations', $createEvent['body']);
+    }
+
+    public function testWordPressProductionOnlyCarriesFieldsOwnedHere(): void
+    {
+        $production = (new Production())->setTitle('Aus WordPress')->setExternalId(1977);
+
+        $this->service([['success' => true, 'action' => 'updated', 'external_id' => 1977]])->pushProduction($production);
+
+        $body = $this->requests[0]['body'];
+        self::assertSame(1977, $body['external_id']);
+        self::assertArrayHasKey('contact_persons', $body);
+        self::assertArrayHasKey('needs_sound_technician', $body);
+        self::assertArrayNotHasKey('title', $body);
+        self::assertArrayNotHasKey('prices', $body);
+        self::assertArrayNotHasKey('content_html', $body);
+    }
+
+    public function testWordPressPerformanceOnlyCarriesFieldsOwnedHere(): void
+    {
+        $production = (new Production())->setTitle('Aus WordPress')->setExternalId(1977);
+        $event = (new ProductionEvent())->setDate(new \DateTime('2027-03-15'))->setEventIndex(2);
+        $production->addEvent($event);
+
+        $this->service([['success' => true]])->pushProductionEvent($event);
+
+        $body = $this->requests[0]['body'];
+        self::assertSame(2, $body['event_index']);
+        self::assertSame(1977, $body['production_external_id']);
+        self::assertArrayNotHasKey('date', $body);
+        self::assertArrayNotHasKey('categories', $body);
+        self::assertArrayNotHasKey('prices', $body);
+    }
+
+    public function testRejectionIsReportedAndRecorded(): void
+    {
+        $production = (new Production())->setTitle('Aus WordPress')->setExternalId(1977);
+
+        $result = $this->service([new MockResponse(json_encode(['code' => 'brux_conflict', 'message' => 'Konflikt']), ['http_code' => 409])])
+            ->pushProduction($production);
+
+        self::assertSame('error', $result['status']);
+        self::assertSame('Konflikt', $result['message']);
+        self::assertSame('Konflikt', $production->getLastPushError());
+    }
+
+    public function testNothingIsSentWithoutCredentials(): void
+    {
+        $service = new WordPressPushService(
+            new MockHttpClient(fn () => self::fail('no request expected')),
+            $this->createMock(EntityManagerInterface::class),
+            new FieldOwnership([]),
+            new NullLogger(),
+            'https://wp.test/wp-json/brux-crud/v1',
+            'brux_api_crud',
+            '',
+        );
+
+        self::assertFalse($service->isConfigured());
+        self::assertSame('skipped', $service->pushProduction(new Production())['status']);
+    }
+
+    /**
+     * @param list<array|MockResponse> $responses
+     */
+    private function service(array $responses): WordPressPushService
+    {
+        $client = new MockHttpClient(function (string $method, string $url, array $options) use (&$responses): MockResponse {
+            $headers = [];
+            foreach ($options['normalized_headers'] ?? [] as $name => $lines) {
+                $headers[$name] = substr($lines[0], \strlen($name) + 2);
+            }
+            $this->requests[] = [
+                'method' => $method,
+                'url' => $url,
+                'body' => isset($options['body']) && \is_string($options['body']) ? json_decode($options['body'], true) : null,
+                'auth' => $headers['authorization'] ?? null,
+            ];
+            $next = array_shift($responses);
+
+            return $next instanceof MockResponse ? $next : new MockResponse(json_encode($next), ['http_code' => 200]);
+        });
+
+        return new WordPressPushService(
+            $client,
+            $this->createMock(EntityManagerInterface::class),
+            new FieldOwnership([
+                'production' => ['title', 'permalink', 'postThumbnailUrl', 'contentHtml', 'excerptHtml', 'priceList'],
+                'production_event' => ['date', 'timeFrom', 'timeTo', 'room', 'status', 'reservationStatus', 'quota', 'incomingTotal', 'freeSeats', 'reservationNote', 'reservations', 'categories', 'priceList'],
+            ]),
+            new NullLogger(),
+            'https://wp.test/wp-json/brux-crud/v1/',
+            'brux_api_crud',
+            'app pass word',
+        );
+    }
+}

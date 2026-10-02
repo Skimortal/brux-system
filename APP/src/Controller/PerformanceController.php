@@ -7,7 +7,6 @@ use App\Entity\ProductionEvent;
 use App\Form\AppointmentType;
 use App\Form\PerformanceContactsType;
 use App\Form\PerformanceType;
-use App\Repository\ProductionEventRepository;
 use App\Service\AppointmentManager;
 use App\Service\FieldOwnership;
 use App\Service\WordPressPushService;
@@ -28,7 +27,7 @@ final class PerformanceController extends AbstractController
     }
 
     #[Route('/neu', name: 'app_performance_new', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $em, ProductionEventRepository $performances, FieldOwnership $ownership, WordPressPushService $push): Response
+    public function new(Request $request, EntityManagerInterface $em, FieldOwnership $ownership, WordPressPushService $push): Response
     {
         $performance = new ProductionEvent();
         $form = $this->createForm(PerformanceType::class, $performance);
@@ -38,12 +37,15 @@ final class PerformanceController extends AbstractController
             if ($production->isFromWordPress() && !$ownership->canCreatePerformances()) {
                 throw $this->createAccessDeniedException('Vorstellungen dieser Produktion werden in WordPress angelegt.');
             }
-            $performance->setEventIndex($performances->nextEventIndex($production));
             $this->numberPrices($performance);
             $em->persist($performance);
             $em->flush();
-            $push->pushProductionEvent($performance);
-            $this->addFlash('success', 'Vorstellung angelegt.');
+            $result = $push->pushProductionEvent($performance);
+            if ($result['status'] === 'error') {
+                $this->addFlash('warning', 'Angelegt, aber die Übertragung an die Website ist fehlgeschlagen: ' . ($result['message'] ?? ''));
+            } else {
+                $this->addFlash('success', 'Vorstellung angelegt.');
+            }
 
             return $this->backToCalendar($request, $this->page, ['panel' => 'pe-' . $performance->getId(), 'date' => $performance->getDate()?->format('Y-m-d')]);
         }

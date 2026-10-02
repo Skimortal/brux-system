@@ -229,7 +229,8 @@ class BruxApiSyncService
     }
 
     /**
-     * Matches by event index; rows without an index are matched by date and start time.
+     * Matches by event index; otherwise by date and start time, among performances
+     * WordPress has not numbered yet (created here, push still pending).
      */
     private function findEvent(Production $production, ?int $eventIndex, \DateTimeInterface $date, ?string $timeFrom): ?ProductionEvent
     {
@@ -239,11 +240,12 @@ class BruxApiSyncService
                     return $existing;
                 }
             }
-
-            return null;
         }
         foreach ($production->getEvents() as $existing) {
-            if ($existing->getDate()?->format('Y-m-d') === $date->format('Y-m-d') && $existing->getTimeFrom() === $timeFrom) {
+            if (($eventIndex === null || $existing->getEventIndex() === null)
+                && $existing->getDate()?->format('Y-m-d') === $date->format('Y-m-d')
+                && $existing->getTimeFrom() === $timeFrom
+            ) {
                 return $existing;
             }
         }

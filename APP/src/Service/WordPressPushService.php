@@ -8,37 +8,77 @@ use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
+/**
+ * Writes productions and performances to the WordPress site via the brux-crud/v1 API.
+ *
+ * PUT merges on the WordPress side: fields left out stay untouched. Records that already
+ * exist in WordPress therefore only carry the fields this system owns, so a push never
+ * overwrites newer WordPress edits with the copy from the last import.
+ */
 class WordPressPushService
 {
+    /** Event categories that WordPress maintains itself. */
+    private const SERVER_CATEGORIES = ['ausverkauft-event'];
+
     public function __construct(
         private HttpClientInterface $httpClient,
         private EntityManagerInterface $entityManager,
+        private FieldOwnership $ownership,
         private LoggerInterface $logger,
         private string $wordpressApiUrl,
-        private string $wordpressApiToken = '',
+        private string $wordpressApiUser = '',
+        private string $wordpressApiPassword = '',
     ) {}
 
     public function isConfigured(): bool
     {
-        return trim($this->wordpressApiUrl) !== '';
+        return trim($this->wordpressApiUrl) !== '' && trim($this->wordpressApiUser) !== '' && trim($this->wordpressApiPassword) !== '';
     }
 
+    public function getApiUrl(): string
+    {
+        return $this->wordpressApiUrl;
+    }
+
+    /**
+     * @return array{status: string, status_code?: int, message?: string, response?: mixed}
+     */
+    public function checkConnection(): array
+    {
+        return $this->request('GET', '/system-check');
+    }
+
+    /**
+     * Pushes a production; a production that is new to WordPress takes its performances along.
+     */
     public function pushProduction(Production $production): array
     {
-        $data = $this->buildProductionPayload($production);
-        $result = $this->sendPutRequest('/production', $data);
-        if ($result['status'] !== 'skipped') {
-            $production->markPushed($result['status'] === 'success' ? null : ($result['message'] ?? 'Unbekannter Fehler'));
-            $this->entityManager->flush();
+        $created = $production->getExternalId() === null;
+        $result = $this->request('PUT', '/production', $this->buildProductionPayload($production));
+        if ($result['status'] === 'skipped') {
+            return $result;
         }
 
-        // WordPress gibt external_id zurück → bei uns speichern
-        if ($result['status'] === 'success'
-            && isset($result['response']['external_id'])
-            && $production->getExternalId() === null
-        ) {
-            $production->setExternalId((int) $result['response']['external_id']);
-            $this->entityManager->flush();
+        $production->markPushed($result['status'] === 'success' ? null : ($result['message'] ?? 'Unbekannter Fehler'));
+        if ($result['status'] === 'success' && $created) {
+            $externalId = $result['response']['external_id'] ?? null;
+            if ($externalId !== null) {
+                $production->setExternalId((int) $externalId);
+            } else {
+                $this->logger->warning('WordPress Push: Antwort ohne external_id', ['production' => $production->getId()]);
+            }
+        }
+        $this->entityManager->flush();
+
+        if ($result['status'] === 'success' && $created && $production->getExternalId() !== null) {
+            foreach ($production->getEvents() as $event) {
+                // indexes given here before the production existed in WordPress mean nothing there
+                $event->setEventIndex(null);
+                $eventResult = $this->pushProductionEvent($event);
+                if ($eventResult['status'] === 'error') {
+                    $result = ['status' => 'error', 'message' => 'Vorstellung vom ' . $event->getDate()?->format('d.m.Y') . ': ' . ($eventResult['message'] ?? '')];
+                }
+            }
         }
 
         return $result;
@@ -46,12 +86,29 @@ class WordPressPushService
 
     public function pushProductionEvent(ProductionEvent $event): array
     {
-        $data = $this->buildEventPayload($event);
-        $result = $this->sendPutRequest('/event', $data);
-        if ($result['status'] !== 'skipped') {
-            $event->markPushed($result['status'] === 'success' ? null : ($result['message'] ?? 'Unbekannter Fehler'));
-            $this->entityManager->flush();
+        $production = $event->getProduction();
+        // WordPress needs the production before its performances; pushing it takes them along
+        if ($production !== null && $production->getExternalId() === null) {
+            return $this->pushProduction($production);
         }
+
+        $created = $event->getEventIndex() === null;
+        $result = $this->request('PUT', '/event', $this->buildEventPayload($event));
+        if ($result['status'] === 'skipped') {
+            return $result;
+        }
+
+        $event->markPushed($result['status'] === 'success' ? null : ($result['message'] ?? 'Unbekannter Fehler'));
+        if ($result['status'] === 'success' && $created) {
+            $response = $result['response'] ?? [];
+            $eventIndex = $response['event_index'] ?? $response['event']['event_index'] ?? null;
+            if ($eventIndex !== null) {
+                $event->setEventIndex((int) $eventIndex);
+            } else {
+                $this->logger->warning('WordPress Push: Antwort ohne event_index', ['event' => $event->getId()]);
+            }
+        }
+        $this->entityManager->flush();
 
         return $result;
     }
@@ -61,29 +118,13 @@ class WordPressPushService
         $payload = [
             'id' => $production->getId(),
             'external_id' => $production->getExternalId(),
-            'title' => $production->getTitle(),
-            'permalink' => $production->getPermalink(),
-            'post_thumbnail_url' => $production->getPostThumbnailUrl(),
-            'content_html' => $production->getContentHtml(),
-            'excerpt_html' => $production->getExcerptHtml(),
             'needs_lighting_technician' => $production->isNeedsLightingTechnician(),
             'needs_sound_technician' => $production->isNeedsSoundTechnician(),
             'needs_setup_technician' => $production->isNeedsSetupTechnician(),
             'grandstand' => $production->getGrandstand(),
-            'prices' => [],
             'technicians' => [],
             'contact_persons' => [],
-            'events' => [],
         ];
-
-        foreach ($production->getPriceList() as $price) {
-            $payload['prices'][] = [
-                'index' => $price->getPriceIndex(),
-                'price_label' => $price->getPriceLabel(),
-                'category_label' => $price->getCategoryLabel(),
-                'parent_reserved' => $price->getParentReserved(),
-            ];
-        }
 
         foreach ($production->getTechnicians() as $technician) {
             $payload['technicians'][] = [
@@ -102,8 +143,31 @@ class WordPressPushService
             ];
         }
 
-        foreach ($production->getEvents() as $event) {
-            $payload['events'][] = $this->buildEventPayload($event);
+        $isNew = $production->getExternalId() === null;
+        $owned = fn (string $field): bool => $isNew || !$this->ownership->isWordPressField('production', $field);
+
+        if ($owned('title')) {
+            $payload['title'] = $production->getTitle();
+        }
+        if ($owned('postThumbnailUrl')) {
+            $payload['post_thumbnail_url'] = $production->getPostThumbnailUrl();
+        }
+        if ($owned('contentHtml')) {
+            $payload['content_html'] = $production->getContentHtml();
+        }
+        if ($owned('excerptHtml')) {
+            $payload['excerpt_html'] = $production->getExcerptHtml();
+        }
+        if ($owned('priceList')) {
+            $payload['prices'] = [];
+            foreach ($production->getPriceList() as $price) {
+                $payload['prices'][] = [
+                    'index' => $price->getPriceIndex(),
+                    'price_label' => $price->getPriceLabel(),
+                    'category_label' => $price->getCategoryLabel(),
+                    'parent_reserved' => $price->getParentReserved(),
+                ];
+            }
         }
 
         return $payload;
@@ -113,42 +177,10 @@ class WordPressPushService
     {
         $payload = [
             'id' => $event->getId(),
-            'event_index' => $event->getEventIndex(),
-            'production_id' => $event->getProduction()?->getId(),
             'production_external_id' => $event->getProduction()?->getExternalId(),
-            'date' => $event->getDate()?->format('Y-m-d'),
-            'time_from' => $event->getTimeFrom(),
-            'time_to' => $event->getTimeTo(),
-            'room' => $event->getRoom()?->getExternalId(),
-            'status' => $event->getStatus()?->value,
-            'reservation_status' => $event->getReservationStatus()?->value,
-            'quota' => $event->getQuota(),
-            'incoming_total' => $event->getIncomingTotal(),
-            'free_seats' => $event->getFreeSeats(),
-            'reservation_note' => $event->getReservationNote(),
-            'reservations' => $event->getReservations(),
-            'categories' => [],
-            'prices' => [],
+            'event_index' => $event->getEventIndex(),
             'contact_persons' => [],
         ];
-
-        foreach ($event->getCategories() as $category) {
-            $payload['categories'][] = [
-                'id' => $category->getExternalId(),
-                'name' => $category->getName(),
-                'slug' => $category->getSlug(),
-            ];
-        }
-
-        foreach ($event->getPriceList() as $price) {
-            $payload['prices'][] = [
-                'price_index' => $price->getPriceIndex(),
-                'price_label' => $price->getPriceLabel(),
-                'category_label' => $price->getCategoryLabel(),
-                'reserved_seats' => $price->getReservedSeats(),
-                'incoming_reservations' => $price->getIncomingReservations(),
-            ];
-        }
 
         foreach ($event->getContactPersons() as $contactPerson) {
             $payload['contact_persons'][] = [
@@ -159,56 +191,95 @@ class WordPressPushService
             ];
         }
 
+        $isNew = $event->getEventIndex() === null;
+        $owned = fn (string $field): bool => $isNew || !$this->ownership->isWordPressField('production_event', $field);
+
+        if ($owned('date')) {
+            $payload['date'] = $event->getDate()?->format('Y-m-d');
+        }
+        if ($owned('timeFrom')) {
+            $payload['time_from'] = $event->getTimeFrom();
+        }
+        if ($owned('timeTo')) {
+            $payload['time_to'] = $event->getTimeTo();
+        }
+        if ($owned('room') && $event->getRoom()?->getExternalId() !== null) {
+            $payload['room'] = $event->getRoom()->getExternalId();
+        }
+        if ($owned('status') && $event->getStatus() !== null) {
+            $payload['status'] = $event->getStatus()->value;
+        }
+        if ($owned('reservationStatus') && $event->getReservationStatus() !== null) {
+            $payload['reservation_status'] = $event->getReservationStatus()->value;
+        }
+        if ($owned('quota') && $event->getQuota() !== null) {
+            $payload['quota'] = $event->getQuota();
+        }
+        if ($owned('reservationNote') && $event->getReservationNote() !== null) {
+            $payload['reservation_note'] = $event->getReservationNote();
+        }
+        if ($owned('categories')) {
+            $payload['categories'] = [];
+            foreach ($event->getCategories() as $category) {
+                $slug = $category->getSlug();
+                if ($slug !== null && !\in_array($slug, self::SERVER_CATEGORIES, true)) {
+                    $payload['categories'][] = $slug;
+                }
+            }
+        }
+        if ($owned('priceList')) {
+            $payload['prices'] = [];
+            foreach ($event->getPriceList() as $price) {
+                $payload['prices'][] = [
+                    'price_index' => $price->getPriceIndex(),
+                    'price_label' => $price->getPriceLabel(),
+                    'category_label' => $price->getCategoryLabel(),
+                    'reserved_seats' => $price->getReservedSeats(),
+                ];
+            }
+        }
+
         return $payload;
     }
 
-    private function sendPutRequest(string $endpoint, array $data): array
+    /**
+     * @return array{status: string, status_code?: int, message?: string, response?: mixed}
+     */
+    private function request(string $method, string $endpoint, ?array $data = null): array
     {
-        if (empty($this->wordpressApiUrl)) {
-            $this->logger->info('WordPress Push: URL nicht konfiguriert, Request übersprungen.', [
-                'endpoint' => $endpoint,
-            ]);
+        if (!$this->isConfigured()) {
+            $this->logger->info('WordPress Push: nicht konfiguriert, Request übersprungen.', ['endpoint' => $endpoint]);
 
-            return ['status' => 'skipped', 'message' => 'WordPress API URL nicht konfiguriert'];
+            return ['status' => 'skipped', 'message' => 'WordPress API nicht konfiguriert'];
         }
 
         $url = rtrim($this->wordpressApiUrl, '/') . $endpoint;
+        $options = [
+            'auth_basic' => [trim($this->wordpressApiUser), trim($this->wordpressApiPassword)],
+            'headers' => ['Accept' => 'application/json'],
+            'timeout' => 15,
+        ];
+        if ($data !== null) {
+            $options['json'] = $data;
+        }
 
         try {
-            $headers = [
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ];
-            if (trim($this->wordpressApiToken) !== '') {
-                $headers['Authorization'] = 'Bearer ' . trim($this->wordpressApiToken);
-            }
-            $response = $this->httpClient->request('PUT', $url, [
-                'json' => $data,
-                'headers' => $headers,
-                'timeout' => 15,
-            ]);
-
+            $response = $this->httpClient->request($method, $url, $options);
             $statusCode = $response->getStatusCode();
             $responseData = $response->toArray(false);
 
-            if ($statusCode < 200 || $statusCode >= 300) {
-                $message = \is_array($responseData) && isset($responseData['message']) ? (string) $responseData['message'] : 'HTTP ' . $statusCode;
-                $this->logger->error('WordPress Push abgelehnt', ['url' => $url, 'status_code' => $statusCode, 'message' => $message]);
+            if ($statusCode < 200 || $statusCode >= 300 || ($responseData['success'] ?? true) === false) {
+                $message = isset($responseData['message']) ? (string) $responseData['message'] : 'HTTP ' . $statusCode;
+                $this->logger->error('WordPress Push abgelehnt', ['method' => $method, 'url' => $url, 'status_code' => $statusCode, 'message' => $message]);
 
                 return ['status' => 'error', 'status_code' => $statusCode, 'message' => $message];
             }
 
-            $this->logger->info('WordPress Push erfolgreich', [
-                'url' => $url,
-                'status_code' => $statusCode,
-            ]);
+            $this->logger->info('WordPress Push erfolgreich', ['method' => $method, 'url' => $url, 'status_code' => $statusCode]);
 
             return ['status' => 'success', 'status_code' => $statusCode, 'response' => $responseData];
         } catch (\Throwable $e) {
-            $this->logger->error('WordPress Push fehlgeschlagen', [
-                'url' => $url,
-                'error' => $e->getMessage(),
-            ]);
+            $this->logger->error('WordPress Push fehlgeschlagen', ['method' => $method, 'url' => $url, 'error' => $e->getMessage()]);
 
             return ['status' => 'error', 'message' => $e->getMessage()];
         }

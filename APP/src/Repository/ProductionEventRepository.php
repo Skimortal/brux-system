@@ -40,19 +40,6 @@ class ProductionEventRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /** The event index for a new performance, following the ones WordPress numbered. */
-    public function nextEventIndex(Production $production): int
-    {
-        $max = $this->createQueryBuilder('pe')
-            ->select('MAX(pe.eventIndex)')
-            ->andWhere('pe.production = :production')
-            ->setParameter('production', $production)
-            ->getQuery()
-            ->getSingleScalarResult();
-
-        return $max === null ? 0 : (int) $max + 1;
-    }
-
     public function findLastSyncedAt(): ?\DateTimeImmutable
     {
         $value = $this->createQueryBuilder('pe')

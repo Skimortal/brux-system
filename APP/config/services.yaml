@@ -31,7 +31,8 @@ services:
     App\Service\WordPressPushService:
         arguments:
             $wordpressApiUrl: '%wordpress_api_url%'
-            $wordpressApiToken: '%env(WORDPRESS_API_TOKEN)%'
+            $wordpressApiUser: '%env(WORDPRESS_API_USER)%'
+            $wordpressApiPassword: '%env(WORDPRESS_API_PASSWORD)%'
 
     App\Service\BruxApiSyncService:
         arguments:
