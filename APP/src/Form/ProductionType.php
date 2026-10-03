@@ -28,6 +28,7 @@ final class ProductionType extends AbstractType
 {
     private const SECTIONS = [
         'generalInfo' => 'Allgemeine Infos',
+        'intro' => 'Einleitung (optional, steht vor der Kurzbeschreibung)',
         'shortDescription' => 'Kurzbeschreibung',
         'description' => 'Stückbeschreibung',
         'pressQuotes' => 'Pressestimmen',

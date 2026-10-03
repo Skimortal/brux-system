@@ -91,4 +91,21 @@ final class WebsiteContentTest extends TestCase
         self::assertSame('<p>Nur Text</p>', $production->getDescription());
         self::assertNull($production->getSubtitle());
     }
+
+    public function testDescriptionBeforeTheShortOneStaysInFront(): void
+    {
+        $post = '<h2 class="untertitel">von X | Y</h2>'
+            . '<p class="stueckbeschreibung"><strong>Seid ihr ready?</strong></p>'
+            . '<p class="stueckbeschreibung short">Kurz.</p>'
+            . '<p class="stueckbeschreibung">Lang.</p>';
+        $content = new WebsiteContent();
+        $production = (new Production())->setContentHtml($post);
+        $content->fillSections($production);
+
+        self::assertSame('<p><strong>Seid ihr ready?</strong></p>', $production->getIntro());
+        self::assertSame('<p>Lang.</p>', $production->getDescription());
+        $html = $content->render($production);
+        self::assertLessThan(strpos($html, 'Kurz.'), strpos($html, 'Seid ihr ready?'));
+        self::assertLessThan(strpos($html, 'Lang.'), strpos($html, 'Kurz.'));
+    }
 }

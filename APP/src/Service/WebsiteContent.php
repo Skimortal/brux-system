@@ -15,9 +15,14 @@ final class WebsiteContent
 {
     public const DEFAULT_GENERAL_INFO = '<p>Wir empfehlen euch vorab Karten zu reservieren.<br>Bei Fragen bitte gerne melden:&nbsp;<a href="mailto:info@brux.at">info@brux.at</a></p>';
 
-    /** Paragraph sections in post order: field => [CSS class, placeholder text when empty]. */
+    /**
+     * Sections in post order: field => [CSS class, placeholder text when empty, or null to
+     * leave an empty section out]. The intro holds description text that some posts put
+     * before the short description.
+     */
     private const SECTIONS = [
         'generalInfo' => ['allgemeineinfos', ''],
+        'intro' => ['stueckbeschreibung', null],
         'shortDescription' => ['stueckbeschreibung short', 'Kurzbeschreibung'],
         'description' => ['stueckbeschreibung', 'Stückbeschreibung'],
         'pressQuotes' => ['pressestimmen', 'Pressestimmen'],
@@ -73,9 +78,16 @@ final class WebsiteContent
         $sections = [];
         foreach (self::SECTIONS as $field => [$class, $placeholder]) {
             $sectionBlocks = $this->sectionBlocks((string) $production->{'get' . ucfirst($field)}(), $class);
-            $sections[] = $sectionBlocks !== []
-                ? implode("\n\n", $sectionBlocks)
-                : $this->paragraphBlock($class . ' displaynone', $placeholder);
+            if ($sectionBlocks !== []) {
+                // a section of images only gets its hidden paragraph, so it is recognised again
+                $anchored = str_contains(implode('', $sectionBlocks), 'class="' . $class);
+                if (!$anchored && $placeholder !== null) {
+                    array_unshift($sectionBlocks, $this->paragraphBlock($class . ' displaynone', $placeholder));
+                }
+                $sections[] = implode("\n\n", $sectionBlocks);
+            } elseif ($placeholder !== null) {
+                $sections[] = $this->paragraphBlock($class . ' displaynone', $placeholder);
+            }
         }
         $blocks[] = "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\">"
             . implode("\n\n", $sections)
@@ -107,21 +119,44 @@ final class WebsiteContent
         $subtitle = $xpath->query('//*[' . $hasClass('untertitel') . ']')->item(0);
         $fields = ['subtitle' => $subtitle !== null ? trim($subtitle->textContent) : null];
 
-        foreach (self::SECTIONS as $field => [$class]) {
-            $condition = implode(' and ', array_map($hasClass, explode(' ', $class)));
-            $parts = [];
-            foreach ($xpath->query("//p[{$condition}] | //ul[{$condition}] | //ol[{$condition}] | //h2[{$condition}] | //h3[{$condition}] | //h4[{$condition}]") as $node) {
-                $nodeClasses = preg_split('/\s+/', (string) $node->getAttribute('class'));
-                // "stueckbeschreibung" alone must not pick up the short one; hidden ones are empty
-                if (\in_array('displaynone', $nodeClasses, true) || ($field === 'description' && \in_array('short', $nodeClasses, true))) {
-                    continue;
-                }
-                if (trim(strip_tags($document->saveHTML($node), '<img>')) === '') {
-                    continue;
-                }
-                $parts[] = $this->plainCopy($document, $node);
+        // one pass in post order: plain "stueckbeschreibung" blocks before the short one are
+        // the intro; blocks without a section class belong to the section before them
+        $parts = array_fill_keys(array_keys(self::SECTIONS), []);
+        $shortSeen = false;
+        $current = 'generalInfo';
+        $blocks = '//*[self::p or self::ul or self::ol or self::h2 or self::h3 or self::h4 or self::blockquote or self::figure]'
+            . '[not(ancestor::ul or ancestor::ol or ancestor::blockquote or ancestor::figure)]';
+        foreach ($xpath->query($blocks) as $node) {
+            $classes = preg_split('/\s+/', trim((string) $node->getAttribute('class')));
+            if (\in_array('untertitel', $classes, true) || \in_array('wp-block-post-featured-image', $classes, true)) {
+                continue;
             }
-            $fields[$field] = $parts !== [] ? implode('', $parts) : null;
+            $field = match (true) {
+                \in_array('allgemeineinfos', $classes, true) => 'generalInfo',
+                \in_array('stueckbeschreibung', $classes, true) && \in_array('short', $classes, true) => 'shortDescription',
+                \in_array('stueckbeschreibung', $classes, true) => $shortSeen ? 'description' : 'intro',
+                \in_array('pressestimmen', $classes, true) => 'pressQuotes',
+                \in_array('credits', $classes, true) => 'credits',
+                \in_array('zusaetzlicheinformation', $classes, true) => 'additionalInfo',
+                default => $current,
+            };
+            $current = $field;
+            if ($field === 'shortDescription') {
+                $shortSeen = true;
+            }
+            // hidden sections are empty
+            if (\in_array('displaynone', $classes, true) || trim(strip_tags($document->saveHTML($node), '<img>')) === '') {
+                continue;
+            }
+            $parts[$field][] = $this->plainCopy($document, $node);
+        }
+        // without a short description everything is the description
+        if (!$shortSeen) {
+            $parts['description'] = [...$parts['intro'], ...$parts['description']];
+            $parts['intro'] = [];
+        }
+        foreach ($parts as $field => $blocks) {
+            $fields[$field] = $blocks !== [] ? implode('', $blocks) : null;
         }
 
         return $fields;
@@ -168,7 +203,11 @@ final class WebsiteContent
             } elseif ($tag !== null && preg_match('/^h([2-4])$/', $tag, $level)) {
                 $flush();
                 $blocks[] = "<!-- wp:heading {\"level\":{$level[1]},\"className\":\"{$class}\"} -->\n<{$tag} class=\"wp-block-heading {$class}\">" . $this->innerHtml($document, $node) . "</{$tag}>\n<!-- /wp:heading -->";
-            } elseif (\in_array($tag, ['p', 'blockquote', 'figure', 'div'], true)) {
+            } elseif ($tag === 'figure') {
+                // images and galleries go through as they are, so their layout classes stay
+                $flush();
+                $blocks[] = "<!-- wp:html -->\n" . $document->saveHTML($node) . "\n<!-- /wp:html -->";
+            } elseif (\in_array($tag, ['p', 'blockquote', 'div'], true)) {
                 $flush();
                 $inline = $this->innerHtml($document, $node);
                 $flush();
@@ -202,6 +241,9 @@ final class WebsiteContent
             }
 
             return "<{$tag}>{$items}</{$tag}>";
+        }
+        if ($tag === 'figure') {
+            return $document->saveHTML($node);
         }
 
         return "<{$tag}>" . trim($this->innerHtml($document, $node)) . "</{$tag}>";

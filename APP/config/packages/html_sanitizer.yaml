@@ -2,7 +2,8 @@ framework:
     html_sanitizer:
         sanitizers:
             # Descriptions edited here and pushed to the website: text structure,
-            # links and images only; classes, styles and scripts are dropped.
+            # links and images only; styles and scripts are dropped, classes only
+            # survive on images.
             app.website_content:
                 allow_elements:
                     p: []
@@ -21,10 +22,15 @@ framework:
                     ol: []
                     li: []
                     blockquote: []
-                    figure: []
-                    figcaption: []
+                    # WordPress images and galleries keep their layout classes
+                    figure: [class]
+                    figcaption: [class]
                     a: [href, title, target]
-                    img: [src, alt, title, width, height]
+                    img: [src, alt, title, width, height, class, srcset, sizes]
+                    sup: []
+                    sub: []
+                # formatting wrappers (e.g. underline spans from WordPress) go, their text stays
+                block_elements: [span, div, font, mark, section, article, small, big]
                 allowed_link_schemes: [http, https, mailto, tel]
                 allowed_media_schemes: [http, https]
                 # WordPress markup with srcset lists gets long

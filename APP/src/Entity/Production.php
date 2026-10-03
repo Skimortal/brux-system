@@ -51,6 +51,9 @@ class Production extends Base
     private ?string $generalInfo = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $intro = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $shortDescription = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -245,6 +248,18 @@ class Production extends Base
     public function setGeneralInfo(?string $generalInfo): static
     {
         $this->generalInfo = $generalInfo;
+
+        return $this;
+    }
+
+    public function getIntro(): ?string
+    {
+        return $this->intro;
+    }
+
+    public function setIntro(?string $intro): static
+    {
+        $this->intro = $intro;
 
         return $this;
     }
