@@ -116,10 +116,20 @@ final class PerformanceController extends AbstractController
             $prices[$price->getPriceIndex()] = $price->getCategoryLabel();
         }
 
+        // WordPress stores one row per price; one booking covers all rows of a submission
+        $result = $push->fetchReservations($performance);
+        $bookings = [];
+        foreach ($result['reservations'] ?? [] as $row) {
+            $key = implode('|', [$row['created_at_utc'] ?? $row['created_at_eu'] ?? '', mb_strtolower((string) ($row['email'] ?? '')), $row['last_name'] ?? '']);
+            $bookings[$key] ??= $row + ['tickets' => [], 'seats' => 0];
+            $bookings[$key]['tickets'][] = ($row['qty'] ?? 0) . ' × ' . ($prices[$row['price_index'] ?? null] ?? 'Preis ' . ($row['price_index'] ?? '?'));
+            $bookings[$key]['seats'] += (int) ($row['qty'] ?? 0);
+        }
+
         return $this->render('calendar/panel/_reservations.html.twig', [
             'performance' => $performance,
-            'result' => $push->fetchReservations($performance),
-            'prices' => $prices,
+            'result' => $result,
+            'bookings' => array_values($bookings),
         ]);
     }
 

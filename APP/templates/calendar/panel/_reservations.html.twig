@@ -6,23 +6,24 @@
         <p class="small muted">Keine Reservierungen.</p>
     {% else %}
         <div class="reservation-list">
-            {% for r in result.reservations %}
+            {% for r in bookings %}
                 <div class="reservation">
                     <div class="between">
                         <strong>{{ r.first_name }} {{ r.last_name }}</strong>
-                        <span class="mono">{{ r.qty }} × {{ prices[r.price_index] ?? ('Preis ' ~ r.price_index) }}</span>
+                        <span class="mono">{{ r.seats }} {{ r.seats == 1 ? 'Platz' : 'Plätze' }}</span>
                     </div>
                     <div class="small muted">
                         {% if r.email %}<a href="mailto:{{ r.email }}">{{ r.email }}</a>{% endif %}
                         {% if r.phone %} · <a href="tel:{{ r.phone }}">{{ r.phone }}</a>{% endif %}
                         {% if r.created_at_eu %} · reserviert {{ r.created_at_eu }}{% endif %}
                     </div>
+                    <div class="small">{{ r.tickets|join(', ') }}</div>
                     {% if r.need_invoice %}<div class="small">Rechnung: {{ r.invoice_address ?: 'ja' }}</div>{% endif %}
                     {% if r.notes %}<div class="small">{{ r.notes }}</div>{% endif %}
                     {% if r.comment %}<div class="small muted">Intern: {{ r.comment }}</div>{% endif %}
                 </div>
             {% endfor %}
         </div>
-        <p class="small muted">{{ result.reservations|reduce((sum, r) => sum + (r.qty ?? 0), 0) }} Plätze in {{ result.reservations|length }} Reservierungen · live von der Website</p>
+        <p class="small muted">{{ bookings|reduce((sum, r) => sum + r.seats, 0) }} Plätze in {{ bookings|length }} Reservierungen · live von der Website</p>
     {% endif %}
 </turbo-frame>

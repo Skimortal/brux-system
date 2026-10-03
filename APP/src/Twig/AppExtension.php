@@ -36,6 +36,8 @@ final class AppExtension extends AbstractExtension
         if ($html === null || trim($html) === '') {
             return '';
         }
+        // sections the website hides (empty template paragraphs)
+        $html = preg_replace('#<(p|h[1-6]|ul|ol)\b[^>]*class="[^"]*\bdisplaynone\b[^"]*"[^>]*>.*?</\1>#is', '', $html) ?? $html;
         $text = preg_replace('#<(br|/p|/h[1-6]|/li|/div|/blockquote|/figure)\b[^>]*>#i', "\n", $html) ?? $html;
         $text = html_entity_decode(strip_tags($text), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
         $text = str_replace("\u{00A0}", ' ', $text);
