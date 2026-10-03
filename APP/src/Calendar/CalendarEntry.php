@@ -26,6 +26,10 @@ final class CalendarEntry
         public readonly ?array $roomIds = null,
         /** Colour of the production's category, shown as the entry background. */
         public readonly ?string $color = null,
+        /** Whether the entry can be dragged to another day or room (performances only). */
+        public readonly bool $movable = false,
+        /** Reserved seats, to warn before moving a performance people have booked. */
+        public readonly ?int $reservedSeats = null,
     ) {
     }
 

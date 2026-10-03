@@ -7,6 +7,7 @@ use App\Entity\ProductionEvent;
 use App\Form\AppointmentType;
 use App\Form\PerformanceContactsType;
 use App\Form\PerformanceType;
+use App\Repository\RoomRepository;
 use App\Service\AppointmentManager;
 use App\Service\FieldOwnership;
 use App\Service\WordPressPushService;
@@ -15,6 +16,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/vorstellungen')]
@@ -105,6 +107,39 @@ final class PerformanceController extends AbstractController
         $this->addFlash('success', 'Vorstellung gelöscht.');
 
         return $this->backToCalendar($request, $this->page, ['panel' => null]);
+    }
+
+    /** Dropped on another day (and room) in the calendar; the start time stays. */
+    #[Route('/{id}/verschieben', name: 'app_performance_move', methods: ['POST'])]
+    public function move(ProductionEvent $performance, Request $request, EntityManagerInterface $em, FieldOwnership $ownership, AppointmentManager $manager, WordPressPushService $push, CsrfTokenManagerInterface $csrf, RoomRepository $rooms): Response
+    {
+        $this->requireCsrf($request, $csrf, 'move-performance');
+        if ($ownership->isLocked($performance, 'date')) {
+            throw $this->createAccessDeniedException('Vorstellungen dieser Produktion werden in WordPress verschoben.');
+        }
+        $date = \DateTime::createFromFormat('!Y-m-d', $request->request->getString('date'));
+        if ($date === false) {
+            throw $this->createNotFoundException('Ungültiges Datum.');
+        }
+
+        $performance->setDate($date);
+        if (($roomId = $request->request->getInt('room')) > 0 && ($room = $rooms->find($roomId)) !== null) {
+            $performance->setRoom($room);
+        }
+        if (($staffing = $performance->getAppointment()) !== null) {
+            $manager->alignWithPerformance($staffing, $performance);
+        }
+        $em->flush();
+
+        $label = sprintf('Vorstellung auf %s%s verschoben', $date->format('d.m.Y'), $performance->getRoom() ? ' · ' . $performance->getRoom()->getName() : '');
+        $result = $push->pushProductionEvent($performance);
+        if ($result['status'] === 'error') {
+            $this->addFlash('warning', $label . ', aber die Übertragung an die Website ist fehlgeschlagen: ' . ($result['message'] ?? ''));
+        } else {
+            $this->addFlash('success', $label . '.');
+        }
+
+        return $this->backToCalendar($request, $this->page, ['panel' => 'pe-' . $performance->getId()]);
     }
 
     /** Lazily loaded into the performance panel. */

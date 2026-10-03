@@ -12,6 +12,7 @@ use App\Repository\CleaningScheduleRepository;
 use App\Repository\KeyLoanRepository;
 use App\Repository\ProductionEventRepository;
 use App\Repository\RoomRepository;
+use App\Service\FieldOwnership;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Clock\MockClock;
 
@@ -38,7 +39,7 @@ final class CalendarBuilderTest extends TestCase
         $rooms = $this->createStub(RoomRepository::class);
         $rooms->method('findBy')->willReturn([$room]);
 
-        $builder = new CalendarBuilder($appointments, $performances, $schedules, $loans, $rooms, new MockClock('2026-10-14 12:00'));
+        $builder = new CalendarBuilder($appointments, $performances, $schedules, $loans, $rooms, new MockClock('2026-10-14 12:00'), new FieldOwnership([]));
         $view = $builder->build(new CalendarQuery(new \DateTimeImmutable('2026-10-15'), 'week', layout: 'rows'));
 
         $byTitle = [];

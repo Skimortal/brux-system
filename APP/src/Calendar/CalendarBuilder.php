@@ -12,6 +12,7 @@ use App\Repository\CleaningScheduleRepository;
 use App\Repository\KeyLoanRepository;
 use App\Repository\ProductionEventRepository;
 use App\Repository\RoomRepository;
+use App\Service\FieldOwnership;
 use Symfony\Component\Clock\ClockInterface;
 
 /**
@@ -27,6 +28,7 @@ final class CalendarBuilder
         private readonly KeyLoanRepository $keyLoans,
         private readonly RoomRepository $rooms,
         private readonly ClockInterface $clock,
+        private readonly FieldOwnership $ownership,
     ) {
     }
 
@@ -166,6 +168,8 @@ final class CalendarBuilder
             fromWordPress: $performance->getProduction()?->isFromWordPress() ?? false,
             cancelled: $performance->isCancelled(),
             color: $performance->getProduction()?->getCalendarColor(),
+            movable: !$this->ownership->isLocked($performance, 'date'),
+            reservedSeats: $performance->getSeatsTaken(),
         );
     }
 
