@@ -350,13 +350,14 @@ class BruxApiSyncService
                 continue;
             }
             $category = $this->productionCategoryRepository->findByExternalId($externalId);
-            if ($category === null) {
-                $category = (new ProductionCategory())->setExternalId($externalId);
+            $isNew = $category === null;
+            $category ??= (new ProductionCategory())->setExternalId($externalId);
+            $category->setName((string) $this->decode($categoryData['name'] ?? ''))->setSlug($categoryData['slug'] ?? null);
+            if ($isNew) {
                 $this->entityManager->persist($category);
                 // make it visible to the next production of this run
                 $this->entityManager->flush();
             }
-            $category->setName((string) $this->decode($categoryData['name'] ?? ''))->setSlug($categoryData['slug'] ?? null);
             $production->addCategory($category);
         }
     }
