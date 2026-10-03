@@ -63,7 +63,7 @@ final class ProductionType extends AbstractType
                 'mapped' => false,
                 'required' => false,
                 'disabled' => $locked('postThumbnailUrl'),
-                'help' => 'JPG, PNG oder WebP, höchstens 8 MB. Ersetzt die Bild-URL.',
+                'help' => 'JPG, PNG oder WebP. Große Fotos werden vor dem Hochladen auf Website-Größe verkleinert. Ersetzt die Bild-URL.',
                 'constraints' => [new Image(maxSize: '8M', mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], mimeTypesMessage: 'Bitte ein JPG-, PNG- oder WebP-Bild hochladen.')],
             ])
             ->add('subtitle', TextType::class, [

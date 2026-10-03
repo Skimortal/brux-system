@@ -63,7 +63,10 @@
                         </div>
                         <div class="stack grow">
                             {{ form_row(form.postThumbnailUrl) }}
-                            {{ form_row(form.imageFile) }}
+                            <div data-controller="image-shrink">
+                                {{ form_row(form.imageFile, {attr: {'data-image-shrink-target': 'input', 'data-action': 'change->image-shrink#shrink'}}) }}
+                                <p class="small muted" data-image-shrink-target="note" hidden></p>
+                            </div>
                         </div>
                     </div>
                     {{ form_row(form.subtitle) }}
