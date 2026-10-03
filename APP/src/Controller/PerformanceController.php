@@ -37,7 +37,7 @@ final class PerformanceController extends AbstractController
             if ($production->isFromWordPress() && !$ownership->canCreatePerformances()) {
                 throw $this->createAccessDeniedException('Vorstellungen dieser Produktion werden in WordPress angelegt.');
             }
-            $this->numberPrices($performance);
+            $performance->alignPricesWithProduction();
             $em->persist($performance);
             $em->flush();
             $result = $push->pushProductionEvent($performance);
@@ -59,7 +59,7 @@ final class PerformanceController extends AbstractController
         $form = $this->createForm(PerformanceType::class, $performance);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->numberPrices($performance);
+            $performance->alignPricesWithProduction();
             if (($staffing = $performance->getAppointment()) !== null) {
                 $manager->alignWithPerformance($staffing, $performance);
             }
@@ -107,6 +107,22 @@ final class PerformanceController extends AbstractController
         return $this->backToCalendar($request, $this->page, ['panel' => null]);
     }
 
+    /** Lazily loaded into the performance panel. */
+    #[Route('/{id}/reservierungen', name: 'app_performance_reservations', methods: ['GET'])]
+    public function reservations(ProductionEvent $performance, WordPressPushService $push): Response
+    {
+        $prices = [];
+        foreach ($performance->getPriceList() as $price) {
+            $prices[$price->getPriceIndex()] = $price->getCategoryLabel();
+        }
+
+        return $this->render('calendar/panel/_reservations.html.twig', [
+            'performance' => $performance,
+            'result' => $push->fetchReservations($performance),
+            'prices' => $prices,
+        ]);
+    }
+
     #[Route('/{id}/ansprechpartner', name: 'app_performance_contacts', methods: ['POST'])]
     public function contacts(ProductionEvent $performance, Request $request, EntityManagerInterface $em, WordPressPushService $push): Response
     {
@@ -139,12 +155,4 @@ final class PerformanceController extends AbstractController
         return $this->page->render($this->page->queryFromReturn($request), $request, ['staffing' => $form], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
-    /** Price rows are addressed by their position, as in WordPress. */
-    private function numberPrices(ProductionEvent $performance): void
-    {
-        $index = 0;
-        foreach ($performance->getPriceList() as $price) {
-            $price->setPriceIndex($index++)->setEvent($performance);
-        }
-    }
-}
+    /** Price rows are addressed by their position, as in WordPress. */}

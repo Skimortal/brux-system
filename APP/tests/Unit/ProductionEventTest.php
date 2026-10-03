@@ -2,7 +2,10 @@
 
 namespace App\Tests\Unit;
 
+use App\Entity\EventPrice;
+use App\Entity\Production;
 use App\Entity\ProductionEvent;
+use App\Entity\ProductionPrice;
 use PHPUnit\Framework\TestCase;
 
 final class ProductionEventTest extends TestCase
@@ -45,5 +48,22 @@ final class ProductionEventTest extends TestCase
         self::assertSame(0, $event->getSeatsTaken());
         self::assertSame(50, $event->getSeatsFree());
         self::assertNull((new ProductionEvent())->getSeatsFree());
+    }
+
+    public function testPricesFollowTheProduction(): void
+    {
+        $production = new Production();
+        foreach ([['Kulturpass', '0', 5], ['Freikarte', '0', 0], ['Stuhl', '16', 60]] as $index => [$category, $price, $seats]) {
+            $production->addPriceList((new ProductionPrice())->setPriceIndex($index)->setCategoryLabel($category)->setPriceLabel($price)->setParentReserved($seats));
+        }
+        $event = (new ProductionEvent())->setProduction($production);
+        $event->addPriceList((new EventPrice())->setPriceIndex(2)->setCategoryLabel('Alt')->setPriceLabel('99')->setReservedSeats(40));
+        $event->addPriceList((new EventPrice())->setPriceIndex(7)->setCategoryLabel('Weg')->setReservedSeats(1));
+
+        $event->alignPricesWithProduction();
+
+        $rows = array_map(static fn (EventPrice $p) => [$p->getPriceIndex(), $p->getCategoryLabel(), $p->getPriceLabel(), $p->getReservedSeats()], array_values($event->getPriceList()->toArray()));
+        usort($rows, static fn ($a, $b) => $a[0] <=> $b[0]);
+        self::assertSame([[0, 'Kulturpass', '0', 5], [1, 'Freikarte', '0', 0], [2, 'Stuhl', '16', 40]], $rows);
     }
 }

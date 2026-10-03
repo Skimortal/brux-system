@@ -107,6 +107,7 @@
 .field .rte-source { height: auto; min-height: 220px; font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; border-radius: 0 0 8px 8px; }
 .rte.is-readonly .rte-editor .rte-content { border-radius: 8px; background: var(--surface-2); min-height: 0; max-height: 360px; }
 .rte-editor .rte-content:focus { outline: none; border-color: var(--accent); box-shadow: var(--focus); }
+.rte-compact .rte-editor .rte-content, .rte-compact .rte-source { min-height: 88px; }
 .rte-content > * + * { margin-top: .7em; }
 .rte-content p, .rte-content ul, .rte-content ol, .rte-content blockquote, .rte-content figure { margin-bottom: 0; }
 .rte-content > :first-child { margin-top: 0; }

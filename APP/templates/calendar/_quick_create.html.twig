@@ -4,16 +4,20 @@
         <button type="button" class="btn btn-ghost btn-icon btn-sm" data-action="quick-create#close" aria-label="Schließen">{{ ux_icon('lucide:x') }}</button>
     </div>
     <div class="popover-list">
+        <a href="#" data-quick-create-target="link" data-kind="performance" data-turbo-frame="side" data-turbo-action="advance">
+            <span class="swatch swatch-performance"></span>
+            <span><span>Vorstellung</span><span class="d">{{ can_create_performances ? 'Termin einer Produktion mit Plätzen und Preisen' : 'einer eigenen Produktion (nicht aus WordPress)' }}</span></span>
+        </a>
+        <a href="#" data-quick-create-target="link" data-kind="production" data-turbo-frame="_top">
+            <span class="swatch swatch-performance"></span>
+            <span><span>Neue Produktion</span><span class="d">mit Website-Inhalt, danach die erste Vorstellung</span></span>
+        </a>
         {% for type in enum_cases('App\\Enum\\AppointmentTypeEnum') %}
             <a href="#" data-quick-create-target="link" data-kind="appointment" data-type="{{ type.value }}" data-turbo-frame="side" data-turbo-action="advance">
                 <span class="swatch swatch-{{ type.value in ['closed_event', 'school_event'] ? 'closed_event' : type.value }}"></span>
                 <span><span>{{ type.label }}</span><span class="d">{{ type.description }}</span></span>
             </a>
         {% endfor %}
-        <a href="#" data-quick-create-target="link" data-kind="performance" data-turbo-frame="side" data-turbo-action="advance">
-            <span class="swatch swatch-performance"></span>
-            <span><span>Vorstellung</span><span class="d">{{ can_create_performances ? 'Termin einer Produktion mit Plätzen und Preisen' : 'einer eigenen Produktion (nicht aus WordPress)' }}</span></span>
-        </a>
         <a href="#" data-quick-create-target="link" data-kind="loan" data-turbo-frame="side" data-turbo-action="advance">
             <span class="swatch swatch-key"></span>
             <span><span>Schlüssel verleihen</span><span class="d">an wen, von wann bis wann</span></span>

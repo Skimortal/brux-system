@@ -1,7 +1,8 @@
-{# field: textarea form view, edited with the rich-text controller #}
+{# field: textarea form view, edited with the rich-text controller; compact: smaller editor #}
+{% set compact = compact ?? false %}
 {% set editable = not field.vars.disabled %}
 {% set tool = 'btn btn-ghost btn-icon btn-sm' %}
-<div class="field rte{{ editable ? '' : ' is-readonly' }}{{ field.vars.errors|length ? ' has-error' }}" data-controller="rich-text" data-action="turbo:morph@window->rich-text#reload">
+<div class="field rte{{ compact ? ' rte-compact' }}{{ editable ? '' : ' is-readonly' }}{{ field.vars.errors|length ? ' has-error' }}" data-controller="rich-text" data-action="turbo:morph@window->rich-text#reload">
     <div class="between">
         <label class="field-label" for="{{ field.vars.id }}">{{ field.vars.label }}</label>
         {% if editable %}
@@ -34,5 +35,6 @@
     <div class="rte-editor" data-rich-text-target="editor"></div>
     {{ form_widget(field, {attr: {hidden: 'hidden', rows: 16, class: 'rte-source', 'data-rich-text-target': 'input'}}) }}
     {{ form_errors(field) }}
-    {% if editable %}<div class="field-help">Wird beim Speichern bereinigt: Formatierung, Links und Bilder bleiben, Farben und Skripte nicht.</div>{% endif %}
+    {% if editable and field.vars.help %}<div class="field-help">{{ field.vars.help }}</div>{% endif %}
+    {% if editable and not compact %}<div class="field-help">Wird beim Speichern bereinigt: Formatierung, Links und Bilder bleiben, Farben und Skripte nicht.</div>{% endif %}
 </div>

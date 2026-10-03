@@ -43,6 +43,28 @@ class Production extends Base
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $excerptHtml = null;
 
+    // sections of the website post, see WebsiteContent
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $subtitle = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $generalInfo = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $shortDescription = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $description = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $pressQuotes = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $credits = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $additionalInfo = null;
+
     #[ORM\Column(options: ['default' => false])]
     private bool $needsLightingTechnician = false;
 
@@ -67,6 +89,10 @@ class Production extends Base
     #[ORM\OneToMany(targetEntity: ProductionEvent::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $events;
 
+    #[ORM\ManyToMany(targetEntity: ProductionCategory::class)]
+    #[ORM\JoinTable(name: 'production_production_category')]
+    private Collection $categories;
+
     #[ORM\OneToMany(targetEntity: ProductionPrice::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $priceList;
 
@@ -75,6 +101,7 @@ class Production extends Base
         $this->technicians = new ArrayCollection();
         $this->contactPersons = new ArrayCollection();
         $this->events = new ArrayCollection();
+        $this->categories = new ArrayCollection();
         $this->priceList = new ArrayCollection();
     }
 
@@ -196,6 +223,126 @@ class Production extends Base
         $this->grandstand = $grandstand;
 
         return $this;
+    }
+
+    public function getSubtitle(): ?string
+    {
+        return $this->subtitle;
+    }
+
+    public function setSubtitle(?string $subtitle): static
+    {
+        $this->subtitle = $subtitle;
+
+        return $this;
+    }
+
+    public function getGeneralInfo(): ?string
+    {
+        return $this->generalInfo;
+    }
+
+    public function setGeneralInfo(?string $generalInfo): static
+    {
+        $this->generalInfo = $generalInfo;
+
+        return $this;
+    }
+
+    public function getShortDescription(): ?string
+    {
+        return $this->shortDescription;
+    }
+
+    public function setShortDescription(?string $shortDescription): static
+    {
+        $this->shortDescription = $shortDescription;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): static
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    public function getPressQuotes(): ?string
+    {
+        return $this->pressQuotes;
+    }
+
+    public function setPressQuotes(?string $pressQuotes): static
+    {
+        $this->pressQuotes = $pressQuotes;
+
+        return $this;
+    }
+
+    public function getCredits(): ?string
+    {
+        return $this->credits;
+    }
+
+    public function setCredits(?string $credits): static
+    {
+        $this->credits = $credits;
+
+        return $this;
+    }
+
+    public function getAdditionalInfo(): ?string
+    {
+        return $this->additionalInfo;
+    }
+
+    public function setAdditionalInfo(?string $additionalInfo): static
+    {
+        $this->additionalInfo = $additionalInfo;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductionCategory>
+     */
+    public function getCategories(): Collection
+    {
+        return $this->categories;
+    }
+
+    public function addCategory(ProductionCategory $category): static
+    {
+        if (!$this->categories->contains($category)) {
+            $this->categories->add($category);
+        }
+
+        return $this;
+    }
+
+    public function removeCategory(ProductionCategory $category): static
+    {
+        $this->categories->removeElement($category);
+
+        return $this;
+    }
+
+    /** The first category with a colour, for the calendar. */
+    public function getCalendarColor(): ?string
+    {
+        foreach ($this->categories as $category) {
+            if ($category->getColor() !== null) {
+                return $category->getColor();
+            }
+        }
+
+        return null;
     }
 
     public function getWebsiteStatus(): string

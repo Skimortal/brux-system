@@ -111,6 +111,26 @@ class WordPressPushService
     }
 
     /**
+     * The reservations of a performance, read live from WordPress; they are not stored here.
+     *
+     * @return array{status: string, message?: string, reservations?: list<array<string, mixed>>}
+     */
+    public function fetchReservations(ProductionEvent $event): array
+    {
+        $postId = $event->getProduction()?->getExternalId();
+        if ($postId === null || $event->getEventIndex() === null) {
+            return ['status' => 'success', 'reservations' => []];
+        }
+
+        $result = $this->request('GET', '/reservations?' . http_build_query(['post_id' => $postId, 'event_index' => $event->getEventIndex()]));
+        if ($result['status'] !== 'success') {
+            return $result;
+        }
+
+        return ['status' => 'success', 'reservations' => array_values($result['response']['reservations'] ?? [])];
+    }
+
+    /**
      * Removes a production from WordPress (into the trash) before it is deleted here;
      * WordPress refuses while it holds reservations for it.
      */
@@ -223,6 +243,14 @@ class WordPressPushService
         }
         if ($owned('excerptHtml')) {
             $payload['excerpt_html'] = $production->getExcerptHtml();
+        }
+        if ($owned('categories')) {
+            $payload['categories'] = [];
+            foreach ($production->getCategories() as $category) {
+                if ($category->getSlug() !== null) {
+                    $payload['categories'][] = $category->getSlug();
+                }
+            }
         }
         if ($owned('priceList')) {
             $payload['prices'] = [];

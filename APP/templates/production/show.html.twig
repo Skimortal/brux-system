@@ -66,8 +66,19 @@
                             {{ form_row(form.imageFile) }}
                         </div>
                     </div>
+                    {{ form_row(form.subtitle) }}
+                    {% for field in [form.generalInfo, form.shortDescription, form.description, form.pressQuotes, form.credits, form.additionalInfo] %}
+                        {{ include('production/_rich_text.html.twig', {field: field, compact: true}) }}
+                    {% endfor %}
                     {{ form_row(form.excerptHtml) }}
-                    {{ include('production/_rich_text.html.twig', {field: form.contentHtml}) }}
+                    <div class="field">
+                        <span class="field-label">{{ form.categories.vars.label }}</span>
+                        <div class="toggles">
+                            {% for c in form.categories %}<span class="toggle">{{ form_widget(c) }}<label for="{{ c.vars.id }}">{{ c.vars.label }}</label></span>{% endfor %}
+                        </div>
+                        {% if form.categories.vars.disabled %}<div class="field-help">Kommen noch aus WordPress, bis die Website-Schnittstelle sie übernehmen kann.</div>{% endif %}
+                        {% do form.categories.setRendered %}
+                    </div>
                     {{ rows.prices(form.priceList, 'Noch keine Preise.') }}
                 </div>
             </section>

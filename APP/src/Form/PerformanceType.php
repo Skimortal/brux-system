@@ -38,6 +38,8 @@ final class PerformanceType extends AbstractType
         $performance = $builder->getData();
         $locked = fn (string $field): bool => $this->ownership->isLocked($performance, $field);
         $ownership = $this->ownership;
+        // one row per price of the production, so the form shows what WordPress has
+        $performance->alignPricesWithProduction();
 
         if ($performance->getId() === null) {
             $builder->add('production', EntityType::class, [
@@ -75,7 +77,7 @@ final class PerformanceType extends AbstractType
             ->add('reservationNote', TextType::class, ['label' => 'Reservierungshinweis oder -link', 'required' => false, 'disabled' => $locked('reservationNote')])
             ->add('categories', EntityType::class, [
                 'class' => EventCategory::class,
-                'label' => 'Kategorien',
+                'label' => 'Kategorien der Vorstellung',
                 'multiple' => true,
                 'expanded' => true,
                 'required' => false,
@@ -85,9 +87,7 @@ final class PerformanceType extends AbstractType
             ])
             ->add('priceList', CollectionType::class, [
                 'entry_type' => EventPriceType::class,
-                'label' => 'Preise',
-                'allow_add' => true,
-                'allow_delete' => true,
+                'label' => 'Kontingent je Preis',
                 'by_reference' => false,
                 'prototype_name' => '__price__',
                 'disabled' => $locked('priceList'),

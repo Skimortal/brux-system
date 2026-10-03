@@ -24,6 +24,8 @@ final class CalendarEntry
         public readonly ?string $icon = null,
         /** Rooms an entry belongs to when it has several (key loans: the rooms the key opens). */
         public readonly ?array $roomIds = null,
+        /** Colour of the production's category, shown as the entry background. */
+        public readonly ?string $color = null,
     ) {
     }
 

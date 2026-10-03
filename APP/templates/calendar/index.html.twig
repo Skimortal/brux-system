@@ -12,6 +12,7 @@
                  data-quick-create-appointment-url-value="{{ cal_path(query, {panel: 'a-new'}) }}"
                  data-quick-create-loan-url-value="{{ cal_path(query, {panel: 'kl-new'}) }}"
                  data-quick-create-performance-url-value="{{ cal_path(query, {panel: 'pe-new'}) }}"
+                 data-quick-create-production-url-value="{{ path('app_production_new') }}"
                  data-action="click->quick-create#open">
                 {% if query.effectiveLayout == 'split' %}
                     {{ include('calendar/_split.html.twig') }}

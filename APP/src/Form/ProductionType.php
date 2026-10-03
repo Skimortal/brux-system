@@ -3,14 +3,17 @@
 namespace App\Form;
 
 use App\Entity\Production;
+use App\Entity\ProductionCategory;
 use App\Service\FieldOwnership;
+use Doctrine\ORM\EntityRepository;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\UrlType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -23,6 +26,15 @@ use Symfony\Component\Validator\Constraints\NotBlank;
  */
 final class ProductionType extends AbstractType
 {
+    private const SECTIONS = [
+        'generalInfo' => 'Allgemeine Infos',
+        'shortDescription' => 'Kurzbeschreibung',
+        'description' => 'Stückbeschreibung',
+        'pressQuotes' => 'Pressestimmen',
+        'credits' => 'Credits',
+        'additionalInfo' => 'Zusätzliche Informationen',
+    ];
+
     public function __construct(private readonly FieldOwnership $ownership)
     {
     }
@@ -53,13 +65,34 @@ final class ProductionType extends AbstractType
                 'help' => 'JPG, PNG oder WebP, höchstens 8 MB. Ersetzt die Bild-URL.',
                 'constraints' => [new Image(maxSize: '8M', mimeTypes: ['image/jpeg', 'image/png', 'image/webp'], mimeTypesMessage: 'Bitte ein JPG-, PNG- oder WebP-Bild hochladen.')],
             ])
-            ->add('excerptHtml', TextareaType::class, ['label' => 'Kurztext', 'required' => false, 'attr' => ['rows' => 3], 'disabled' => $locked('excerptHtml')])
-            ->add('contentHtml', TextareaType::class, [
-                'label' => 'Beschreibung',
+            ->add('subtitle', TextType::class, [
+                'label' => 'Untertitel',
+                'required' => false,
+                'disabled' => $locked('contentHtml'),
+                'help' => 'Gruppe bzw. Künstler*in und Gattung, z. B. „von OFFTANZ Tirol | Zeitgenössischer Tanz“',
+            ]);
+        // sections of the website post, each a paragraph of the post template
+        foreach (self::SECTIONS as $field => $label) {
+            $builder->add($field, TextareaType::class, [
+                'label' => $label,
                 'required' => false,
                 'disabled' => $locked('contentHtml'),
                 'sanitize_html' => true,
                 'sanitizer' => 'app.website_content',
+            ]);
+        }
+        $builder
+            ->add('excerptHtml', TextareaType::class, ['label' => 'Kurztext (Auszug)', 'required' => false, 'attr' => ['rows' => 3], 'disabled' => $locked('excerptHtml'), 'help' => 'Wird auf der Website derzeit nicht angezeigt.'])
+            ->add('categories', EntityType::class, [
+                'class' => ProductionCategory::class,
+                'label' => 'Kategorien',
+                'multiple' => true,
+                'expanded' => true,
+                'required' => false,
+                'choice_label' => 'name',
+                'query_builder' => static fn (EntityRepository $r) => $r->createQueryBuilder('c')->orderBy('c.name', 'ASC'),
+                'by_reference' => false,
+                'disabled' => $locked('categories'),
             ])
             ->add('priceList', CollectionType::class, [
                 'entry_type' => ProductionPriceType::class,

@@ -15,7 +15,7 @@ enum AppointmentTypeEnum: string
     {
         return match ($this) {
             self::PRIVATE => 'Privat / Vermietung',
-            self::PRODUCTION => 'Produktion',
+            self::PRODUCTION => 'Produktionstermin',
             self::CLOSED_EVENT => 'Geschlossene Veranstaltung',
             self::SCHOOL_EVENT => 'Schulveranstaltung',
             self::INTERNAL => 'Intern',
@@ -39,7 +39,7 @@ enum AppointmentTypeEnum: string
     {
         return match ($this) {
             self::PRIVATE => 'Titel, Raum, Zeit',
-            self::PRODUCTION => 'Probe, Aufbau/Abbau oder Veranstaltung',
+            self::PRODUCTION => 'Probe oder Aufbau/Abbau einer Produktion, keine Vorstellung',
             self::CLOSED_EVENT => 'mit Technik und Freiwilligen',
             self::SCHOOL_EVENT => 'mit Technik und Freiwilligen',
             self::INTERNAL => 'Besprechung, Blocker',

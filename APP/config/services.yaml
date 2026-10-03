@@ -9,9 +9,10 @@ parameters:
     wordpress_api_url: '%env(WORDPRESS_API_URL)%'
     # Fields that WordPress owns. They are read-only here for records that come from
     # WordPress and are overwritten by every import. Since 2026-10 this system leads;
-    # only what WordPress generates or computes itself is left.
+    # only what WordPress generates or computes itself is left. Production categories
+    # follow once the WordPress API can write them.
     wordpress_owned_fields:
-        production: [permalink]
+        production: [permalink, categories]
         production_event: [incomingTotal, freeSeats, reservations]
 
 services:

@@ -5,12 +5,14 @@ namespace App\Service;
 use App\Entity\EventCategory;
 use App\Entity\EventPrice;
 use App\Entity\Production;
+use App\Entity\ProductionCategory;
 use App\Entity\ProductionEvent;
 use App\Entity\ProductionPrice;
 use App\Entity\Room;
 use App\Enum\EventReservationStatus;
 use App\Enum\EventStatus;
 use App\Repository\EventCategoryRepository;
+use App\Repository\ProductionCategoryRepository;
 use App\Repository\ProductionEventRepository;
 use App\Repository\ProductionRepository;
 use App\Repository\RoomRepository;
@@ -34,6 +36,8 @@ class BruxApiSyncService
         private ProductionEventRepository $productionEventRepository,
         private RoomRepository $roomRepository,
         private EventCategoryRepository $eventCategoryRepository,
+        private ProductionCategoryRepository $productionCategoryRepository,
+        private WebsiteContent $websiteContent,
         private FieldOwnership $ownership,
         private AppointmentManager $appointmentManager,
         private WordPressPushService $push,
@@ -131,6 +135,12 @@ class BruxApiSyncService
         }
         if ($takes('excerptHtml')) {
             $production->setExcerptHtml($data['excerpt_html'] ?? null);
+        }
+        if ($isNew) {
+            $this->websiteContent->fillSections($production);
+        }
+        if ($takes('categories') && isset($data['categories']) && \is_array($data['categories'])) {
+            $this->syncProductionCategories($production, $data['categories']);
         }
         $production->setSyncedAt($syncedAt);
         $this->entityManager->persist($production);
@@ -328,6 +338,26 @@ class BruxApiSyncService
             $price->setIncomingReservations($priceData['incoming_reservations'] ?? null);
             $event->addPriceList($price);
             $this->entityManager->persist($price);
+        }
+    }
+
+    private function syncProductionCategories(Production $production, array $categoriesData): void
+    {
+        $production->getCategories()->clear();
+        foreach ($categoriesData as $categoryData) {
+            $externalId = isset($categoryData['id']) ? (int) $categoryData['id'] : null;
+            if (!$externalId) {
+                continue;
+            }
+            $category = $this->productionCategoryRepository->findByExternalId($externalId);
+            if ($category === null) {
+                $category = (new ProductionCategory())->setExternalId($externalId);
+                $this->entityManager->persist($category);
+                // make it visible to the next production of this run
+                $this->entityManager->flush();
+            }
+            $category->setName((string) $this->decode($categoryData['name'] ?? ''))->setSlug($categoryData['slug'] ?? null);
+            $production->addCategory($category);
         }
     }
 

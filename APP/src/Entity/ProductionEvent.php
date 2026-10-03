@@ -288,6 +288,37 @@ class ProductionEvent extends Base
     }
 
     /**
+     * Gives the performance one price row per price of its production, as WordPress has
+     * them: category and price come from the production, only the seats are per performance.
+     * Existing seats are kept by position; new rows start with the production's seats.
+     */
+    public function alignPricesWithProduction(): static
+    {
+        $own = [];
+        foreach ($this->priceList->toArray() as $position => $price) {
+            $own[$price->getPriceIndex() ?? $position] = $price;
+        }
+
+        $kept = [];
+        foreach ($this->production?->getPriceList() ?? [] as $position => $productionPrice) {
+            $index = $productionPrice->getPriceIndex() ?? $position;
+            $price = $own[$index] ?? (new EventPrice())->setReservedSeats($productionPrice->getParentReserved());
+            $price->setPriceIndex($index)
+                ->setCategoryLabel($productionPrice->getCategoryLabel())
+                ->setPriceLabel($productionPrice->getPriceLabel());
+            $this->addPriceList($price);
+            $kept[] = $price;
+        }
+        foreach ($this->priceList->toArray() as $price) {
+            if (!\in_array($price, $kept, true)) {
+                $this->removePriceList($price);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * @return Collection<int, ProductionContactPerson>
      */
     public function getContactPersons(): Collection

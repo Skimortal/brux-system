@@ -33,13 +33,13 @@
     </div>
     {{ form_row(f.reservationNote) }}
     <div class="field">
-        <span class="field-label">Kategorien</span>
+        <span class="field-label">{{ f.categories.vars.label }}</span>
         <div class="toggles">
             {% for c in f.categories %}<span class="toggle">{{ form_widget(c) }}<label for="{{ c.vars.id }}">{{ c.vars.label }}</label></span>{% endfor %}
         </div>
         {% do f.categories.setRendered %}
     </div>
-    {{ rows.prices(f.priceList, 'Keine eigenen Preise; es gelten die Preise der Produktion.') }}
+    {{ rows.prices(f.priceList, is_new and pe.production is null ? 'Die Preise kommen von der Produktion; Kontingente je Preis nach dem Anlegen.' : 'Die Produktion hat noch keine Preise.') }}
     <div class="form-actions">
         <button type="submit" class="btn btn-primary">{{ ux_icon('lucide:save') }} {{ is_new ? 'Vorstellung anlegen' : 'Speichern' }}</button>
     </div>

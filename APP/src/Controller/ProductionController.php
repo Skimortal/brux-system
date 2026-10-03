@@ -6,9 +6,11 @@ use App\Calendar\CalendarBuilder;
 use App\Calendar\CalendarPage;
 use App\Calendar\CalendarQuery;
 use App\Entity\Production;
+use App\Entity\ProductionPrice;
 use App\Form\ProductionType;
 use App\Repository\ProductionRepository;
 use App\Service\FieldOwnership;
+use App\Service\WebsiteContent;
 use App\Service\WordPressPushService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -38,14 +40,22 @@ final class ProductionController extends AbstractController
     }
 
     #[Route('/neu', name: 'app_production_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar, SluggerInterface $slugger, FieldOwnership $ownership, CalendarPage $page): Response
+    public function new(Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar, SluggerInterface $slugger, FieldOwnership $ownership, CalendarPage $page, WebsiteContent $content): Response
     {
-        return $this->edit(new Production(), $request, $em, $push, $calendar, $slugger, $ownership, $page);
+        $production = (new Production())->setGeneralInfo(WebsiteContent::DEFAULT_GENERAL_INFO);
+        // every production on the website offers these two; the Freikarte is only visible internally
+        foreach (['Kulturpass “Hunger auf Kunst und Kultur”', 'Freikarte'] as $index => $category) {
+            $production->addPriceList((new ProductionPrice())->setPriceIndex($index)->setCategoryLabel($category)->setPriceLabel('0')->setParentReserved(0));
+        }
+
+        return $this->edit($production, $request, $em, $push, $calendar, $slugger, $ownership, $page, $content);
     }
 
     #[Route('/{id}', name: 'app_production_show', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
-    public function edit(Production $production, Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar, SluggerInterface $slugger, FieldOwnership $ownership, CalendarPage $page): Response
+    public function edit(Production $production, Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar, SluggerInterface $slugger, FieldOwnership $ownership, CalendarPage $page, WebsiteContent $content): Response
     {
+        // posts from WordPress are split into their sections the first time they are edited here
+        $content->fillSections($production);
         $form = $this->createForm(ProductionType::class, $production);
         $form->handleRequest($request);
 
@@ -58,6 +68,10 @@ final class ProductionController extends AbstractController
             foreach ($production->getPriceList() as $price) {
                 $price->setPriceIndex($index++)->setProduction($production);
             }
+            foreach ($production->getEvents() as $performance) {
+                $performance->alignPricesWithProduction();
+            }
+            $production->setContentHtml($content->render($production));
             $em->persist($production);
             $em->flush();
             $result = $push->pushProduction($production);
@@ -65,6 +79,12 @@ final class ProductionController extends AbstractController
                 $this->addFlash('warning', 'Gespeichert, aber die Übertragung an die Website ist fehlgeschlagen: ' . ($result['message'] ?? ''));
             } else {
                 $this->addFlash('success', 'Produktion gespeichert.');
+            }
+
+            // created from the calendar: continue with the first performance on that day
+            $start = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $request->query->getString('vorstellung'));
+            if ($start !== false && $page->canAddPerformance($production)) {
+                return $this->redirectToRoute('app_production_show', ['id' => $production->getId(), 'monat' => $start->format('Y-m'), 'panel' => 'pe-new', 'production' => $production->getId(), 'start' => $start->format('Y-m-d\TH:i')], 303);
             }
 
             return $this->redirectToRoute('app_production_show', ['id' => $production->getId()], 303);

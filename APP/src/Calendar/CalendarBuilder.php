@@ -165,6 +165,7 @@ final class CalendarBuilder
             meta: $meta !== [] ? implode(' · ', $meta) : null,
             fromWordPress: $performance->getProduction()?->isFromWordPress() ?? false,
             cancelled: $performance->isCancelled(),
+            color: $performance->getProduction()?->getCalendarColor(),
         );
     }
 
