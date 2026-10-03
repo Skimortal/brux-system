@@ -78,15 +78,6 @@
             </div>
         {% endif %}
 
-        {% if pe.production.fromWordPress and pe.eventIndex is not null and (pe.seatsTaken ?? 0) > 0 %}
-            <details class="reservations">
-                <summary>{{ ux_icon('lucide:ticket') }} Reservierungen ansehen</summary>
-                <turbo-frame id="reservations-{{ pe.id }}" src="{{ path('app_performance_reservations', {id: pe.id}) }}" loading="lazy">
-                    <p class="small muted">Wird von der Website geladen …</p>
-                </turbo-frame>
-            </details>
-        {% endif %}
-
         {% if pe.categories|length or pe.reservationNote %}
             <div class="row-wrap">
                 {% for category in pe.categories %}
@@ -99,6 +90,15 @@
                 {% endif %}
             </div>
         {% endif %}
+    {% endif %}
+
+    {% if pe.production.fromWordPress and pe.eventIndex is not null and (pe.seatsTaken ?? 0) > 0 %}
+        <details class="reservations">
+            <summary>{{ ux_icon('lucide:ticket') }} Reservierungen ansehen</summary>
+            <turbo-frame id="reservations-{{ pe.id }}" src="{{ path('app_performance_reservations', {id: pe.id}) }}" loading="lazy">
+                <p class="small muted">Wird von der Website geladen …</p>
+            </turbo-frame>
+        </details>
     {% endif %}
 
     {% if production.contentHtml or production.excerptHtml %}
