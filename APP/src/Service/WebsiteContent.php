@@ -27,7 +27,8 @@ final class WebsiteContent
     private const SECTIONS = [
         'generalInfo' => ['allgemeineinfos', ''],
         'intro' => ['stueckbeschreibung', null],
-        'shortDescription' => ['stueckbeschreibung short', 'Kurzbeschreibung'],
+        // left empty when there is no text, so the infoscreen never shows a placeholder
+        'shortDescription' => ['stueckbeschreibung short', ''],
         'description' => ['stueckbeschreibung', 'Stückbeschreibung'],
         'pressQuotes' => ['pressestimmen', 'Pressestimmen'],
         'credits' => ['credits', 'Credits'],

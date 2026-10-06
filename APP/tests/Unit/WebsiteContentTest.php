@@ -67,7 +67,7 @@ final class WebsiteContentTest extends TestCase
         self::assertStringContainsString('<p class="stueckbeschreibung">Zweiter <em>Absatz</em>.</p>', $html);
         self::assertStringContainsString('<ul class="wp-block-list stueckbeschreibung"><!-- wp:list-item -->', $html);
         self::assertStringContainsString('<p class="pressestimmen displaynone">Pressestimmen</p>', $html);
-        self::assertStringContainsString('<p class="stueckbeschreibung short displaynone">Kurzbeschreibung</p>', $html);
+        self::assertStringContainsString('<p class="stueckbeschreibung short displaynone"></p>', $html);
     }
 
     public function testInfoscreenTextIsHiddenOnTheWebsiteButKept(): void
