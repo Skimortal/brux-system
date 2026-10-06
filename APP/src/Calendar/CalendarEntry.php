@@ -75,7 +75,9 @@ final class CalendarEntry
         $next = $day->modify('+1 day');
         $startsBefore = $this->start < $day;
         $endsAfter = $this->end > $next;
-        if (!$startsBefore && !$endsAfter) {
+        // a late show past midnight is shown on its evening with its real end
+        $shortOvernight = !$startsBefore && $endsAfter && $this->end->getTimestamp() - $this->start->getTimestamp() < 86400;
+        if ((!$startsBefore && !$endsAfter) || $shortOvernight) {
             return $this->start->format('H:i') . '–' . $this->end->format('H:i');
         }
         if ($startsBefore && $endsAfter) {

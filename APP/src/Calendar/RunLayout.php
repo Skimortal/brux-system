@@ -32,6 +32,11 @@ final class RunLayout
                     $indices[] = $i;
                 }
             }
+            // a late show ending after midnight belongs to the evening it starts on
+            if (!$entry->allDay && $entry->end->getTimestamp() - $entry->start->getTimestamp() < 86400) {
+                $startDay = $entry->start->format('Y-m-d');
+                $indices = array_values(array_filter($indices, static fn (int $i) => $days[$i]->format('Y-m-d') === $startDay));
+            }
             if ($indices === []) {
                 continue;
             }

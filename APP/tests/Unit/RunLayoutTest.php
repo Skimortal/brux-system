@@ -41,6 +41,19 @@ final class RunLayoutTest extends TestCase
         self::assertSame('pe-4', $result['days'][6][0]->panel);
     }
 
+    public function testLateShowPastMidnightStaysOnItsEvening(): void
+    {
+        $start = new \DateTimeImmutable('2026-11-04 22:30');
+        $late = new CalendarEntry('pe-9', EntryGroup::PERFORMANCE, 'performance', 'Spät', $start, $start->modify('+2 hours'), roomId: 1);
+
+        $result = RunLayout::arrange($this->week(), [$late]);
+
+        self::assertSame([], $result['runs']);
+        self::assertSame('pe-9', $result['days'][2][0]->panel);
+        self::assertSame([], $result['days'][3]);
+        self::assertSame('22:30–00:30', $late->timeLabelOn($this->week()[2]));
+    }
+
     public function testMultiDayEntryBecomesOneRun(): void
     {
         $start = new \DateTimeImmutable('2026-11-03 10:00');
