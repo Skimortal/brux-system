@@ -3,9 +3,9 @@
 namespace App\Calendar;
 
 /**
- * Joins entries that belong together across consecutive days into one bar:
- * multi-day entries, and the same production/title in the same room on
- * back-to-back days (e.g. a run of performances).
+ * Lays out a row of days: an entry spanning several days becomes one bar, every
+ * other entry stays on its day. Entries on consecutive days are not joined, so each
+ * performance keeps its own place, colour and time order.
  */
 final class RunLayout
 {
@@ -23,7 +23,6 @@ final class RunLayout
     {
         $count = \count($days);
         $perDay = array_fill(0, $count, []);
-        $candidates = [];
         $runs = [];
 
         foreach ($entries as $entry) {
@@ -40,33 +39,7 @@ final class RunLayout
                 $runs[] = self::run(array_map(static fn (int $i) => ['day' => $days[$i], 'entry' => $entry, 'index' => $i], $indices), true);
                 continue;
             }
-            $index = $indices[0];
-            if ($entry->cancelled || $count === 1) {
-                $perDay[$index][] = $entry;
-                continue;
-            }
-            $key = $entry->colorKey . '|' . $entry->title . '|' . ($entry->roomId ?? '-');
-            if (isset($candidates[$key][$index])) {
-                // second entry of the same kind on the same day stays on its own
-                $perDay[$index][] = $entry;
-                continue;
-            }
-            $candidates[$key][$index] = $entry;
-        }
-
-        foreach ($candidates as $byDay) {
-            ksort($byDay);
-            $chain = [];
-            $previous = null;
-            foreach ($byDay as $index => $entry) {
-                if ($previous !== null && $index !== $previous + 1) {
-                    self::flush($chain, $days, $runs, $perDay);
-                    $chain = [];
-                }
-                $chain[$index] = $entry;
-                $previous = $index;
-            }
-            self::flush($chain, $days, $runs, $perDay);
+            $perDay[$indices[0]][] = $entry;
         }
 
         // pack runs into rows
@@ -83,25 +56,6 @@ final class RunLayout
         unset($run);
 
         return ['runs' => $runs, 'rows' => \count($rowEnds), 'days' => $perDay];
-    }
-
-    /**
-     * @param array<int, CalendarEntry> $chain
-     */
-    private static function flush(array $chain, array $days, array &$runs, array &$perDay): void
-    {
-        if (\count($chain) >= 2) {
-            $segments = [];
-            foreach ($chain as $index => $entry) {
-                $segments[] = ['day' => $days[$index], 'entry' => $entry, 'index' => $index];
-            }
-            $runs[] = self::run($segments);
-
-            return;
-        }
-        foreach ($chain as $index => $entry) {
-            $perDay[$index][] = $entry;
-        }
     }
 
     private static function run(array $segments, bool $single = false): array

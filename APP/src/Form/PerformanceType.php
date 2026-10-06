@@ -8,7 +8,10 @@ use App\Entity\ProductionEvent;
 use App\Entity\Room;
 use App\Enum\EventReservationStatus;
 use App\Enum\EventStatus;
+use App\Service\BruxApiSyncService;
 use App\Service\FieldOwnership;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -28,8 +31,15 @@ use Symfony\Component\Validator\Constraints\NotNull;
  */
 final class PerformanceType extends AbstractType
 {
+    public const NAME = 'performance';
+
     public function __construct(private readonly FieldOwnership $ownership)
     {
+    }
+
+    public function getBlockPrefix(): string
+    {
+        return self::NAME;
     }
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
@@ -40,6 +50,13 @@ final class PerformanceType extends AbstractType
         $ownership = $this->ownership;
         // one row per price of the production, so the form shows what WordPress has
         $performance->alignPricesWithProduction();
+        // categories the website sets itself are not offered, so the submit must not drop them
+        $serverCategories = array_filter($performance->getCategories()->toArray(), static fn (EventCategory $c) => \in_array($c->getSlug(), BruxApiSyncService::SERVER_CATEGORIES, true));
+        $builder->addEventListener(FormEvents::POST_SUBMIT, static function (FormEvent $event) use ($serverCategories): void {
+            foreach ($serverCategories as $category) {
+                $event->getData()?->addCategory($category);
+            }
+        });
 
         if ($performance->getId() === null) {
             $builder->add('production', EntityType::class, [
@@ -82,6 +99,12 @@ final class PerformanceType extends AbstractType
                 'expanded' => true,
                 'required' => false,
                 'choice_label' => 'name',
+                // "ausverkauft" is set by the website; it is not offered and kept as it is
+                'query_builder' => static fn (EntityRepository $r) => $r->createQueryBuilder('c')
+                    ->andWhere('c.slug IS NULL OR c.slug NOT IN (:server)')
+                    ->setParameter('server', BruxApiSyncService::SERVER_CATEGORIES)
+                    ->orderBy('c.name', 'ASC'),
+                'help' => '„Ausverkauft“ setzt die Website automatisch, sobald das Kontingent voll ist.',
                 'by_reference' => false,
                 'disabled' => $locked('categories'),
             ])
@@ -89,6 +112,8 @@ final class PerformanceType extends AbstractType
                 'entry_type' => EventPriceType::class,
                 'label' => 'Kontingent je Preis',
                 'by_reference' => false,
+                // rows of a production chosen differently in the browser are ignored, not an error
+                'allow_extra_fields' => true,
                 'prototype_name' => '__price__',
                 'disabled' => $locked('priceList'),
             ]);

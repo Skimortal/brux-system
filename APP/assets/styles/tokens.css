@@ -127,7 +127,6 @@
 :root[data-theme="dark"] .cal-lane.is-house .cal-lane-bg, :root[data-theme="dark"] .cal-lane-label.is-house { background: #1b1b1a; }
 :root[data-theme="dark"] .cal-keys, :root[data-theme="dark"] .cal-keys .cal-lane-label { background: #1f1c16; }
 :root[data-theme="dark"] .cal-mday.is-other { background: #1b1b1a; }
-:root[data-theme="dark"] .cal-item .wp, :root[data-theme="dark"] .cal-run-title .wp { background: rgba(0, 0, 0, 0.35); }
 :root[data-theme="dark"] .loan-item.is-active { background: #221e14; }
 :root[data-theme="dark"] .loan-item.is-overdue { background: #2a1616; }
 :root[data-theme="dark"] .toast { background: #ededeb; color: #151514; }

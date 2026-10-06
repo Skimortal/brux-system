@@ -70,10 +70,9 @@
                         </div>
                     </div>
                     {{ form_row(form.subtitle) }}
-                    {% for field in [form.generalInfo, form.intro, form.shortDescription, form.description, form.pressQuotes, form.credits, form.additionalInfo] %}
+                    {% for field in [form.generalInfo, form.intro, form.description, form.pressQuotes, form.credits, form.additionalInfo, form.shortDescription] %}
                         {{ include('production/_rich_text.html.twig', {field: field, compact: true}) }}
                     {% endfor %}
-                    {{ form_row(form.excerptHtml) }}
                     <div class="field">
                         <span class="field-label">{{ form.categories.vars.label }}</span>
                         <div class="toggles">

@@ -19,7 +19,6 @@ final class CalendarEntry
         public readonly bool $allDay = false,
         public readonly ?int $roomId = null,
         public readonly ?string $meta = null,
-        public readonly bool $fromWordPress = false,
         public readonly bool $cancelled = false,
         public readonly ?string $icon = null,
         /** Rooms an entry belongs to when it has several (key loans: the rooms the key opens). */

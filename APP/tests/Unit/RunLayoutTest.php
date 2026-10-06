@@ -27,33 +27,18 @@ final class RunLayoutTest extends TestCase
         return new CalendarEntry($panel, EntryGroup::PERFORMANCE, 'performance', $title, $start, $start->modify('+2 hours'), roomId: 1, cancelled: $cancelled);
     }
 
-    public function testConsecutiveDaysOfTheSameProductionAreJoined(): void
+    public function testConsecutiveDaysOfTheSameProductionStaySeparate(): void
     {
         $result = RunLayout::arrange($this->week(), [
             $this->performance('pe-1', 'Tintinnabulum', '2026-11-06'),
             $this->performance('pe-2', 'Tintinnabulum', '2026-11-07'),
-            $this->performance('pe-3', 'Tintinnabulum', '2026-11-10'),
             $this->performance('pe-4', 'Anderes', '2026-11-08'),
         ]);
 
-        self::assertCount(1, $result['runs']);
-        self::assertSame(4, $result['runs'][0]['col']);
-        self::assertSame(2, $result['runs'][0]['span']);
-        self::assertSame(['pe-1', 'pe-2'], array_map(static fn ($s) => $s['entry']->panel, $result['runs'][0]['segments']));
-        self::assertSame('pe-4', $result['days'][6][0]->panel);
-    }
-
-    public function testCancelledDaysBreakTheRun(): void
-    {
-        $result = RunLayout::arrange($this->week(), [
-            $this->performance('pe-1', 'Reinigung', '2026-11-03'),
-            $this->performance('pe-2', 'Reinigung', '2026-11-04', cancelled: true),
-            $this->performance('pe-3', 'Reinigung', '2026-11-05'),
-        ]);
-
         self::assertSame([], $result['runs']);
-        self::assertCount(1, $result['days'][1]);
-        self::assertCount(1, $result['days'][2]);
+        self::assertSame('pe-1', $result['days'][4][0]->panel);
+        self::assertSame('pe-2', $result['days'][5][0]->panel);
+        self::assertSame('pe-4', $result['days'][6][0]->panel);
     }
 
     public function testMultiDayEntryBecomesOneRun(): void

@@ -7,7 +7,7 @@
     {% if compact %}
         <span class="title">{% if not e.allDay %}<span class="mono small">{{ e.start|date('H:i') }}</span> {% endif %}{{ e.title }}</span>
     {% else %}
-        <span class="t">{% if e.icon %}{{ ux_icon(e.icon) }}{% endif %}{{ day is defined ? e.timeLabelOn(day) : e.timeLabel }}{% if e.fromWordPress %}<span class="wp">WP</span>{% endif %}</span>
+        <span class="t">{% if e.icon %}{{ ux_icon(e.icon) }}{% endif %}{{ day is defined ? e.timeLabelOn(day) : e.timeLabel }}</span>
         <span class="title">{{ e.title }}</span>
         {% if e.meta %}<span class="meta">{{ e.meta }}</span>{% endif %}
     {% endif %}

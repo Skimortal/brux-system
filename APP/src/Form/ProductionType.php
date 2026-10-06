@@ -28,12 +28,16 @@ final class ProductionType extends AbstractType
 {
     private const SECTIONS = [
         'generalInfo' => 'Allgemeine Infos',
-        'intro' => 'Einleitung (optional, steht vor der Kurzbeschreibung)',
-        'shortDescription' => 'Kurzbeschreibung',
+        'intro' => 'Einleitung (optional)',
         'description' => 'Stückbeschreibung',
         'pressQuotes' => 'Pressestimmen',
         'credits' => 'Credits',
         'additionalInfo' => 'Zusätzliche Informationen',
+        'shortDescription' => 'Text für den Infoscreen',
+    ];
+
+    private const HELP = [
+        'shortDescription' => 'Nur für den Infoscreen, auf der Website wird er nicht angezeigt. Muss für sich allein verständlich sein, ohne die übrigen Texte.',
     ];
 
     public function __construct(private readonly FieldOwnership $ownership)
@@ -80,10 +84,10 @@ final class ProductionType extends AbstractType
                 'disabled' => $locked('contentHtml'),
                 'sanitize_html' => true,
                 'sanitizer' => 'app.website_content',
+                'help' => self::HELP[$field] ?? null,
             ]);
         }
         $builder
-            ->add('excerptHtml', TextareaType::class, ['label' => 'Kurztext (Auszug)', 'required' => false, 'attr' => ['rows' => 3], 'disabled' => $locked('excerptHtml'), 'help' => 'Wird auf der Website derzeit nicht angezeigt.'])
             ->add('categories', EntityType::class, [
                 'class' => ProductionCategory::class,
                 'label' => 'Kategorien',

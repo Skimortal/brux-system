@@ -70,6 +70,17 @@ final class WebsiteContentTest extends TestCase
         self::assertStringContainsString('<p class="stueckbeschreibung short displaynone">Kurzbeschreibung</p>', $html);
     }
 
+    public function testInfoscreenTextIsHiddenOnTheWebsiteButKept(): void
+    {
+        $content = new WebsiteContent();
+        $production = (new Production())->setSubtitle('von X | Y')->setShortDescription('<p>Für den Infoscreen.</p>');
+
+        $html = $content->render($production);
+        self::assertStringContainsString('<p class="stueckbeschreibung short displaynone">Für den Infoscreen.</p>', $html);
+        self::assertSame('<p>Für den Infoscreen.</p>', $content->parse($html)['shortDescription']);
+        self::assertNull($content->parse($content->render(new Production()))['shortDescription'], 'the placeholder is no text'); 
+    }
+
     public function testRoundTripKeepsTheContent(): void
     {
         $content = new WebsiteContent();

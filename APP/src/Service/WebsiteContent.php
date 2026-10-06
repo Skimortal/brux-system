@@ -9,7 +9,8 @@ use App\Entity\Production;
  * as the block template every post on the website uses: subtitle heading, featured
  * image, then each section as paragraphs, lists and headings carrying the CSS class
  * the theme styles.
- * Empty sections stay in the post, hidden with "displaynone", as in WordPress.
+ * Empty sections stay in the post, hidden with "displaynone", as in WordPress. The short
+ * description is the text of the infoscreen and always hidden on the website.
  */
 final class WebsiteContent
 {
@@ -20,6 +21,9 @@ final class WebsiteContent
      * leave an empty section out]. The intro holds description text that some posts put
      * before the short description.
      */
+    /** Sections kept in the post for other uses (the infoscreen) but hidden on the website. */
+    private const HIDDEN_SECTIONS = ['shortDescription'];
+
     private const SECTIONS = [
         'generalInfo' => ['allgemeineinfos', ''],
         'intro' => ['stueckbeschreibung', null],
@@ -77,16 +81,19 @@ final class WebsiteContent
 
         $sections = [];
         foreach (self::SECTIONS as $field => [$class, $placeholder]) {
+            if (\in_array($field, self::HIDDEN_SECTIONS, true)) {
+                $class .= ' displaynone';
+            }
             $sectionBlocks = $this->sectionBlocks((string) $production->{'get' . ucfirst($field)}(), $class);
             if ($sectionBlocks !== []) {
                 // a section of images only gets its hidden paragraph, so it is recognised again
                 $anchored = str_contains(implode('', $sectionBlocks), 'class="' . $class);
                 if (!$anchored && $placeholder !== null) {
-                    array_unshift($sectionBlocks, $this->paragraphBlock($class . ' displaynone', $placeholder));
+                    array_unshift($sectionBlocks, $this->paragraphBlock(str_replace(' displaynone', '', $class) . ' displaynone', $placeholder));
                 }
                 $sections[] = implode("\n\n", $sectionBlocks);
             } elseif ($placeholder !== null) {
-                $sections[] = $this->paragraphBlock($class . ' displaynone', $placeholder);
+                $sections[] = $this->paragraphBlock(str_replace(' displaynone', '', $class) . ' displaynone', $placeholder);
             }
         }
         $blocks[] = "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\">"
@@ -138,14 +145,17 @@ final class WebsiteContent
                 \in_array('pressestimmen', $classes, true) => 'pressQuotes',
                 \in_array('credits', $classes, true) => 'credits',
                 \in_array('zusaetzlicheinformation', $classes, true) => 'additionalInfo',
-                default => $current,
+                // visible text after the (hidden) infoscreen text belongs to the description
+                default => $current === 'shortDescription' ? 'description' : $current,
             };
             $current = $field;
             if ($field === 'shortDescription') {
                 $shortSeen = true;
             }
-            // hidden sections are empty
-            if (\in_array('displaynone', $classes, true) || trim(strip_tags($document->saveHTML($node), '<img>')) === '') {
+            // hidden blocks are empty sections, except the infoscreen text unless it is the placeholder
+            $text = trim(strip_tags($document->saveHTML($node), '<img>'));
+            $hidden = \in_array('displaynone', $classes, true);
+            if ($text === '' || ($hidden && (!\in_array($field, self::HIDDEN_SECTIONS, true) || $text === self::SECTIONS[$field][1]))) {
                 continue;
             }
             $parts[$field][] = $this->plainCopy($document, $node);

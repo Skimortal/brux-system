@@ -37,6 +37,7 @@
         <div class="toggles">
             {% for c in f.categories %}<span class="toggle">{{ form_widget(c) }}<label for="{{ c.vars.id }}">{{ c.vars.label }}</label></span>{% endfor %}
         </div>
+        {{ form_help(f.categories) }}
         {% do f.categories.setRendered %}
     </div>
     {{ rows.prices(f.priceList, is_new and pe.production is null ? 'Die Preise kommen von der Produktion; Kontingente je Preis nach dem Anlegen.' : 'Die Produktion hat noch keine Preise.') }}

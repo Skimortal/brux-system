@@ -165,7 +165,6 @@ final class CalendarBuilder
             allDay: $performance->isAllDay(),
             roomId: $performance->getRoom()?->getId(),
             meta: $meta !== [] ? implode(' · ', $meta) : null,
-            fromWordPress: $performance->getProduction()?->isFromWordPress() ?? false,
             cancelled: $performance->isCancelled(),
             color: $performance->getProduction()?->getCalendarColor(),
             movable: !$this->ownership->isLocked($performance, 'date'),

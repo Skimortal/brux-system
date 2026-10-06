@@ -280,9 +280,6 @@ class WordPressPushService
         if ($owned('contentHtml')) {
             $payload['content_html'] = $production->getContentHtml();
         }
-        if ($owned('excerptHtml')) {
-            $payload['excerpt_html'] = $production->getExcerptHtml();
-        }
         if ($owned('categories')) {
             $payload['categories'] = [];
             foreach ($production->getCategories() as $category) {

@@ -2,7 +2,7 @@
 {% set first = run.segments|first.entry %}
 <div class="cal-run t-{{ first.colorKey }}{{ first.isPast(cal.now) ? ' is-past' }}" style="grid-column: {{ run.col + 1 }} / span {{ run.span }}; grid-row: {{ run.row + 1 }}; --span: {{ run.span }}">
     <a class="cal-run-title" href="{{ (panel_link is defined and first.panel starts with 'pe-' ? panel_link ~ first.panel : cal_path(query, {panel: first.panel})) }}" data-turbo-frame="{{ link_frame ?? 'side' }}" data-turbo-action="advance" data-action="{{ link_frame is defined ? '' : 'quick-create#select' }}" data-panel="{{ first.panel }}">
-        {% if first.icon %}{{ ux_icon(first.icon) }}{% endif %}<span>{{ first.title }}</span>{% if first.fromWordPress %}<span class="wp">WP</span>{% endif %}
+        {% if first.icon %}{{ ux_icon(first.icon) }}{% endif %}<span>{{ first.title }}</span>
     </a>
     {% if run.single %}
         <a class="cal-run-seg cal-run-single{{ first.conflict ? ' has-conflict' }}{{ query.panel == first.panel ? ' is-selected' }}" href="{{ (panel_link is defined and first.panel starts with 'pe-' ? panel_link ~ first.panel : cal_path(query, {panel: first.panel})) }}" data-turbo-frame="{{ link_frame ?? 'side' }}" data-turbo-action="advance"

@@ -43,9 +43,10 @@ final class ProductionController extends AbstractController
     public function new(Request $request, EntityManagerInterface $em, WordPressPushService $push, CalendarBuilder $calendar, SluggerInterface $slugger, FieldOwnership $ownership, CalendarPage $page, WebsiteContent $content): Response
     {
         $production = (new Production())->setGeneralInfo(WebsiteContent::DEFAULT_GENERAL_INFO);
-        // every production on the website offers these two; the Freikarte is only visible internally
-        foreach (['Kulturpass “Hunger auf Kunst und Kultur”', 'Freikarte'] as $index => $category) {
-            $production->addPriceList((new ProductionPrice())->setPriceIndex($index)->setCategoryLabel($category)->setPriceLabel('0')->setParentReserved(0));
+        // every production on the website offers these two; the Kulturpass has a fixed limit of
+        // 5 seats, the Freikarte (only visible internally) always fits in 70
+        foreach (['Kulturpass “Hunger auf Kunst und Kultur”' => 5, 'Freikarte' => 70] as $category => $seats) {
+            $production->addPriceList((new ProductionPrice())->setPriceIndex(\count($production->getPriceList()))->setCategoryLabel($category)->setPriceLabel('0')->setParentReserved($seats));
         }
 
         return $this->edit($production, $request, $em, $push, $calendar, $slugger, $ownership, $page, $content);

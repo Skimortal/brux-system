@@ -290,7 +290,7 @@ class ProductionEvent extends Base
     /**
      * Gives the performance one price row per price of its production, as WordPress has
      * them: category and price come from the production, only the seats are per performance.
-     * Existing seats are kept by position; new rows start with the production's seats.
+     * Existing seats are kept by position; new or empty rows take the production's seats.
      */
     public function alignPricesWithProduction(): static
     {
@@ -306,6 +306,9 @@ class ProductionEvent extends Base
             $price->setPriceIndex($index)
                 ->setCategoryLabel($productionPrice->getCategoryLabel())
                 ->setPriceLabel($productionPrice->getPriceLabel());
+            if ($price->getReservedSeats() === null) {
+                $price->setReservedSeats($productionPrice->getParentReserved());
+            }
             $this->addPriceList($price);
             $kept[] = $price;
         }

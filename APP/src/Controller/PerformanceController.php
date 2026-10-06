@@ -7,6 +7,7 @@ use App\Entity\ProductionEvent;
 use App\Form\AppointmentType;
 use App\Form\PerformanceContactsType;
 use App\Form\PerformanceType;
+use App\Repository\ProductionRepository;
 use App\Repository\RoomRepository;
 use App\Service\AppointmentManager;
 use App\Service\FieldOwnership;
@@ -29,9 +30,12 @@ final class PerformanceController extends AbstractController
     }
 
     #[Route('/neu', name: 'app_performance_new', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $em, FieldOwnership $ownership, WordPressPushService $push): Response
+    public function new(Request $request, EntityManagerInterface $em, FieldOwnership $ownership, WordPressPushService $push, ProductionRepository $productions): Response
     {
         $performance = new ProductionEvent();
+        // the form has one price row per price of the production, so it needs the production up front
+        $productionId = (int) ($request->request->all(PerformanceType::NAME)['production'] ?? 0);
+        $performance->setProduction($productionId > 0 ? $productions->find($productionId) : null);
         $form = $this->createForm(PerformanceType::class, $performance);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {

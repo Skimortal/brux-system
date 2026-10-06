@@ -63,7 +63,7 @@
 }
 .ts-wrapper.focus .ts-control { border-color: var(--accent); box-shadow: var(--focus); }
 .ts-wrapper.multi .ts-control > div { background: var(--surface-3); border-radius: 999px; padding: 2px 10px; color: var(--ink); border: 0; }
-.ts-dropdown { border-color: var(--line); border-radius: 8px; box-shadow: var(--shadow-pop); font-size: 14px; }
+.ts-dropdown { border-color: var(--line); border-radius: 8px; box-shadow: var(--shadow-pop); font-size: 14px; z-index: 80; }
 .ts-dropdown .active { background: var(--surface-3); color: var(--ink); }
 .ts-wrapper .ts-control, .ts-wrapper.single.input-active .ts-control, .ts-wrapper .ts-control input { background: var(--surface); color: var(--ink); }
 .ts-dropdown, .ts-dropdown .option, .ts-dropdown .optgroup-header { background: var(--surface); color: var(--ink); }
