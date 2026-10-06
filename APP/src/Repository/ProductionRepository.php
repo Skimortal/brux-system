@@ -38,6 +38,19 @@ class ProductionRepository extends ServiceEntityRepository
             ->getOneOrNullResult();
     }
 
+    /** @return Production[] productions whose stay in the house overlaps [$from, $to) */
+    public function findStaysBetween(\DateTimeImmutable $from, \DateTimeImmutable $to): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.stayFrom IS NOT NULL')
+            ->andWhere('p.stayFrom < :to')
+            ->andWhere('COALESCE(p.stayUntil, p.stayFrom) >= :from')
+            ->setParameter('from', $from->setTime(0, 0))
+            ->setParameter('to', $to)
+            ->getQuery()
+            ->getResult();
+    }
+
     /** @return Production[] productions whose last push failed */
     public function findFailedPushes(): array
     {

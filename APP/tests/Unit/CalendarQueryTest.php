@@ -42,6 +42,16 @@ final class CalendarQueryTest extends TestCase
 
         self::assertSame(['date' => '2026-10-15', 'panel' => 'pe-4'], $query->params());
         self::assertSame(['date' => '2026-10-15'], $query->params(['panel' => null]));
-        self::assertSame('cleaning', $query->toggleParams(EntryGroup::CLEANING)['hide']);
+        self::assertSame('cleaning,stay', $query->toggleParams(EntryGroup::CLEANING)['hide']);
+    }
+
+    public function testStayIsOffUntilSwitchedOn(): void
+    {
+        $default = CalendarQuery::fromRequest(new Request());
+        self::assertTrue($default->isHidden(EntryGroup::STAY));
+
+        $shown = $default->toggleParams(EntryGroup::STAY);
+        self::assertSame('-', $shown['hide']);
+        self::assertFalse(CalendarQuery::fromRequest(new Request($shown))->isHidden(EntryGroup::STAY));
     }
 }

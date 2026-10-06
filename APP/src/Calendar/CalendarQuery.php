@@ -9,6 +9,8 @@ use Symfony\Component\HttpFoundation\Request;
  */
 final class CalendarQuery
 {
+    private const DEFAULT_HIDE = 'stay';
+
     public const VIEWS = ['day' => 'Tag', 'week' => 'Woche', 'month' => 'Monat'];
     /** split: one calendar per room side by side; rows: rooms as rows of one calendar; all: one calendar. */
     public const LAYOUTS = ['split' => 'Räume', 'rows' => 'Zeilen', 'all' => 'Gesamt'];
@@ -20,7 +22,7 @@ final class CalendarQuery
         public readonly \DateTimeImmutable $date,
         public readonly string $view = 'month',
         public readonly string $layout = 'split',
-        public readonly array $hidden = [],
+        public readonly array $hidden = [EntryGroup::STAY],
         public readonly ?string $panel = null,
         public readonly string $side = 'keys',
     ) {
@@ -40,7 +42,8 @@ final class CalendarQuery
             $layout = 'rows';
         }
         $hidden = [];
-        foreach (explode(',', $request->query->getString('hide')) as $value) {
+        // "Im Haus" is off until switched on; "-" stands for nothing hidden
+        foreach (explode(',', $request->query->has('hide') ? $request->query->getString('hide') : self::DEFAULT_HIDE) as $value) {
             $group = EntryGroup::tryFrom(trim($value));
             if ($group !== null) {
                 $hidden[] = $group;
@@ -129,14 +132,14 @@ final class CalendarQuery
             'date' => $this->date->format('Y-m-d'),
             'view' => $this->view,
             'layout' => $this->layout,
-            'hide' => implode(',', array_map(static fn (EntryGroup $g) => $g->value, $this->hidden)),
+            'hide' => self::hideParam($this->hidden),
             'panel' => $this->panel,
             'side' => $this->side,
         ];
         foreach ($overrides as $key => $value) {
             $params[$key] = $value;
         }
-        $defaults = ['view' => 'month', 'layout' => 'split', 'side' => 'keys', 'hide' => ''];
+        $defaults = ['view' => 'month', 'layout' => 'split', 'side' => 'keys', 'hide' => self::DEFAULT_HIDE];
 
         return array_filter(
             $params,
@@ -155,7 +158,16 @@ final class CalendarQuery
             $hidden[] = $group;
         }
 
-        return $this->params(['hide' => implode(',', array_map(static fn (EntryGroup $g) => $g->value, $hidden))]);
+        return $this->params(['hide' => self::hideParam($hidden)]);
+    }
+
+    /** @param EntryGroup[] $hidden */
+    private static function hideParam(array $hidden): string
+    {
+        $values = array_map(static fn (EntryGroup $g) => $g->value, $hidden);
+        sort($values);
+
+        return $values === [] ? '-' : implode(',', $values);
     }
 
     private static function monday(\DateTimeImmutable $date): \DateTimeImmutable

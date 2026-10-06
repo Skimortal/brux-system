@@ -4,6 +4,7 @@ namespace App\Form;
 
 use App\Entity\Production;
 use App\Entity\ProductionCategory;
+use App\Entity\Room;
 use App\Service\FieldOwnership;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
@@ -11,14 +12,17 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\UrlType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Callback;
 use Symfony\Component\Validator\Constraints\Image;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * Local production data. Fields owned by WordPress are only added for productions
@@ -119,6 +123,27 @@ final class ProductionType extends AbstractType
                 'required' => false,
                 'placeholder' => 'offen',
                 'choices' => array_flip(Production::GRANDSTAND_LABELS),
+            ])
+            ->add('stayFrom', DateType::class, ['label' => 'Im Haus von', 'widget' => 'single_text', 'input' => 'datetime_immutable', 'required' => false])
+            ->add('stayUntil', DateType::class, [
+                'label' => 'bis',
+                'widget' => 'single_text',
+                'input' => 'datetime_immutable',
+                'required' => false,
+                'constraints' => [new Callback(static function (?\DateTimeImmutable $until, ExecutionContextInterface $context): void {
+                    $from = $context->getRoot()->get('stayFrom')->getData();
+                    if ($until !== null && $from !== null && $until < $from) {
+                        $context->addViolation('Das Ende liegt vor dem Beginn.');
+                    }
+                })],
+            ])
+            ->add('stayRoom', EntityType::class, [
+                'class' => Room::class,
+                'label' => 'Raum',
+                'required' => false,
+                'placeholder' => 'ganzes Haus',
+                'query_builder' => static fn (EntityRepository $r) => $r->createQueryBuilder('r')->orderBy('r.position', 'ASC'),
+                'choice_label' => 'name',
             ])
             ->add('contactPersons', CollectionType::class, [
                 'entry_type' => ProductionContactPersonType::class,

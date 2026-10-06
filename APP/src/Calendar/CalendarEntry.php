@@ -29,6 +29,8 @@ final class CalendarEntry
         public readonly bool $movable = false,
         /** Reserved seats, to warn before moving a performance people have booked. */
         public readonly ?int $reservedSeats = null,
+        /** A page to open instead of a side panel. */
+        public readonly ?string $url = null,
     ) {
     }
 

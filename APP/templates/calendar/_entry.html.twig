@@ -1,6 +1,6 @@
 {# @var e \App\Calendar\CalendarEntry #}
 {% set compact = compact ?? false %}
-<a href="{{ (panel_link is defined and e.panel starts with 'pe-' ? panel_link ~ e.panel : cal_path(query, {panel: e.panel})) }}" data-turbo-frame="{{ link_frame ?? 'side' }}" data-turbo-action="advance"
+<a href="{{ e.url ?: (panel_link is defined and e.panel starts with 'pe-' ? panel_link ~ e.panel : cal_path(query, {panel: e.panel})) }}" data-turbo-frame="{{ e.url ? '_top' : (link_frame ?? 'side') }}" data-turbo-action="advance"
    data-panel="{{ e.panel }}"{% if e.movable and link_frame is not defined %} draggable="true" data-move-url="{{ path('app_performance_move', {id: e.panel|slice(3)}) }}" data-date="{{ e.start|date('Y-m-d') }}" data-room="{{ e.roomId }}" data-seats="{{ e.reservedSeats ?? 0 }}"{% endif %} data-action="{{ link_frame is defined ? '' : 'quick-create#select' }}"
    class="cal-item t-{{ e.colorKey }}{{ e.isPast(cal.now) ? ' is-past' }}{{ e.cancelled ? ' is-cancelled' }}{{ e.conflict ? ' has-conflict' }}{{ query.panel == e.panel ? ' is-selected' }}{{ e.color ? ' has-color' }}"{% if e.color %} style="--cat: {{ e.color }}"{% endif %}
    title="{{ e.title }} · {{ day is defined ? e.timeLabelOn(day) : e.timeLabel }}{{ e.conflict ? ' · ' ~ e.conflict }}">

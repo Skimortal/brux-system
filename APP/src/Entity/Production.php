@@ -80,6 +80,17 @@ class Production extends Base
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $grandstand = null;
 
+    /** When the group is in the house (rehearsals, setup, run), shown in the calendar on demand. */
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $stayFrom = null;
+
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $stayUntil = null;
+
+    #[ORM\ManyToOne(targetEntity: Room::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Room $stayRoom = null;
+
     #[ORM\Column(length: 20, options: ['default' => 'draft'])]
     private string $websiteStatus = 'draft';
 
@@ -358,6 +369,42 @@ class Production extends Base
         }
 
         return null;
+    }
+
+    public function getStayFrom(): ?\DateTimeImmutable
+    {
+        return $this->stayFrom;
+    }
+
+    public function setStayFrom(?\DateTimeImmutable $stayFrom): static
+    {
+        $this->stayFrom = $stayFrom;
+
+        return $this;
+    }
+
+    public function getStayUntil(): ?\DateTimeImmutable
+    {
+        return $this->stayUntil;
+    }
+
+    public function setStayUntil(?\DateTimeImmutable $stayUntil): static
+    {
+        $this->stayUntil = $stayUntil;
+
+        return $this;
+    }
+
+    public function getStayRoom(): ?Room
+    {
+        return $this->stayRoom;
+    }
+
+    public function setStayRoom(?Room $stayRoom): static
+    {
+        $this->stayRoom = $stayRoom;
+
+        return $this;
     }
 
     public function getWebsiteStatus(): string

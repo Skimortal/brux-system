@@ -16,6 +16,7 @@ enum EntryGroup: string
     case INTERNAL = 'internal';
     case CLEANING = 'cleaning';
     case KEYS = 'keys';
+    case STAY = 'stay';
 
     public function label(): string
     {
@@ -27,6 +28,7 @@ enum EntryGroup: string
             self::INTERNAL => 'Intern',
             self::CLEANING => 'Reinigung',
             self::KEYS => 'Schlüssel',
+            self::STAY => 'Im Haus',
         };
     }
 
@@ -41,6 +43,7 @@ enum EntryGroup: string
             self::INTERNAL => 'internal',
             self::CLEANING => 'cleaning',
             self::KEYS => 'key',
+            self::STAY => 'stay',
         };
     }
 

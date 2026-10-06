@@ -69,6 +69,7 @@
     --t-internal-bg: #ece9e2; --t-internal-ink: #45413a; --t-internal-line: #dad5ca; --t-internal-dot: #a8a295;
     --t-cleaning-bg: #ddf1ee; --t-cleaning-ink: #0f5249; --t-cleaning-line: #bce2dc; --t-cleaning-dot: #4fa396;
     --t-key-bg: #fcebc9; --t-key-ink: #7a3e00; --t-key-line: #eacb8e; --t-key-dot: #d9a94a;
+    --t-stay-bg: #e9eef2; --t-stay-ink: #2b3f52; --t-stay-line: #cfd9e2; --t-stay-dot: #7d94a8;
 
     --radius-sm: 4px;
     --radius: 5px;
@@ -116,6 +117,7 @@
     --t-internal-bg: #2e2e2b; --t-internal-ink: #d6d6d2; --t-internal-line: #43433f;
     --t-cleaning-bg: #133633; --t-cleaning-ink: #9ee0d6; --t-cleaning-line: #1f4f4a;
     --t-key-bg: #3d2c0d; --t-key-ink: #f2c77a; --t-key-line: #5c451a;
+    --t-stay-bg: #1f2a33; --t-stay-ink: #c3d3e0; --t-stay-line: #31414e;
     --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.55);
     --focus: 0 0 0 3px rgba(237, 237, 235, 0.3);
 }

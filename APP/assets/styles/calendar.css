@@ -83,7 +83,7 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .cal-item[draggable="true"] { cursor: grab; }
 .cal-item.is-dragging { opacity: .4; }
 .is-drop-target { background: color-mix(in srgb, var(--accent) 12%, transparent); outline: 2px dashed var(--accent); outline-offset: -2px; border-radius: 6px; }
-.cal-item.has-color { --bg: color-mix(in srgb, var(--cat) 20%, var(--surface)); --line: color-mix(in srgb, var(--cat) 55%, var(--surface)); box-shadow: inset 3px 0 0 var(--cat); }
+.cal-item.has-color, .cal-run.has-color { --bg: color-mix(in srgb, var(--cat) 20%, var(--surface)); --line: color-mix(in srgb, var(--cat) 55%, var(--surface)); box-shadow: inset 3px 0 0 var(--cat); }
 .t-production { --bg: var(--t-production-bg); --ink: var(--t-production-ink); --line: var(--t-production-line); }
 .t-closed_event { --bg: var(--t-closed_event-bg); --ink: var(--t-closed_event-ink); --line: var(--t-closed_event-line); }
 .t-school_event { --bg: var(--t-school_event-bg); --ink: var(--t-school_event-ink); --line: var(--t-school_event-line); }
@@ -91,6 +91,7 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .t-internal { --bg: var(--t-internal-bg); --ink: var(--t-internal-ink); --line: var(--t-internal-line); }
 .t-cleaning { --bg: var(--t-cleaning-bg); --ink: var(--t-cleaning-ink); --line: var(--t-cleaning-line); }
 .t-key { --bg: var(--t-key-bg); --ink: var(--t-key-ink); --line: var(--t-key-line); }
+.t-stay { --bg: var(--t-stay-bg); --ink: var(--t-stay-ink); --line: var(--t-stay-line); }
 .swatch-performance { background: var(--t-performance-dot); }
 .swatch-production { background: var(--t-production-dot); }
 .swatch-closed_event { background: var(--t-closed_event-dot); }
@@ -98,6 +99,7 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .swatch-internal { background: var(--t-internal-dot); }
 .swatch-cleaning { background: var(--t-cleaning-dot); }
 .swatch-key { background: var(--t-key-dot); }
+.swatch-stay { background: var(--t-stay-dot); }
 
 /* key lane */
 .cal-keys { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; position: relative; background: #fffcf5; border-bottom: 1px solid var(--line); }

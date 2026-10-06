@@ -10,10 +10,12 @@ use App\Enum\AppointmentTypeEnum;
 use App\Repository\AppointmentRepository;
 use App\Repository\CleaningScheduleRepository;
 use App\Repository\KeyLoanRepository;
+use App\Repository\ProductionRepository;
 use App\Repository\ProductionEventRepository;
 use App\Repository\RoomRepository;
 use App\Service\FieldOwnership;
 use Symfony\Component\Clock\ClockInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * Collects performances, appointments, cleaning schedule occurrences and key loans
@@ -29,6 +31,8 @@ final class CalendarBuilder
         private readonly RoomRepository $rooms,
         private readonly ClockInterface $clock,
         private readonly FieldOwnership $ownership,
+        private readonly ?ProductionRepository $productions = null,
+        private readonly ?UrlGeneratorInterface $urls = null,
     ) {
     }
 
@@ -110,6 +114,22 @@ final class CalendarBuilder
                 continue;
             }
             $entries[] = $this->appointmentEntry($appointment);
+        }
+        foreach ($this->productions?->findStaysBetween($from, $to) ?? [] as $production) {
+            $entries[] = new CalendarEntry(
+                panel: 'p-' . $production->getId(),
+                group: EntryGroup::STAY,
+                colorKey: 'stay',
+                title: (string) $production->getTitle(),
+                start: $production->getStayFrom()->setTime(0, 0),
+                end: ($production->getStayUntil() ?? $production->getStayFrom())->setTime(0, 0)->modify('+1 day'),
+                allDay: true,
+                roomId: $production->getStayRoom()?->getId(),
+                meta: 'im Haus',
+                icon: 'lucide:house',
+                color: $production->getCalendarColor(),
+                url: $this->urls?->generate('app_production_show', ['id' => $production->getId()]),
+            );
         }
         foreach ($this->cleaningSchedules->findActiveBetween($from, $to) as $schedule) {
             for ($day = $from; $day < $to; $day = $day->modify('+1 day')) {

@@ -100,6 +100,18 @@
                 </div>
             </section>
 
+            <section class="card">
+                <div class="card-head"><h2>Im Haus</h2></div>
+                <div class="card-body form">
+                    <p class="small muted">Wie lange die Gruppe im Haus ist. Im Kalender über den Filter „Im Haus“ einblendbar.</p>
+                    <div class="form-grid-3">
+                        {{ form_row(form.stayFrom) }}
+                        {{ form_row(form.stayUntil) }}
+                        {{ form_row(form.stayRoom) }}
+                    </div>
+                </div>
+            </section>
+
             <section class="card" id="ansprechpersonen" data-controller="collection" data-collection-index-value="{{ form.contactPersons|length }}" data-collection-placeholder-value="__cp__">
                 <div class="card-head">
                     <h2>Ansprechpersonen</h2>
