@@ -1,0 +1,39 @@
+{# Time grid (layout "grid"): hours running down; day view a column per room, week view a column per day. #}
+{% set g = cal.grid %}
+{% set week = query.view == 'week' %}
+{% set has_all_day = g.columns|filter(c => c.allDay|length > 0)|length > 0 %}
+<div class="tg" style="--tg-cols: {{ g.columns|length }}; --tg-hours: {{ g.hours|length }}">
+    <div class="cal-head tg-corner"></div>
+    {% for c in g.columns %}
+        <div class="cal-head{{ week and cal.isToday(c.date) ? ' is-today' }}">
+            {% if week %}
+                <a href="{{ cal_path(query, {view: 'day', date: c.date|date('Y-m-d')}) }}" title="Tagesansicht"><span>{{ c.date|de_date('EE') }}</span><span class="num">{{ c.date|date('j') }}</span></a>
+            {% else %}
+                <span class="tg-room">{{ c.label }}</span>
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    {% if has_all_day %}
+        <div class="tg-label">ganztägig</div>
+        {% for c in g.columns %}
+            <div class="tg-allday" data-date="{{ c.date|date('Y-m-d') }}" data-room="{{ c.roomId ?? '' }}" data-label="{{ c.date|de_date('EE d.M.') }}{{ week ? '' : ' · ' ~ c.label }}">
+                {% for e in c.allDay %}{{ include('calendar/_entry.html.twig', {e: e, day: c.date, compact: true}) }}{% endfor %}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="tg-times">
+        {% for h in g.hours %}<div class="tg-hour">{{ '%02d'|format(h) }}:00</div>{% endfor %}
+    </div>
+    {% for c in g.columns %}
+        <div class="tg-col{{ cal.isToday(c.date) ? ' is-today' }}" data-date="{{ c.date|date('Y-m-d') }}" data-room="{{ c.roomId ?? '' }}"
+             data-label="{{ c.date|de_date('EE d.M.') }}{{ week ? '' : ' · ' ~ c.label }}" data-grid-from="{{ g.from }}" data-grid-to="{{ g.to }}">
+            {% for item in c.timed %}
+                <div class="tg-ev" style="top: {{ item.top }}%; height: {{ item.height }}%; left: {{ item.left }}%; width: {{ item.width }}%">
+                    {{ include('calendar/_entry.html.twig', {e: item.entry, day: c.date, room_label: week and item.entry.roomId ? cal.roomNames[item.entry.roomId] ?? null : null}) }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>

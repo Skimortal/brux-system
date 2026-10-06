@@ -55,6 +55,9 @@ final class CalendarBuilder
         $this->markConflicts($entries);
 
         $layout = $query->effectiveLayout();
+        if ($layout === 'grid') {
+            return new CalendarView($query, $days, [], [], 0, array_values($entries), $now, grid: $this->grid($query, $days, $entries), roomNames: $this->roomNames());
+        }
         [$bars, $rows] = $query->isHidden(EntryGroup::KEYS) || $layout === 'split' ? [[], 0] : $this->keyBars($days, $from, $to, $now);
 
         return new CalendarView(
@@ -67,6 +70,50 @@ final class CalendarBuilder
             $now,
             $layout === 'split' ? $this->split($query, $days, $entries, $from, $to, $now) : [],
         );
+    }
+
+    /**
+     * Time grid: in the day view a column per room (the dashboard rooms and any room in
+     * use, plus the whole house when something has no room), in the week view a column
+     * per day. Key loans have no times and are left out.
+     *
+     * @param \DateTimeImmutable[] $days
+     * @param CalendarEntry[]      $entries
+     */
+    private function grid(CalendarQuery $query, array $days, array $entries): array
+    {
+        $entries = array_values(array_filter($entries, static fn (CalendarEntry $e) => $e->group !== EntryGroup::KEYS));
+        $columns = [];
+        if ($query->view === 'day') {
+            $day = $days[0];
+            $usedRooms = array_unique(array_filter(array_map(static fn (CalendarEntry $e) => $e->roomId, $entries)));
+            /** @var Room $room */
+            foreach ($this->rooms->findBy([], ['position' => 'ASC', 'name' => 'ASC']) as $room) {
+                if ($room->isShowOnDashboard() || \in_array($room->getId(), $usedRooms, true)) {
+                    $columns[] = ['key' => 'room-' . $room->getId(), 'label' => (string) $room->getName(), 'date' => $day, 'roomId' => $room->getId(), 'house' => false];
+                }
+            }
+            if (array_filter($entries, static fn (CalendarEntry $e) => $e->roomId === null) !== []) {
+                $columns[] = ['key' => 'house', 'label' => 'Ganzes Haus', 'date' => $day, 'roomId' => null, 'house' => true];
+            }
+        } else {
+            foreach ($days as $index => $day) {
+                $columns[] = ['key' => 'day-' . $index, 'label' => $day->format('Y-m-d'), 'date' => $day, 'roomId' => null, 'house' => false];
+            }
+        }
+
+        return TimeGrid::arrange($columns, $entries);
+    }
+
+    /** @return array<int, string> */
+    private function roomNames(): array
+    {
+        $names = [];
+        foreach ($this->rooms->findAll() as $room) {
+            $names[$room->getId()] = (string) $room->getName();
+        }
+
+        return $names;
     }
 
     /**

@@ -12,8 +12,11 @@ final class CalendarQuery
     private const DEFAULT_HIDE = 'stay';
 
     public const VIEWS = ['day' => 'Tag', 'week' => 'Woche', 'month' => 'Monat'];
-    /** split: one calendar per room side by side; rows: rooms as rows of one calendar; all: one calendar. */
-    public const LAYOUTS = ['split' => 'Räume', 'rows' => 'Zeilen', 'all' => 'Gesamt'];
+    /**
+     * split: one calendar per room side by side; rows: rooms as rows of one calendar;
+     * all: one calendar; grid: hours running down (day: a column per room, week: per day).
+     */
+    public const LAYOUTS = ['split' => 'Räume', 'rows' => 'Zeilen', 'all' => 'Gesamt', 'grid' => 'Raster'];
 
     /**
      * @param EntryGroup[] $hidden
@@ -70,10 +73,14 @@ final class CalendarQuery
             : self::LAYOUTS;
     }
 
-    /** Layout actually used: the month view has no room rows. */
+    /** Layout actually used: the month view has no room rows and no time grid. */
     public function effectiveLayout(): string
     {
-        return $this->view === 'month' && $this->layout === 'rows' ? 'all' : $this->layout;
+        return match (true) {
+            $this->view === 'month' && $this->layout === 'rows' => 'all',
+            $this->view === 'month' && $this->layout === 'grid' => 'split',
+            default => $this->layout,
+        };
     }
 
     public function isHidden(EntryGroup $group): bool

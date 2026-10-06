@@ -24,7 +24,19 @@ export default class extends Controller {
             this.close();
             return;
         }
-        this.show(cell.dataset.date, cell.dataset.room, cell.dataset.label, event.clientX, event.clientY);
+        this.show(cell.dataset.date, cell.dataset.room, cell.dataset.label, event.clientX, event.clientY, this.timeAt(cell, event.clientY));
+    }
+
+    /** In the time grid: the clicked time, rounded down to the half hour. */
+    timeAt(cell, y) {
+        if (!cell.dataset.gridFrom) return null;
+        const from = Number(cell.dataset.gridFrom);
+        const to = Number(cell.dataset.gridTo);
+        const rect = cell.getBoundingClientRect();
+        const minutes = Math.min(to - 30, from + Math.floor(((y - rect.top) / rect.height) * (to - from) / 30) * 30);
+        const pad = (n) => String(n).padStart(2, '0');
+
+        return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
     }
 
     openDefault(event) {
@@ -34,8 +46,8 @@ export default class extends Controller {
         this.show(date, '', label, rect.right - 300, rect.bottom + 8);
     }
 
-    show(date, room, label, x, y) {
-        const start = `${date}T${this.defaultHour(date)}`;
+    show(date, room, label, x, y, time = null) {
+        const start = `${date}T${time ?? this.defaultHour(date)}`;
         this.labelTarget.textContent = label;
         this.linkTargets.forEach((link) => {
             if (link.dataset.kind === 'loan') {
@@ -46,14 +58,14 @@ export default class extends Controller {
             if (link.dataset.kind === 'production') {
                 // the new production page offers its first performance on this day afterwards
                 const url = new URL(this.productionUrlValue, window.location.origin);
-                url.searchParams.set('vorstellung', `${date}T19:30`);
+                url.searchParams.set('vorstellung', `${date}T${time ?? '19:30'}`);
                 link.href = url.pathname + url.search;
                 return;
             }
             const performance = link.dataset.kind === 'performance';
             const url = new URL(performance ? this.performanceUrlValue : this.appointmentUrlValue, window.location.origin);
             if (!performance) url.searchParams.set('type', link.dataset.type);
-            url.searchParams.set('start', performance ? `${date}T19:30` : start);
+            url.searchParams.set('start', performance && !time ? `${date}T19:30` : start);
             if (room) url.searchParams.set('room', room); else url.searchParams.delete('room');
             link.href = url.pathname + url.search;
         });

@@ -9,6 +9,7 @@
     {% else %}
         <span class="t">{% if e.icon %}{{ ux_icon(e.icon) }}{% endif %}{{ day is defined ? e.timeLabelOn(day) : e.timeLabel }}</span>
         <span class="title">{{ e.title }}</span>
+        {% if room_label ?? null %}<span class="meta">{{ room_label }}</span>{% endif %}
         {% if e.meta %}<span class="meta">{{ e.meta }}</span>{% endif %}
     {% endif %}
     {% if e.conflict %}<span class="conflict-dot" aria-hidden="true">!</span><span class="sr-only">{{ e.conflict }}</span>{% endif %}

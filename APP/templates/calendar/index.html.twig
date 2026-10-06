@@ -16,7 +16,9 @@
                  data-quick-create-performance-url-value="{{ cal_path(query, {panel: 'pe-new'}) }}"
                  data-quick-create-production-url-value="{{ path('app_production_new') }}"
                  data-action="click->quick-create#open">
-                {% if query.effectiveLayout == 'split' %}
+                {% if query.effectiveLayout == 'grid' %}
+                    {{ include('calendar/_timegrid.html.twig') }}
+                {% elseif query.effectiveLayout == 'split' %}
                     {{ include('calendar/_split.html.twig') }}
                 {% elseif query.view == 'month' %}
                     {{ include('calendar/_month.html.twig') }}

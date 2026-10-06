@@ -23,6 +23,10 @@ final class CalendarView
         public readonly \DateTimeImmutable $now,
         /** @var array<int, array{label: string, roomId: int, lane: ?array, weeks: ?array}> one calendar per room (layout "split") */
         public readonly array $split = [],
+        /** time grid (layout "grid"), see TimeGrid::arrange(); room names by id for the week columns */
+        public readonly ?array $grid = null,
+        /** @var array<int, string> */
+        public readonly array $roomNames = [],
     ) {
     }
 

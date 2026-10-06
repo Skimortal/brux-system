@@ -38,6 +38,23 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 }
 .cal-grid { --days: 7; display: grid; grid-template-columns: 104px repeat(var(--days), minmax(0, 1fr)); min-width: calc(104px + var(--days) * 118px); }
 .cal-grid.is-day { grid-template-columns: 104px minmax(0, 1fr); min-width: 0; }
+
+/* time grid: hours running down, a column per room (day) or per day (week) */
+.tg { --tg-cols: 7; --tg-hours: 16; --tg-hour: 52px; display: grid; grid-template-columns: 56px repeat(var(--tg-cols), minmax(118px, 1fr)); min-width: calc(56px + var(--tg-cols) * 118px); }
+.tg-corner { position: sticky; left: 0; z-index: 4; }
+.tg-room { color: var(--ink); font-weight: 600; }
+.tg-label { position: sticky; left: 0; z-index: 2; background: var(--surface); font-size: 10.5px; color: var(--muted); padding: 6px 6px 6px 0; text-align: right; border-bottom: 1px solid var(--line); }
+.tg-allday { display: flex; flex-direction: column; gap: 3px; padding: 4px; border-left: 1px solid var(--line-soft); border-bottom: 1px solid var(--line); cursor: copy; min-width: 0; }
+.tg-times { position: sticky; left: 0; z-index: 2; background: var(--surface); }
+.tg-hour { height: var(--tg-hour); font-size: 10.5px; color: var(--muted); text-align: right; padding-right: 6px; transform: translateY(-6px); }
+.tg-hour:first-child { transform: none; }
+.tg-col {
+    position: relative; height: calc(var(--tg-hours) * var(--tg-hour)); border-left: 1px solid var(--line-soft); cursor: copy;
+    background-image: repeating-linear-gradient(to bottom, var(--line-soft) 0 1px, transparent 1px var(--tg-hour));
+}
+.tg-col.is-today { background-color: color-mix(in srgb, var(--accent) 4%, transparent); }
+.tg-ev { position: absolute; padding: 1px 2px; box-sizing: border-box; min-height: 20px; }
+.tg-ev > .cal-item { height: 100%; overflow: hidden; }
 .cal-head {
     position: sticky; top: 0; z-index: 3; background: var(--surface-2); border-bottom: 1px solid var(--line);
     padding: 9px 10px; display: flex; align-items: baseline; gap: 6px; color: var(--muted); font-size: 12.5px;
