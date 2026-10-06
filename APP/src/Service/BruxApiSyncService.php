@@ -60,6 +60,7 @@ class BruxApiSyncService
         ];
         $syncedAt = new \DateTimeImmutable();
         $this->push->retryProductions($this->productionRepository->findFailedPushes());
+        $this->syncCategoryList($stats);
 
         try {
             $response = $this->httpClient->request('GET', $this->apiUrl, ['timeout' => 30]);
@@ -339,6 +340,36 @@ class BruxApiSyncService
             $event->addPriceList($price);
             $this->entityManager->persist($price);
         }
+    }
+
+    /**
+     * Takes over production categories created in WordPress, and their colour, which
+     * WordPress keeps as a hex code in the description, unless one is set here.
+     */
+    private function syncCategoryList(array &$stats): void
+    {
+        $result = $this->push->fetchProductionCategories();
+        if ($result['status'] !== 'success') {
+            return;
+        }
+        foreach ($result['categories'] as $data) {
+            $externalId = (int) ($data['term_id'] ?? 0);
+            if ($externalId === 0) {
+                continue;
+            }
+            $category = $this->productionCategoryRepository->findByExternalId($externalId);
+            if ($category === null) {
+                $category = (new ProductionCategory())->setExternalId($externalId);
+                $this->entityManager->persist($category);
+                ++$stats['categories_created'];
+            }
+            $category->setName((string) $this->decode($data['name'] ?? ''))->setSlug($data['slug'] ?? null);
+            $color = trim((string) ($data['description'] ?? ''));
+            if ($category->getColor() === null && preg_match('/^#[0-9a-f]{6}$/i', $color)) {
+                $category->setColor(strtolower($color));
+            }
+        }
+        $this->entityManager->flush();
     }
 
     private function syncProductionCategories(Production $production, array $categoriesData): void

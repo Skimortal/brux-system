@@ -111,6 +111,29 @@ class WordPressPushService
     }
 
     /**
+     * The production categories WordPress has (without the "-event" ones of performances).
+     *
+     * @return array{status: string, message?: string, categories?: list<array<string, mixed>>}
+     */
+    public function fetchProductionCategories(): array
+    {
+        $result = $this->request('GET', '/categories');
+        if ($result['status'] !== 'success') {
+            return $result;
+        }
+        $categories = array_filter($result['response']['categories'] ?? [], static fn (array $c) => !str_ends_with((string) ($c['slug'] ?? ''), '-event'));
+
+        return ['status' => 'success', 'categories' => array_values($categories)];
+    }
+
+    private function isWordPressMedia(?string $url): bool
+    {
+        $site = parse_url($this->wordpressApiUrl, \PHP_URL_HOST);
+
+        return $url !== null && \is_string($site) && parse_url($url, \PHP_URL_HOST) === $site;
+    }
+
+    /**
      * The reservations of a performance, read live from WordPress; they are not stored here.
      *
      * @return array{status: string, message?: string, reservations?: list<array<string, mixed>>}
@@ -235,7 +258,9 @@ class WordPressPushService
         if ($owned('title')) {
             $payload['title'] = $production->getTitle();
         }
-        if ($owned('postThumbnailUrl')) {
+        // WordPress imports the image behind this URL as the featured image; an image that
+        // already lives in its media library is left alone, so it is not imported twice
+        if ($owned('postThumbnailUrl') && !$this->isWordPressMedia($production->getPostThumbnailUrl())) {
             $payload['post_thumbnail_url'] = $production->getPostThumbnailUrl();
         }
         if ($owned('contentHtml')) {

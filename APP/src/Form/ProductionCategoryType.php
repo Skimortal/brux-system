@@ -29,6 +29,13 @@ final class ProductionCategoryType extends AbstractType
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
+        // a colour taken over from WordPress stays selectable even outside the palette
+        $colors = self::COLORS;
+        $current = $builder->getData()?->getColor();
+        if ($current !== null && !isset($colors[$current])) {
+            $colors[$current] = 'von der Website (' . $current . ')';
+        }
+
         $builder
             ->add('name', TextType::class, ['label' => 'Name', 'constraints' => [new NotBlank()]])
             ->add('color', ChoiceType::class, [
@@ -36,7 +43,7 @@ final class ProductionCategoryType extends AbstractType
                 'required' => false,
                 'expanded' => true,
                 'placeholder' => 'keine',
-                'choices' => array_flip(self::COLORS),
+                'choices' => array_flip($colors),
                 'choice_attr' => static fn (?string $color) => $color !== null ? ['style' => 'accent-color: ' . $color] : [],
                 'help' => 'Vorstellungen von Produktionen mit dieser Kategorie werden im Kalender so hinterlegt.',
             ])

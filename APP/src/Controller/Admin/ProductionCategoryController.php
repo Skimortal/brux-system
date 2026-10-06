@@ -21,7 +21,7 @@ final class ProductionCategoryController extends AbstractController
     {
         return $this->render('crud/list.html.twig', [
             'title' => 'Produktions-Kategorien',
-            'subtitle' => 'Kommen aus WordPress (z. B. VIP, Kinderprogramm). Die Farbe gilt nur im Kalender.',
+            'subtitle' => 'Kommen aus WordPress (z. B. VIP, Kinderprogramm). Die Farbe gilt im Kalender; ist hier keine gesetzt, wird die Farbe aus WordPress übernommen.',
             'crumbs' => [['label' => 'Verwaltung', 'url' => $this->generateUrl('app_settings')]],
             'new_url' => null,
             'columns' => ['Name', 'Farbe', 'Slug'],

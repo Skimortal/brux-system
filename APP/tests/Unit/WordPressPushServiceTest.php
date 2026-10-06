@@ -113,6 +113,19 @@ final class WordPressPushServiceTest extends TestCase
         self::assertSame([0, 1], [$first->getEventIndex(), $second->getEventIndex()]);
     }
 
+    public function testImageFromTheMediaLibraryIsNotSentAgain(): void
+    {
+        // new productions carry all fields, so only the origin of the image decides
+        $fromWordPress = (new Production())->setTitle('Bild aus der Mediathek')->setPostThumbnailUrl('https://wp.test/wp-content/uploads/2026/04/bild.jpg');
+        $uploadedHere = (new Production())->setTitle('Hier hochgeladen')->setPostThumbnailUrl('https://brux.test/uploads/productions/bild.jpg');
+
+        $this->service([['success' => true, 'external_id' => 1977]])->pushProduction($fromWordPress);
+        $this->service([['success' => true, 'external_id' => 1978]])->pushProduction($uploadedHere);
+
+        self::assertArrayNotHasKey('post_thumbnail_url', $this->requests[0]['body']);
+        self::assertSame('https://brux.test/uploads/productions/bild.jpg', $this->requests[1]['body']['post_thumbnail_url']);
+    }
+
     public function testRejectionIsReportedAndRecorded(): void
     {
         $production = (new Production())->setTitle('Aus WordPress')->setExternalId(1977);
