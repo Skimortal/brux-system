@@ -111,19 +111,33 @@ class WordPressPushService
     }
 
     /**
-     * The production categories WordPress has (without the "-event" ones of performances).
+     * All productions with their performances, drafts included, for the import.
+     *
+     * @return array{status: string, message?: string, productions?: list<array<string, mixed>>}
+     */
+    public function fetchProductions(): array
+    {
+        $result = $this->request('GET', '/productions', null, 60);
+        if ($result['status'] !== 'success') {
+            return $result;
+        }
+
+        return ['status' => 'success', 'productions' => array_values($result['response']['productions'] ?? [])];
+    }
+
+    /**
+     * All WordPress categories: those of productions and the "-event" ones of performances.
      *
      * @return array{status: string, message?: string, categories?: list<array<string, mixed>>}
      */
-    public function fetchProductionCategories(): array
+    public function fetchCategories(): array
     {
         $result = $this->request('GET', '/categories');
         if ($result['status'] !== 'success') {
             return $result;
         }
-        $categories = array_filter($result['response']['categories'] ?? [], static fn (array $c) => !str_ends_with((string) ($c['slug'] ?? ''), '-event'));
 
-        return ['status' => 'success', 'categories' => array_values($categories)];
+        return ['status' => 'success', 'categories' => array_values($result['response']['categories'] ?? [])];
     }
 
     private function isWordPressMedia(?string $url): bool
@@ -364,7 +378,7 @@ class WordPressPushService
     /**
      * @return array{status: string, status_code?: int, message?: string, response?: mixed}
      */
-    private function request(string $method, string $endpoint, ?array $data = null): array
+    private function request(string $method, string $endpoint, ?array $data = null, int $timeout = 15): array
     {
         if (!$this->isConfigured()) {
             $this->logger->info('WordPress Push: nicht konfiguriert, Request übersprungen.', ['endpoint' => $endpoint]);
@@ -376,7 +390,7 @@ class WordPressPushService
         $options = [
             'auth_basic' => [trim($this->wordpressApiUser), trim($this->wordpressApiPassword)],
             'headers' => ['Accept' => 'application/json'],
-            'timeout' => 15,
+            'timeout' => $timeout,
         ];
         if ($data !== null) {
             $options['json'] = $data;

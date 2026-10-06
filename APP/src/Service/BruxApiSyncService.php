@@ -29,6 +29,9 @@ class BruxApiSyncService
     /** Event categories that WordPress sets itself. */
     public const SERVER_CATEGORIES = ['ausverkauft-event'];
 
+    /** Drafts in WordPress that are templates for new posts, not productions. */
+    private const TEMPLATE_TITLE = '/\bVorlage\b/u';
+
     public function __construct(
         private HttpClientInterface $httpClient,
         private EntityManagerInterface $entityManager,
@@ -60,17 +63,9 @@ class BruxApiSyncService
         ];
         $syncedAt = new \DateTimeImmutable();
         $this->push->retryProductions($this->productionRepository->findFailedPushes());
-        $this->syncCategoryList($stats);
 
         try {
-            $response = $this->httpClient->request('GET', $this->apiUrl, ['timeout' => 30]);
-            $data = $response->toArray();
-
-            if (!isset($data['productions']) || !\is_array($data['productions'])) {
-                throw new \RuntimeException('Invalid API response format');
-            }
-
-            foreach ($data['productions'] as $productionData) {
+            foreach ($this->fetchProductions($stats) as $productionData) {
                 try {
                     $this->syncProduction($productionData, $stats, $syncedAt);
                 } catch (\Throwable $e) {
@@ -92,9 +87,61 @@ class BruxApiSyncService
         return $stats;
     }
 
+    /** Where the import reads from: the protected API when it is set up, else the old public one. */
     public function getApiUrl(): string
     {
-        return $this->apiUrl;
+        return $this->push->isConfigured() ? rtrim($this->push->getApiUrl(), '/') . '/productions' : $this->apiUrl;
+    }
+
+    /**
+     * The productions in the shape the import works with (that of the old public API):
+     * "id" is the WordPress post id and categories are objects with id, name and slug.
+     * The protected API also lists drafts; private posts and template drafts are left out.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function fetchProductions(array &$stats): array
+    {
+        if (!$this->push->isConfigured()) {
+            $data = $this->httpClient->request('GET', $this->apiUrl, ['timeout' => 30])->toArray();
+            if (!isset($data['productions']) || !\is_array($data['productions'])) {
+                throw new \RuntimeException('Invalid API response format');
+            }
+
+            return $data['productions'];
+        }
+
+        $categories = $this->push->fetchCategories();
+        if ($categories['status'] !== 'success') {
+            throw new \RuntimeException('Kategorien: ' . ($categories['message'] ?? 'unbekannter Fehler'));
+        }
+        $this->syncCategoryList($categories['categories'], $stats);
+        $bySlug = [];
+        foreach ($categories['categories'] as $category) {
+            $bySlug[$category['slug'] ?? ''] = ['id' => $category['term_id'] ?? null, 'name' => $category['name'] ?? '', 'slug' => $category['slug'] ?? null];
+        }
+        $toObjects = static fn (array $slugs): array => array_values(array_filter(array_map(static fn ($slug) => $bySlug[$slug] ?? null, $slugs)));
+
+        $result = $this->push->fetchProductions();
+        if ($result['status'] !== 'success') {
+            throw new \RuntimeException($result['message'] ?? 'unbekannter Fehler');
+        }
+        $productions = [];
+        foreach ($result['productions'] as $production) {
+            $status = $production['post_status'] ?? 'publish';
+            if ($status === 'private' || ($status === 'draft' && preg_match(self::TEMPLATE_TITLE, (string) ($production['title'] ?? '')))) {
+                continue;
+            }
+            $production['id'] = $production['external_id'] ?? null;
+            $production['categories'] = $toObjects($production['categories'] ?? []);
+            foreach ($production['events'] ?? [] as $index => $event) {
+                $production['events'][$index]['categories'] = $toObjects($event['categories'] ?? []);
+                $production['events'][$index]['time_to'] = ($event['time_to'] ?? null) ?: null;
+            }
+            $productions[] = $production;
+        }
+
+        return $productions;
     }
 
     public function getLastSyncTime(): ?\DateTimeImmutable
@@ -114,7 +161,7 @@ class BruxApiSyncService
             ?? $this->productionRepository->findUnconfirmedPush($title);
         $isNew = $production === null;
         if ($isNew) {
-            $production = (new Production())->setWebsiteStatus('publish');
+            $production = (new Production())->setWebsiteStatus(($data['post_status'] ?? 'publish') === 'draft' ? 'draft' : 'publish');
             ++$stats['productions_created'];
         } else {
             ++$stats['productions_updated'];
@@ -346,15 +393,12 @@ class BruxApiSyncService
      * Takes over production categories created in WordPress, and their colour, which
      * WordPress keeps as a hex code in the description, unless one is set here.
      */
-    private function syncCategoryList(array &$stats): void
+    private function syncCategoryList(array $categories, array &$stats): void
     {
-        $result = $this->push->fetchProductionCategories();
-        if ($result['status'] !== 'success') {
-            return;
-        }
-        foreach ($result['categories'] as $data) {
+        foreach ($categories as $data) {
             $externalId = (int) ($data['term_id'] ?? 0);
-            if ($externalId === 0) {
+            // "-event" categories belong to performances and are synced with them
+            if ($externalId === 0 || str_ends_with((string) ($data['slug'] ?? ''), '-event')) {
                 continue;
             }
             $category = $this->productionCategoryRepository->findByExternalId($externalId);
