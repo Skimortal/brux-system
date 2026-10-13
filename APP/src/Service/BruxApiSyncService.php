@@ -29,6 +29,9 @@ class BruxApiSyncService
     /** Event categories that WordPress sets itself. */
     public const SERVER_CATEGORIES = ['ausverkauft-event'];
 
+    /** @var string[] production fields taken from WordPress in the current run, see syncFromApi() */
+    private array $take = [];
+
     /** Drafts in WordPress that are templates for new posts, not productions. */
     private const TEMPLATE_TITLE = '/\bVorlage\b/u';
 
@@ -51,8 +54,14 @@ class BruxApiSyncService
     /**
      * @return array{productions_created: int, productions_updated: int, events_created: int, events_updated: int, categories_created: int, errors: string[]}
      */
-    public function syncFromApi(): array
+    /**
+     * @param string[] $take fields of existing productions to take from WordPress in this run
+     *                       although they are kept here (e.g. ["categories"] once, to fill a
+     *                       field this system did not have yet)
+     */
+    public function syncFromApi(array $take = []): array
     {
+        $this->take = $take;
         $stats = [
             'productions_created' => 0,
             'productions_updated' => 0,
@@ -455,7 +464,7 @@ class BruxApiSyncService
 
     private function owns(string $entity, string $field): bool
     {
-        return $this->ownership->isWordPressField($entity, $field);
+        return $this->ownership->isWordPressField($entity, $field) || ($entity === 'production' && \in_array($field, $this->take, true));
     }
 
     private function decode(?string $text): ?string

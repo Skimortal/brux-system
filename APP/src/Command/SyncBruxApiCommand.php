@@ -6,6 +6,7 @@ use App\Service\BruxApiSyncService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -21,6 +22,11 @@ class SyncBruxApiCommand extends Command
         parent::__construct();
     }
 
+    protected function configure(): void
+    {
+        $this->addOption('take', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Production field to take from WordPress for existing productions in this run (e.g. categories, once after it was added)');
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
@@ -28,7 +34,7 @@ class SyncBruxApiCommand extends Command
         $io->title('Brux API Synchronization');
         $io->text('Starting synchronization from ' . $this->syncService->getApiUrl());
 
-        $stats = $this->syncService->syncFromApi();
+        $stats = $this->syncService->syncFromApi($input->getOption('take'));
 
         $io->success('Synchronization completed!');
 
