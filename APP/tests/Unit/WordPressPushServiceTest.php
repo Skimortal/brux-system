@@ -151,7 +151,14 @@ final class WordPressPushServiceTest extends TestCase
         );
 
         self::assertFalse($service->isConfigured());
-        self::assertSame('skipped', $service->pushProduction(new Production())['status']);
+        $production = new Production();
+        self::assertSame('skipped', $service->pushProduction($production)['status']);
+        self::assertSame(WordPressPushService::PENDING, $production->getLastPushError(), 'retried with the next import once set up');
+
+        // what is on the website cannot be deleted yet, the import would bring it back
+        $fromWordPress = (new Production())->setTitle('Aus WordPress')->setExternalId(1977);
+        self::assertSame('error', $service->deleteProduction($fromWordPress)['status']);
+        self::assertSame('skipped', $service->deleteProduction(new Production())['status'], 'local ones can go');
     }
 
     /**

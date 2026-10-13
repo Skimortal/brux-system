@@ -21,7 +21,9 @@
     {% if panel.locked %}
         <div class="note">{{ ux_icon('lucide:lock') }}<span>Termin, Plätze und Preise kommen von der Website und werden beim Import aktualisiert{% if pe.syncedAt %} (zuletzt {{ pe.syncedAt|de_date('d.M. HH:mm') }}){% endif %}. Änderungen bitte in WordPress vornehmen.</span></div>
     {% endif %}
-    {% if pe.lastPushError %}
+    {% if pe.lastPushError == constant('App\\Service\\WordPressPushService::PENDING') %}
+        <div class="note">{{ ux_icon('lucide:clock') }}<span>{{ pe.lastPushError }}</span></div>
+    {% elseif pe.lastPushError %}
         <div class="note note-danger">{{ ux_icon('lucide:triangle-alert') }}<span>Letzte Übertragung an die Website ist fehlgeschlagen: {{ pe.lastPushError }}</span></div>
     {% endif %}
 
@@ -92,7 +94,7 @@
         {% endif %}
     {% endif %}
 
-    {% if pe.production.fromWordPress and pe.eventIndex is not null and (pe.seatsTaken ?? 0) > 0 %}
+    {% if wordpress_connected() and pe.production.fromWordPress and pe.eventIndex is not null and (pe.seatsTaken ?? 0) > 0 %}
         {# loaded when opened: the list comes live from the website #}
         <details class="reservations" ontoggle="const f = this.querySelector('turbo-frame'); if (this.open && !f.src) f.src = f.dataset.src">
             <summary>{{ ux_icon('lucide:ticket') }} Reservierungen ansehen</summary>

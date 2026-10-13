@@ -17,6 +17,14 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 class WordPressPushService
 {
+    /**
+     * Recorded as push error while the API is not set up: such records are retried with
+     * every import (see BruxApiSyncService), so they reach WordPress once it is.
+     */
+    public const PENDING = 'Wird übertragen, sobald die Website-Schnittstelle eingerichtet ist.';
+
+    private const NOT_YET_DELETABLE = 'Was auf der Website steht, kann erst gelöscht werden, wenn die Website-Schnittstelle eingerichtet ist. Sonst käme es mit dem nächsten Import zurück.';
+
     public function __construct(
         private HttpClientInterface $httpClient,
         private EntityManagerInterface $entityManager,
@@ -53,6 +61,9 @@ class WordPressPushService
         $created = $production->getExternalId() === null;
         $result = $this->request('PUT', '/production', $this->buildProductionPayload($production));
         if ($result['status'] === 'skipped') {
+            $production->markPushed(self::PENDING);
+            $this->entityManager->flush();
+
             return $result;
         }
 
@@ -92,6 +103,9 @@ class WordPressPushService
         $created = $event->getEventIndex() === null;
         $result = $this->request('PUT', '/event', $this->buildEventPayload($event));
         if ($result['status'] === 'skipped') {
+            $event->markPushed(self::PENDING);
+            $this->entityManager->flush();
+
             return $result;
         }
 
@@ -176,6 +190,9 @@ class WordPressPushService
         if ($production->getExternalId() === null) {
             return ['status' => 'skipped', 'message' => 'Nicht in WordPress'];
         }
+        if (!$this->isConfigured()) {
+            return ['status' => 'error', 'message' => self::NOT_YET_DELETABLE];
+        }
 
         return $this->request('DELETE', '/productions/' . $production->getExternalId());
     }
@@ -190,6 +207,9 @@ class WordPressPushService
         $eventIndex = $event->getEventIndex();
         if ($production?->getExternalId() === null || $eventIndex === null) {
             return ['status' => 'skipped', 'message' => 'Nicht in WordPress'];
+        }
+        if (!$this->isConfigured()) {
+            return ['status' => 'error', 'message' => self::NOT_YET_DELETABLE];
         }
 
         $result = $this->request('DELETE', '/productions/' . $production->getExternalId() . '/events/' . $eventIndex);

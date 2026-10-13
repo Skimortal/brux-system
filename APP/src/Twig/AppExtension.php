@@ -3,6 +3,7 @@
 namespace App\Twig;
 
 use App\Calendar\CalendarQuery;
+use App\Service\WordPressPushService;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
@@ -10,7 +11,7 @@ use Twig\TwigFunction;
 
 final class AppExtension extends AbstractExtension
 {
-    public function __construct(private readonly UrlGeneratorInterface $urls)
+    public function __construct(private readonly UrlGeneratorInterface $urls, private readonly WordPressPushService $push)
     {
     }
 
@@ -28,6 +29,8 @@ final class AppExtension extends AbstractExtension
     {
         return [
             new TwigFunction('cal_path', $this->calendarPath(...)),
+            // whether the WordPress write API is set up (reservations, pushes)
+            new TwigFunction('wordpress_connected', fn (): bool => $this->push->isConfigured()),
         ];
     }
 

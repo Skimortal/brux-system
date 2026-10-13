@@ -160,6 +160,11 @@ final class WebsiteContent
                 continue;
             }
             $parts[$field][] = $this->plainCopy($document, $node);
+            // a short description the website shows today stays visible as part of the intro;
+            // from now on the infoscreen text itself is hidden there
+            if ($field === 'shortDescription' && !$hidden) {
+                $parts['intro'][] = $this->plainCopy($document, $node);
+            }
         }
         // without a short description everything is the description
         if (!$shortSeen) {

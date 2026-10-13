@@ -40,7 +40,9 @@
 {% import 'production/_rows.html.twig' as rows %}
 <div class="grid-main-side">
     <div class="stack-lg">
-        {% if production.lastPushError %}
+        {% if production.lastPushError == constant('App\\Service\\WordPressPushService::PENDING') %}
+            <div class="note">{{ ux_icon('lucide:clock') }}<span>{{ production.lastPushError }}</span></div>
+        {% elseif production.lastPushError %}
             <div class="note note-danger">{{ ux_icon('lucide:triangle-alert') }}<span>Letzte Übertragung an die Website fehlgeschlagen: {{ production.lastPushError }}</span></div>
         {% endif %}
         {{ form_start(form, {attr: {class: 'stack-lg', novalidate: 'novalidate', enctype: 'multipart/form-data'}}) }}

@@ -113,10 +113,12 @@ final class WebsiteContentTest extends TestCase
         $production = (new Production())->setContentHtml($post);
         $content->fillSections($production);
 
-        self::assertSame('<p><strong>Seid ihr ready?</strong></p>', $production->getIntro());
+        self::assertSame('<p><strong>Seid ihr ready?</strong></p><p>Kurz.</p>', $production->getIntro(), 'the visible short text stays on the website');
+        self::assertSame('<p>Kurz.</p>', $production->getShortDescription());
         self::assertSame('<p>Lang.</p>', $production->getDescription());
         $html = $content->render($production);
         self::assertLessThan(strpos($html, 'Kurz.'), strpos($html, 'Seid ihr ready?'));
         self::assertLessThan(strpos($html, 'Lang.'), strpos($html, 'Kurz.'));
+        self::assertStringContainsString('<p class="stueckbeschreibung short displaynone">Kurz.</p>', $html);
     }
 }
