@@ -372,7 +372,8 @@ class WordPressPushService
             $payload['categories'] = [];
             foreach ($event->getCategories() as $category) {
                 $slug = $category->getSlug();
-                if ($slug !== null && !\in_array($slug, BruxApiSyncService::SERVER_CATEGORIES, true)) {
+                // "ausverkauft" goes along: it can be set by hand, WordPress also sets it when full
+                if ($slug !== null) {
                     $payload['categories'][] = $slug;
                 }
             }

@@ -47,7 +47,7 @@ final class WordPressPushServiceTest extends TestCase
         self::assertSame(3145, $createEvent['body']['production_external_id']);
         self::assertNull($createEvent['body']['event_index'], 'a local index means nothing to WordPress');
         self::assertSame('2027-03-15', $createEvent['body']['date']);
-        self::assertSame(['premiere-event'], $createEvent['body']['categories']);
+        self::assertSame(['premiere-event', 'ausverkauft-event'], $createEvent['body']['categories'], 'sold out can be set by hand');
         self::assertArrayNotHasKey('incoming_total', $createEvent['body']);
         self::assertArrayNotHasKey('free_seats', $createEvent['body']);
         self::assertArrayNotHasKey('reservations', $createEvent['body']);
