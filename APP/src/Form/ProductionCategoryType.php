@@ -45,6 +45,7 @@ final class ProductionCategoryType extends AbstractType
             ->add('palette', ChoiceType::class, [
                 'label' => 'Farbe',
                 'mapped' => false,
+                'required' => false,
                 'expanded' => true,
                 'placeholder' => false,
                 'choices' => ['keine' => self::NONE] + array_flip(self::COLORS) + ['Eigene Farbe' => self::OWN],

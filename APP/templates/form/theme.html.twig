@@ -1,5 +1,11 @@
 {% use 'form_div_layout.html.twig' %}
 
+{# The fields of a whole form, spaced like the rows of .form #}
+{% block form_widget_compound %}
+    {% if form.parent is null %}{% set attr = attr|merge({class: (attr.class|default('') ~ ' form-fields')|trim}) %}{% endif %}
+    {{ parent() }}
+{% endblock %}
+
 {# Rows: label above widget, help and errors below #}
 {% block form_row %}
     {% set widget_attr = {} %}
