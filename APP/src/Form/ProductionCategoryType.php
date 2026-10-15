@@ -39,15 +39,15 @@ final class ProductionCategoryType extends AbstractType
         $builder
             ->add('name', TextType::class, ['label' => 'Name', 'constraints' => [new NotBlank()]])
             ->add('color', ChoiceType::class, [
-                'label' => 'Farbe im Kalender',
+                'label' => 'Farbe',
                 'required' => false,
                 'expanded' => true,
                 'placeholder' => 'keine',
                 'choices' => array_flip($colors),
                 'choice_attr' => static fn (?string $color) => $color !== null ? ['style' => 'accent-color: ' . $color] : [],
-                'help' => 'Vorstellungen von Produktionen mit dieser Kategorie werden im Kalender so hinterlegt.',
+                'help' => 'Signalfarbe auf der Website. Im Kalender werden Vorstellungen von Produktionen mit dieser Kategorie so hinterlegt.',
             ])
-            ->add('slug', TextType::class, ['label' => 'Slug', 'required' => false, 'disabled' => true])
+            ->add('slug', TextType::class, ['label' => 'Slug', 'required' => false, 'disabled' => true, 'help' => 'Wird beim Anlegen aus dem Namen gebildet und bleibt dann gleich.'])
             ->add('externalId', IntegerType::class, ['label' => 'WordPress-ID', 'required' => false, 'disabled' => true]);
     }
 

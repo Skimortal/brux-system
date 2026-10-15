@@ -4,6 +4,7 @@ namespace App\Tests\Unit;
 
 use App\Entity\EventCategory;
 use App\Entity\Production;
+use App\Entity\ProductionCategory;
 use App\Entity\ProductionEvent;
 use App\Service\FieldOwnership;
 use App\Service\WordPressPushService;
@@ -124,6 +125,22 @@ final class WordPressPushServiceTest extends TestCase
 
         self::assertArrayNotHasKey('post_thumbnail_url', $this->requests[0]['body']);
         self::assertSame('https://brux.test/uploads/productions/bild.jpg', $this->requests[1]['body']['post_thumbnail_url']);
+    }
+
+    public function testCategoryCarriesItsColourInTheDescription(): void
+    {
+        $category = (new ProductionCategory())->setName('Kinderprogramm')->setSlug('kinderprogramm')->setColor('#4caf50');
+
+        $result = $this->service([['success' => true, 'action' => 'created', 'category' => ['term_id' => 32, 'slug' => 'kinderprogramm']]])->pushCategory($category);
+
+        self::assertSame('success', $result['status']);
+        self::assertSame(32, $category->getExternalId());
+        self::assertSame('PUT', $this->requests[0]['method']);
+        self::assertSame('https://wp.test/wp-json/brux-crud/v1/category', $this->requests[0]['url']);
+        self::assertSame(['slug' => 'kinderprogramm', 'name' => 'Kinderprogramm', 'description' => '#4caf50'], $this->requests[0]['body']);
+
+        $this->service([['success' => true, 'category' => ['term_id' => 32]]])->pushCategory($category->setColor(null));
+        self::assertSame('', $this->requests[1]['body']['description'], 'no colour clears it on the website');
     }
 
     public function testRejectionIsReportedAndRecorded(): void

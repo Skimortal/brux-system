@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Production;
+use App\Entity\ProductionCategory;
 use App\Entity\ProductionEvent;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -51,6 +52,28 @@ class WordPressPushService
     public function checkConnection(): array
     {
         return $this->request('GET', '/system-check');
+    }
+
+    /**
+     * Creates or updates a production category, found by its slug. The colour is kept in
+     * the description of the category, where the website reads it.
+     *
+     * @return array{status: string, status_code?: int, message?: string, response?: mixed}
+     */
+    public function pushCategory(ProductionCategory $category): array
+    {
+        $result = $this->request('PUT', '/category', [
+            'slug' => $category->getSlug(),
+            'name' => $category->getName(),
+            'description' => $category->getColor() ?? '',
+        ]);
+        $termId = $result['response']['category']['term_id'] ?? null;
+        if ($result['status'] === 'success' && $termId !== null) {
+            $category->setExternalId((int) $termId);
+            $this->entityManager->flush();
+        }
+
+        return $result;
     }
 
     /**

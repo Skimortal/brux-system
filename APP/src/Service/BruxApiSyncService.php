@@ -420,13 +420,15 @@ class BruxApiSyncService
             if ($externalId === 0 || str_ends_with((string) ($data['slug'] ?? ''), '-event')) {
                 continue;
             }
-            $category = $this->productionCategoryRepository->findByExternalId($externalId);
+            // created here, but not yet in WordPress when it was saved
+            $category = $this->productionCategoryRepository->findByExternalId($externalId)
+                ?? $this->productionCategoryRepository->findOneBy(['slug' => $data['slug'] ?? null, 'externalId' => null]);
             if ($category === null) {
                 $category = (new ProductionCategory())->setExternalId($externalId);
                 $this->entityManager->persist($category);
                 ++$stats['categories_created'];
             }
-            $category->setName((string) $this->decode($data['name'] ?? ''))->setSlug($data['slug'] ?? null);
+            $category->setExternalId($externalId)->setName((string) $this->decode($data['name'] ?? ''))->setSlug($data['slug'] ?? null);
             $color = trim((string) ($data['description'] ?? ''));
             if ($category->getColor() === null && preg_match('/^#[0-9a-f]{6}$/i', $color)) {
                 $category->setColor(strtolower($color));
