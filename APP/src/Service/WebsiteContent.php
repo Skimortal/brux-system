@@ -71,6 +71,16 @@ final class WebsiteContent
         }
     }
 
+    /** Splits the post again, replacing what the sections hold (post newly taken from WordPress). */
+    public function refillSections(Production $production): void
+    {
+        $production->setSubtitle(null);
+        foreach (array_keys(self::SECTIONS) as $field) {
+            $production->{'set' . ucfirst($field)}(null);
+        }
+        $this->fillSections($production);
+    }
+
     /** Builds the post content (WordPress block markup) from the production's fields. */
     public function render(Production $production): string
     {

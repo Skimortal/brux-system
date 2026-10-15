@@ -94,6 +94,16 @@ final class WebsiteContentTest extends TestCase
         self::assertSame($production->getCredits(), $again['credits']);
     }
 
+    public function testPostTakenAgainReplacesTheSections(): void
+    {
+        $production = (new Production())->setSubtitle('alt')->setCredits('<p>alt</p>')->setContentHtml(self::POST);
+
+        (new WebsiteContent())->refillSections($production);
+
+        self::assertSame('von Herz-Impro-Innsbruck | Improvisationstheater', $production->getSubtitle());
+        self::assertSame('<p>Regie: Anna</p>', $production->getCredits());
+    }
+
     public function testPostWithoutTemplateGoesIntoTheDescription(): void
     {
         $production = (new Production())->setContentHtml('<p>Nur Text</p>');

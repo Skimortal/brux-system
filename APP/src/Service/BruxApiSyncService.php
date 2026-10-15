@@ -29,6 +29,9 @@ class BruxApiSyncService
     /** Event categories that WordPress sets itself. */
     public const SERVER_CATEGORIES = ['ausverkauft-event'];
 
+    /** Takes every field of productions and performances, see syncFromApi(). */
+    public const TAKE_ALL = 'all';
+
     /** @var string[] production fields taken from WordPress in the current run, see syncFromApi() */
     private array $take = [];
 
@@ -57,7 +60,8 @@ class BruxApiSyncService
     /**
      * @param string[] $take fields of existing productions to take from WordPress in this run
      *                       although they are kept here (e.g. ["categories"] once, to fill a
-     *                       field this system did not have yet)
+     *                       field this system did not have yet), or [TAKE_ALL] to align
+     *                       everything WordPress has once (data kept only here stays)
      */
     public function syncFromApi(array $take = []): array
     {
@@ -170,13 +174,17 @@ class BruxApiSyncService
             ?? $this->productionRepository->findUnconfirmedPush($title);
         $isNew = $production === null;
         if ($isNew) {
-            $production = (new Production())->setWebsiteStatus(($data['post_status'] ?? 'publish') === 'draft' ? 'draft' : 'publish');
+            $production = new Production();
             ++$stats['productions_created'];
         } else {
             ++$stats['productions_updated'];
         }
         $production->setExternalId($externalId);
         $takes = fn (string $field): bool => $isNew || $this->owns('production', $field);
+
+        if ($takes('websiteStatus')) {
+            $production->setWebsiteStatus(($data['post_status'] ?? 'publish') === 'draft' ? 'draft' : 'publish');
+        }
 
         if ($takes('title')) {
             $production->setTitle($title);
@@ -195,6 +203,8 @@ class BruxApiSyncService
         }
         if ($isNew) {
             $this->websiteContent->fillSections($production);
+        } elseif ($takes('contentHtml')) {
+            $this->websiteContent->refillSections($production);
         }
         if ($takes('categories') && isset($data['categories']) && \is_array($data['categories'])) {
             $this->syncProductionCategories($production, $data['categories']);
@@ -464,7 +474,9 @@ class BruxApiSyncService
 
     private function owns(string $entity, string $field): bool
     {
-        return $this->ownership->isWordPressField($entity, $field) || ($entity === 'production' && \in_array($field, $this->take, true));
+        return $this->ownership->isWordPressField($entity, $field)
+            || \in_array(self::TAKE_ALL, $this->take, true)
+            || ($entity === 'production' && \in_array($field, $this->take, true));
     }
 
     private function decode(?string $text): ?string

@@ -24,7 +24,7 @@ class SyncBruxApiCommand extends Command
 
     protected function configure(): void
     {
-        $this->addOption('take', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Production field to take from WordPress for existing productions in this run (e.g. categories, once after it was added)');
+        $this->addOption('take', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Production field to take from WordPress for existing productions in this run (e.g. categories, once after it was added), or "all" for every field of productions and performances');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
