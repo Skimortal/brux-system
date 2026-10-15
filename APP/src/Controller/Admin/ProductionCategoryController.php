@@ -30,7 +30,7 @@ final class ProductionCategoryController extends AbstractController
             'columns' => ['Name', 'Farbe', 'Slug'],
             'rows' => array_map(fn (ProductionCategory $c) => [
                 'url' => $this->generateUrl('app_production_category_edit', ['id' => $c->getId()]),
-                'cells' => [$c->getName(), $c->getColor() ?? '–', $c->getSlug() ?? '–'],
+                'cells' => [$c->getName(), $c->getColor() !== null ? ['swatch' => $c->getColor(), 'text' => ProductionCategoryType::COLORS[$c->getColor()] ?? $c->getColor()] : '–', $c->getSlug() ?? '–'],
             ], $categories->findBy([], ['name' => 'ASC'])),
         ]);
     }

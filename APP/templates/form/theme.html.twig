@@ -49,6 +49,23 @@
                 <label for="{{ child.vars.id }}">{{ child.vars.label }}</label>
             {% endfor %}
         </div>
+    {% elseif style == 'swatches' %}
+        {# colour choices with their colour; the own colour comes with a picker (sibling field ownColor) #}
+        {% set picker = form.parent.ownColor ?? null %}
+        <div class="swatches" role="radiogroup" id="{{ id }}" data-controller="swatches">
+            {% for child in form %}
+                {% set own = child.vars.value == 'own' %}
+                <label class="swatch">
+                    {{ form_widget(child, {attr: child.vars.attr|merge(own ? {'data-swatches-target': 'own'} : {})}) }}
+                    {% if own and picker %}
+                        {{ form_widget(picker, {attr: picker.vars.attr|merge({class: 'swatch-picker', 'aria-label': 'Eigene Farbe'})}) }}
+                    {% else %}
+                        <span class="swatch-dot{% if child.vars.value starts with '#' %}{% else %} is-none{% endif %}"{% if child.vars.value starts with '#' %} style="background: {{ child.vars.value }}"{% endif %}></span>
+                    {% endif %}
+                    {{ child.vars.label }}
+                </label>
+            {% endfor %}
+        </div>
     {% elseif style == 'checks' %}
         <div class="checks-2" id="{{ id }}">
             {% for child in form %}

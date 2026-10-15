@@ -1,5 +1,5 @@
 {% extends 'layout/page.html.twig' %}
-{# title, subtitle, crumbs, new_url, columns: [label], rows: [{url, cells: [..]}] #}
+{# title, subtitle, crumbs, new_url, columns: [label], rows: [{url, cells: [text or {swatch: colour, text}]}] #}
 
 {% block title %}{{ title }}{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
@@ -15,7 +15,7 @@
         {% for row in rows %}
             <tr class="is-link" onclick="Turbo.visit('{{ row.url }}')">
                 {% for cell in row.cells %}
-                    <td>{% if loop.first %}<a class="cell-link" href="{{ row.url }}">{{ cell }}</a>{% else %}{{ cell }}{% endif %}</td>
+                    <td>{% if loop.first %}<a class="cell-link" href="{{ row.url }}">{{ cell }}</a>{% elseif cell is iterable %}<span class="cell-swatch" style="background: {{ cell.swatch }}"></span>{{ cell.text }}{% else %}{{ cell }}{% endif %}</td>
                 {% endfor %}
             </tr>
         {% else %}
