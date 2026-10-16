@@ -35,7 +35,7 @@ services:
         command: >
             sh -c '
               if id -u nginx >/dev/null 2>&1; then U=nginx; else U=www-data; fi;
-              mkdir -p /var/cache/nginx/{client_temp,proxy_temp,fastcgi_temp} &&
+              mkdir -p /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp /var/cache/nginx/fastcgi_temp &&
               chown -R "$$U:$$U" /var/cache/nginx &&
               exec nginx -g "daemon off;"'
         networks:
