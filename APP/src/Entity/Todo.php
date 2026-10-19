@@ -14,6 +14,23 @@ class Todo extends Base
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $done = false;
 
+    /** Deleting a group keeps its todos as general ones. */
+    #[ORM\ManyToOne(inversedBy: 'todos')]
+    #[ORM\JoinColumn(name: 'todo_group_id', onDelete: 'SET NULL')]
+    private ?TodoGroup $group = null;
+
+    public function getGroup(): ?TodoGroup
+    {
+        return $this->group;
+    }
+
+    public function setGroup(?TodoGroup $group): static
+    {
+        $this->group = $group;
+
+        return $this;
+    }
+
     public function getDescription(): ?string
     {
         return $this->description;

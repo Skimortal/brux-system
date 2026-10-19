@@ -319,8 +319,22 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .todo-add { display: flex; gap: 6px; padding: 0 18px 8px; }
 .todo-add .input { height: 36px; flex-grow: 1; }
 .todo-add .btn { height: 36px; width: 36px; }
-.todo-list { max-height: 32vh; overflow: auto; }
+.todo-list { max-height: 40vh; overflow: auto; }
 .todo-list .todo-row { padding: 7px 18px; }
+/* todo groups, e.g. a shopping list, below the general todos */
+.todo-group { border-top: 1px solid var(--line); }
+.todo-group-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px 4px 18px; background: var(--surface-2, var(--surface)); }
+.todo-group-head .edit { flex-grow: 1; min-width: 0; }
+.todo-group-head .edit input { width: 100%; border: 0; background: transparent; padding: 2px 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.todo-group-head .edit input:focus { outline: none; box-shadow: none; border-bottom: 1px solid var(--accent); }
+.todo-group-head .count { color: var(--muted); font-size: 12.5px; }
+.todo-group .todo-row { padding-left: 30px; }
+.todo-add.in-group { padding: 4px 18px 10px 30px; }
+.todo-add.in-group .input { height: 32px; font-size: 13px; }
+.todo-add.in-group .btn { height: 32px; width: 32px; }
+.todo-group-add { display: flex; align-items: center; gap: 8px; padding: 8px 18px 12px; border-top: 1px solid var(--line-soft); }
+.todo-group-add input { flex-grow: 1; border: 0; background: transparent; padding: 4px 0; font-size: 13.5px; }
+.todo-group-add input:focus { outline: none; box-shadow: none; border-bottom: 1px solid var(--accent); }
 .key-filter { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 2px 18px 10px; border-bottom: 1px solid var(--line-soft); }
 .key-filter-item { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
 .key-filter-item input { width: 16px; height: 16px; margin: 0; accent-color: var(--ink); }

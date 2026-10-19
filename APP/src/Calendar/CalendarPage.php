@@ -22,6 +22,7 @@ use App\Repository\KeyLoanRepository;
 use App\Repository\KeyManagementRepository;
 use App\Repository\ProductionEventRepository;
 use App\Repository\RoomRepository;
+use App\Repository\TodoGroupRepository;
 use App\Repository\TodoRepository;
 use App\Enum\ContactRole;
 use App\Service\AppointmentManager;
@@ -55,6 +56,7 @@ final class CalendarPage
         private readonly KeyLoanRepository $loans,
         private readonly RoomRepository $rooms,
         private readonly TodoRepository $todos,
+        private readonly TodoGroupRepository $todoGroups,
         private readonly ContactRepository $contacts,
         private readonly AppointmentManager $appointmentManager,
         private readonly FieldOwnership $ownership,
@@ -126,7 +128,9 @@ final class CalendarPage
             'cal' => $this->builder->build($query),
             'panel' => $query->panel !== null ? $this->panel((string) $query->panel, $request, $formOverrides) : null,
             'keys' => $this->keys->findAllWithLoans(),
-            'todos' => $this->todos->findBy(['done' => false], ['id' => 'ASC']),
+            'todos' => $this->todos->findBy(['done' => false, 'group' => null], ['id' => 'ASC']),
+            'todo_groups' => $this->todoGroups->findAllWithTodos(),
+            'todo_count' => $this->todos->count(['done' => false]),
             'last_sync' => $this->sync->getLastSyncTime(),
             'cleaning_contacts' => $this->contacts->findByRole(ContactRole::CLEANING),
             'return_url' => $this->url($query),

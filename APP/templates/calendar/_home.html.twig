@@ -5,32 +5,44 @@
 <div class="side-scroll">
     <section class="side-block" aria-labelledby="todos-title">
         <div class="side-block-head">
-            <h2 id="todos-title">{{ ux_icon('lucide:list-todo') }} Todos <span class="count">{{ todos|length }}</span></h2>
+            <h2 id="todos-title">{{ ux_icon('lucide:list-todo') }} Todos <span class="count">{{ todo_count }}</span></h2>
         </div>
-        <form class="todo-add" method="post" action="{{ path('app_todo_create') }}" data-turbo-frame="_top">
-            <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
-            <input type="hidden" name="_return" value="{{ return_url }}">
-            <input class="input" name="description" placeholder="Neues Todo …" maxlength="255" required aria-label="Neues Todo">
-            <button class="btn btn-dark btn-icon" type="submit" aria-label="Todo anlegen" title="Anlegen">{{ ux_icon('lucide:plus') }}</button>
-        </form>
+        {{ _self.todo_add(null, return_url) }}
         <div class="todo-list">
             {% for todo in todos %}
-                <div class="todo-row">
-                    <form class="done" method="post" action="{{ path('app_todo_done', {id: todo.id}) }}" data-turbo-frame="_top">
-                        <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
-                        <input type="hidden" name="_return" value="{{ return_url }}">
-                        <button type="submit" aria-label="Als erledigt markieren" title="Erledigt">{{ ux_icon('lucide:check') }}</button>
-                    </form>
-                    <form class="edit" method="post" action="{{ path('app_todo_update', {id: todo.id}) }}" data-turbo-frame="_top" data-controller="autosubmit">
-                        <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
-                        <input type="hidden" name="_return" value="{{ return_url }}">
-                        <input name="description" value="{{ todo.description }}" maxlength="255" aria-label="Todo bearbeiten" data-action="change->autosubmit#submit">
-                    </form>
-                </div>
+                {{ _self.todo_row(todo, return_url) }}
             {% else %}
-                <p class="small muted" style="padding: 4px 18px 10px">Keine offenen Todos.</p>
+                {% if todo_groups is empty %}<p class="small muted" style="padding: 4px 18px 10px">Keine offenen Todos.</p>{% endif %}
+            {% endfor %}
+            {% for group in todo_groups %}
+                <div class="todo-group">
+                    <div class="todo-group-head">
+                        {{ ux_icon('lucide:folder', {class: 'muted'}) }}
+                        <form class="edit" method="post" action="{{ path('app_todo_group_update', {id: group.id}) }}" data-turbo-frame="_top" data-controller="autosubmit">
+                            <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+                            <input type="hidden" name="_return" value="{{ return_url }}">
+                            <input name="name" value="{{ group.name }}" maxlength="100" required aria-label="Gruppe umbenennen" data-action="change->autosubmit#submit">
+                        </form>
+                        <span class="count">{{ group.openTodos|length }}</span>
+                        <form method="post" action="{{ path('app_todo_group_delete', {id: group.id}) }}" data-turbo-frame="_top" data-turbo-confirm="Gruppe „{{ group.name }}“ löschen? Ihre offenen Todos bleiben unter „Allgemein“ erhalten.">
+                            <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+                            <input type="hidden" name="_return" value="{{ return_url }}">
+                            <button class="btn btn-ghost btn-icon btn-xs" type="submit" aria-label="Gruppe löschen" title="Gruppe löschen">{{ ux_icon('lucide:trash-2') }}</button>
+                        </form>
+                    </div>
+                    {% for todo in group.openTodos %}
+                        {{ _self.todo_row(todo, return_url) }}
+                    {% endfor %}
+                    {{ _self.todo_add(group, return_url) }}
+                </div>
             {% endfor %}
         </div>
+        <form class="todo-group-add" method="post" action="{{ path('app_todo_group_create') }}" data-turbo-frame="_top">
+            <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+            <input type="hidden" name="_return" value="{{ return_url }}">
+            {{ ux_icon('lucide:folder-plus', {class: 'muted'}) }}
+            <input name="name" placeholder="Neue Gruppe …" maxlength="100" required aria-label="Neue Gruppe">
+        </form>
     </section>
 
     <section class="side-block" aria-labelledby="keys-title" data-controller="key-filter">
@@ -68,3 +80,28 @@
         <p class="small muted" data-key-filter-target="empty" hidden style="padding: 10px 18px">Kein Schlüssel passt zum Filter.</p>
     </section>
 </div>
+
+{% macro todo_row(todo, return_url) %}
+    <div class="todo-row">
+        <form class="done" method="post" action="{{ path('app_todo_done', {id: todo.id}) }}" data-turbo-frame="_top">
+            <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+            <input type="hidden" name="_return" value="{{ return_url }}">
+            <button type="submit" aria-label="Als erledigt markieren" title="Erledigt">{{ ux_icon('lucide:check') }}</button>
+        </form>
+        <form class="edit" method="post" action="{{ path('app_todo_update', {id: todo.id}) }}" data-turbo-frame="_top" data-controller="autosubmit">
+            <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+            <input type="hidden" name="_return" value="{{ return_url }}">
+            <input name="description" value="{{ todo.description }}" maxlength="255" aria-label="Todo bearbeiten" data-action="change->autosubmit#submit">
+        </form>
+    </div>
+{% endmacro %}
+
+{% macro todo_add(group, return_url) %}
+    <form class="todo-add{{ group ? ' in-group' }}" method="post" action="{{ path('app_todo_create') }}" data-turbo-frame="_top">
+        <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+        <input type="hidden" name="_return" value="{{ return_url }}">
+        {% if group %}<input type="hidden" name="group" value="{{ group.id }}">{% endif %}
+        <input class="input" name="description" placeholder="{{ group ? 'Todo zu „' ~ group.name ~ '“ …' : 'Neues Todo …' }}" maxlength="255" required aria-label="{{ group ? 'Neues Todo in ' ~ group.name : 'Neues Todo' }}">
+        <button class="btn btn-dark btn-icon" type="submit" aria-label="Todo anlegen" title="Anlegen">{{ ux_icon('lucide:plus') }}</button>
+    </form>
+{% endmacro %}
