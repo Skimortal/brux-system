@@ -28,7 +28,7 @@
             <span class="theme-icon-dark">{{ ux_icon('lucide:moon') }}</span><span class="theme-icon-light">{{ ux_icon('lucide:sun') }}</span><span class="rail-tip" data-theme-target="label">Dunkler Modus</span>
         </button>
         {% if staff %}
-        <a href="{{ path('app_settings') }}" class="rail-link" {% if current starts with 'app_settings' or current starts with 'app_room' or current starts with 'app_user' or current starts with 'app_event_category' or current starts with 'app_email_template' %}aria-current="page"{% endif %}>
+        <a href="{{ path('app_settings') }}" class="rail-link" {% if current starts with 'app_settings' or current starts with 'app_room' or current starts with 'app_user' or current starts with 'app_event_category' or current starts with 'app_email_template' or current starts with 'app_feed' %}aria-current="page"{% endif %}>
             {{ ux_icon('lucide:settings') }}<span class="rail-tip">Verwaltung</span><span class="sr-only">Verwaltung</span>
         </a>
         {% endif %}

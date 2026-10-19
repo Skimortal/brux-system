@@ -29,11 +29,11 @@
             <div class="card-head">
                 <h2>{{ feed.name }} <span class="badge">{{ feed.profile.label }}</span></h2>
                 <div class="row" style="gap:6px">
-                    <form method="post" action="{{ path('app_calendar_feed_renew', {id: feed.id}) }}" data-turbo-confirm="Neue Links erzeugen? Die bisherigen funktionieren dann nicht mehr.">
+                    <form method="post" action="{{ path('app_feed_renew', {id: feed.id}) }}" data-turbo-confirm="Neue Links erzeugen? Die bisherigen funktionieren dann nicht mehr.">
                         <input type="hidden" name="_token" value="{{ csrf_token('calendar-feed') }}">
                         <button class="btn btn-sm btn-ghost" type="submit">{{ ux_icon('lucide:refresh-cw') }} Erneuern</button>
                     </form>
-                    <form method="post" action="{{ path('app_calendar_feed_delete', {id: feed.id}) }}" data-turbo-confirm="Abo „{{ feed.name }}“ löschen?">
+                    <form method="post" action="{{ path('app_feed_delete', {id: feed.id}) }}" data-turbo-confirm="Abo „{{ feed.name }}“ löschen?">
                         <input type="hidden" name="_token" value="{{ csrf_token('calendar-feed') }}">
                         <button class="btn btn-sm btn-ghost btn-danger" type="submit">{{ ux_icon('lucide:trash-2') }}</button>
                     </form>

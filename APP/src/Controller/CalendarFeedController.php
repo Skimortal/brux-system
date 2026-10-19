@@ -28,7 +28,7 @@ final class CalendarFeedController extends AbstractController
     ) {
     }
 
-    #[Route('/kalender/{token}.ics', name: 'app_calendar_feed', methods: ['GET'], requirements: ['token' => '[0-9a-f]{40}'])]
+    #[Route('/kalender/{token}.ics', name: 'app_feed_ics', methods: ['GET'], requirements: ['token' => '[0-9a-f]{40}'])]
     public function feed(string $token, Request $request, CalendarFeedBuilder $builder, RoomRepository $rooms): Response
     {
         $feed = $this->feeds->findOneBy(['token' => $token]) ?? throw new NotFoundHttpException();
@@ -49,7 +49,7 @@ final class CalendarFeedController extends AbstractController
         return $response;
     }
 
-    #[Route('/verwaltung/kalender-abos', name: 'app_calendar_feed_index', methods: ['GET', 'POST'])]
+    #[Route('/verwaltung/kalender-abos', name: 'app_feed_index', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_ADMIN')]
     public function index(Request $request, CalendarFeedLinks $links): Response
     {
@@ -65,7 +65,7 @@ final class CalendarFeedController extends AbstractController
                 $this->addFlash('success', 'Abo für ' . $name . ' angelegt. Schick der Person die Links unten.');
             }
 
-            return $this->redirectToRoute('app_calendar_feed_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_feed_index', [], Response::HTTP_SEE_OTHER);
         }
 
         $feeds = $this->feeds->findBy([], ['profile' => 'ASC', 'name' => 'ASC']);
@@ -77,7 +77,7 @@ final class CalendarFeedController extends AbstractController
         ]);
     }
 
-    #[Route('/verwaltung/kalender-abos/{id}/erneuern', name: 'app_calendar_feed_renew', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[Route('/verwaltung/kalender-abos/{id}/erneuern', name: 'app_feed_renew', methods: ['POST'], requirements: ['id' => '\d+'])]
     #[IsGranted('ROLE_ADMIN')]
     public function renew(CalendarFeed $feed, Request $request): Response
     {
@@ -86,10 +86,10 @@ final class CalendarFeedController extends AbstractController
         $this->em->flush();
         $this->addFlash('success', 'Neue Links für ' . $feed->getName() . ' – die alten funktionieren nicht mehr.');
 
-        return $this->redirectToRoute('app_calendar_feed_index', [], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute('app_feed_index', [], Response::HTTP_SEE_OTHER);
     }
 
-    #[Route('/verwaltung/kalender-abos/{id}/loeschen', name: 'app_calendar_feed_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
+    #[Route('/verwaltung/kalender-abos/{id}/loeschen', name: 'app_feed_delete', methods: ['POST'], requirements: ['id' => '\d+'])]
     #[IsGranted('ROLE_ADMIN')]
     public function delete(CalendarFeed $feed, Request $request): Response
     {
@@ -98,7 +98,7 @@ final class CalendarFeedController extends AbstractController
         $this->em->flush();
         $this->addFlash('success', 'Abo gelöscht, seine Links funktionieren nicht mehr.');
 
-        return $this->redirectToRoute('app_calendar_feed_index', [], Response::HTTP_SEE_OTHER);
+        return $this->redirectToRoute('app_feed_index', [], Response::HTTP_SEE_OTHER);
     }
 
     private function requireToken(Request $request): void

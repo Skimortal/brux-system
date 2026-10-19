@@ -25,7 +25,7 @@ class CalendarFeedLinks
         foreach ($feed->getProfile()->parts() as $part => $info) {
             $targets = $info['rooms'] ? [null, ...$rooms] : [null];
             foreach ($targets as $room) {
-                $url = $this->urls->generate('app_calendar_feed', array_filter([
+                $url = $this->urls->generate('app_feed_ics', array_filter([
                     'token' => $feed->getToken(),
                     'teil' => \count($feed->getProfile()->parts()) > 1 ? $part : null,
                     'raum' => $room?->getId(),
