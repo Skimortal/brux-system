@@ -172,10 +172,11 @@ final class CalendarBuilder
                 end: ($production->getStayUntil() ?? $production->getStayFrom())->setTime(0, 0)->modify('+1 day'),
                 allDay: true,
                 roomId: $production->getStayRoom()?->getId(),
-                meta: 'im Haus',
+                meta: $production->isTentative() ? 'vielleicht · im Haus' : 'im Haus',
                 icon: 'lucide:house',
                 color: $production->getCalendarColor(),
                 url: $this->urls?->generate('app_production_show', ['id' => $production->getId()]),
+                tentative: $production->isTentative(),
             );
         }
         foreach ($this->cleaningSchedules->findActiveBetween($from, $to) as $schedule) {
@@ -209,6 +210,10 @@ final class CalendarBuilder
             return null;
         }
         $meta = [];
+        $tentative = (bool) $performance->getProduction()?->isTentative();
+        if ($tentative) {
+            $meta[] = 'vielleicht';
+        }
         if ($performance->isCancelled()) {
             $meta[] = 'abgesagt';
         } elseif ($performance->isSoldOut()) {
@@ -236,6 +241,7 @@ final class CalendarBuilder
             color: $performance->getProduction()?->getCalendarColor(),
             movable: !$this->ownership->isLocked($performance, 'date'),
             reservedSeats: $performance->getSeatsTaken(),
+            tentative: $tentative,
         );
     }
 
@@ -252,6 +258,10 @@ final class CalendarBuilder
         }
         if ($type === AppointmentTypeEnum::PRODUCTION && $appointment->getStatus() !== null) {
             $meta = trim($appointment->getStatus()->label() . ($meta !== null ? ' · ' . $meta : ''));
+        }
+        $tentative = (bool) $appointment->getProduction()?->isTentative();
+        if ($tentative) {
+            $meta = 'vielleicht' . ($meta !== null ? ' · ' . $meta : '');
         }
         $start = \DateTimeImmutable::createFromInterface($appointment->getStartDate());
         $end = \DateTimeImmutable::createFromInterface($appointment->getEndDate());
@@ -271,6 +281,7 @@ final class CalendarBuilder
             roomId: $appointment->getRoom()?->getId(),
             meta: $meta,
             icon: $appointment->getEventType()?->icon() ?? ($appointment->isInSeries() ? 'lucide:repeat' : null),
+            tentative: $tentative,
         );
     }
 

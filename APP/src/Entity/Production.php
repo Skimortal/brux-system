@@ -94,6 +94,10 @@ class Production extends Base
     #[ORM\Column(length: 20, options: ['default' => 'draft'])]
     private string $websiteStatus = 'draft';
 
+    /** Only pencilled in: its dates are held, but nothing goes to the website while it is set. */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $tentative = false;
+
     #[ORM\OneToMany(targetEntity: ProductionTechnician::class, mappedBy: 'production', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $technicians;
 
@@ -415,6 +419,18 @@ class Production extends Base
     public function setWebsiteStatus(string $websiteStatus): static
     {
         $this->websiteStatus = $websiteStatus;
+
+        return $this;
+    }
+
+    public function isTentative(): bool
+    {
+        return $this->tentative;
+    }
+
+    public function setTentative(bool $tentative): static
+    {
+        $this->tentative = $tentative;
 
         return $this;
     }

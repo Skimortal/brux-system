@@ -58,6 +58,15 @@ final class ProductionType extends AbstractType
         // website content: disabled while WordPress owns it
         $builder
             ->add('title', TextType::class, ['label' => 'Titel', 'disabled' => $locked('title'), 'constraints' => [new NotBlank(message: 'Bitte einen Titel eingeben.')]])
+            ->add('tentative', CheckboxType::class, [
+                'label' => 'Vielleicht – Termine nur vorreserviert',
+                'required' => false,
+                // a production already on the website cannot be taken back this way
+                'disabled' => $production->isFromWordPress() && !$production->isTentative(),
+                'help' => $production->isFromWordPress() && !$production->isTentative()
+                    ? 'Steht bereits auf der Website.'
+                    : 'Solange gesetzt, wird nichts an die Website übertragen. Im Kalender erscheint die Produktion blass.',
+            ])
             ->add('websiteStatus', ChoiceType::class, [
                 'label' => 'Auf der Website',
                 'expanded' => true,

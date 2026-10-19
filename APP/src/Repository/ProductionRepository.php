@@ -30,6 +30,7 @@ class ProductionRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('p')
             ->andWhere('p.externalId IS NULL')
             ->andWhere('p.lastPushAt IS NOT NULL')
+            ->andWhere('p.tentative = false')
             ->andWhere('p.title = :title')
             ->setParameter('title', $title)
             ->orderBy('p.id')

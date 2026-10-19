@@ -54,6 +54,20 @@ final class WordPressPushServiceTest extends TestCase
         self::assertArrayNotHasKey('reservations', $createEvent['body']);
     }
 
+    public function testTentativeProductionStaysOffTheWebsite(): void
+    {
+        $production = (new Production())->setTitle('Vielleicht im Mai')->setTentative(true);
+        $event = (new ProductionEvent())->setDate(new \DateTime('2027-05-15'))->setTimeFrom('20:00');
+        $production->addEvent($event);
+        $service = $this->service([]);
+
+        self::assertSame('skipped', $service->pushProduction($production)['status']);
+        self::assertSame('skipped', $service->pushProductionEvent($event)['status']);
+        self::assertSame([], $this->requests);
+        self::assertNull($production->getExternalId());
+        self::assertNull($production->getLastPushError(), 'not a failed push, so the import does not retry it');
+    }
+
     public function testWordPressProductionOnlyCarriesFieldsOwnedHere(): void
     {
         $production = (new Production())->setTitle('Aus WordPress')->setExternalId(1977);

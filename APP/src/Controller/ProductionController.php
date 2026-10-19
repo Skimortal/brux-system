@@ -79,7 +79,7 @@ final class ProductionController extends AbstractController
             if ($result['status'] === 'error') {
                 $this->addFlash('warning', 'Gespeichert, aber die Übertragung an die Website ist fehlgeschlagen: ' . ($result['message'] ?? ''));
             } else {
-                $this->addFlash('success', 'Produktion gespeichert.');
+                $this->addFlash('success', $production->isTentative() ? 'Produktion gespeichert. Vielleicht: sie geht erst an die Website, wenn sie fix ist.' : 'Produktion gespeichert.');
             }
 
             // created from the calendar: continue with the first performance on that day

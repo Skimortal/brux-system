@@ -24,6 +24,8 @@ class WordPressPushService
      */
     public const PENDING = 'Wird übertragen, sobald die Website-Schnittstelle eingerichtet ist.';
 
+    public const TENTATIVE = 'Vielleicht: wird erst an die Website übertragen, wenn die Produktion fix ist.';
+
     private const NOT_YET_DELETABLE = 'Was auf der Website steht, kann erst gelöscht werden, wenn die Website-Schnittstelle eingerichtet ist. Sonst käme es mit dem nächsten Import zurück.';
 
     public function __construct(
@@ -81,6 +83,11 @@ class WordPressPushService
      */
     public function pushProduction(Production $production): array
     {
+        // pencilled-in productions stay off the website; saving them once they are confirmed
+        // pushes them with all their performances
+        if ($production->isTentative()) {
+            return ['status' => 'skipped', 'message' => self::TENTATIVE];
+        }
         $created = $production->getExternalId() === null;
         $result = $this->request('PUT', '/production', $this->buildProductionPayload($production));
         if ($result['status'] === 'skipped') {
@@ -119,7 +126,7 @@ class WordPressPushService
     {
         $production = $event->getProduction();
         // WordPress needs the production before its performances; pushing it takes them along
-        if ($production !== null && $production->getExternalId() === null) {
+        if ($production !== null && ($production->getExternalId() === null || $production->isTentative())) {
             return $this->pushProduction($production);
         }
 

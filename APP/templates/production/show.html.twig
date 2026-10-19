@@ -16,6 +16,7 @@
                     <h1>{{ is_new ? 'Neue Produktion' : production.title }}</h1>
                     {% if not is_new %}
                         <div class="row-wrap">
+                            {% if production.tentative %}<span class="badge badge-warn">{{ ux_icon('lucide:circle-dashed') }} Vielleicht</span>{% endif %}
                             {% if production.fromWordPress %}<span class="badge badge-accent">WordPress-ID {{ production.externalId }}</span>{% else %}<span class="badge">eigene Produktion</span>{% endif %}
                             {% for label in production.requirementLabels %}<span class="badge badge-square">{{ label }}</span>{% endfor %}
                             {% if production.syncedAt %}<span class="small muted">zuletzt importiert {{ production.syncedAt|de_date('d.M.y HH:mm') }}</span>{% endif %}
@@ -57,6 +58,7 @@
                         <div class="note">{{ ux_icon('lucide:lock') }}<span>Titel, Texte, Bild und Preise kommen derzeit von der Website und werden beim Import überschrieben. Sobald dieses System führend ist, sind die Felder hier bearbeitbar.</span></div>
                     {% endif %}
                     {{ form_row(form.title) }}
+                    {{ form_row(form.tentative) }}
                     {{ form_row(form.websiteStatus) }}
                     {{ form_row(form.permalink) }}
                     <div class="image-field">

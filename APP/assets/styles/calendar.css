@@ -92,6 +92,9 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .cal-item.is-past { opacity: .6; }
 .cal-item.is-cancelled { opacity: .55; }
 .cal-item.is-cancelled .title { text-decoration: line-through; }
+/* productions only pencilled in ("Vielleicht") */
+.cal-item.is-tentative { opacity: .5; border: 1.5px dashed currentColor; }
+.cal-item.is-tentative:hover { opacity: .8; }
 .cal-item.has-conflict { border: 1.5px dashed var(--danger-ink); }
 .cal-item.is-selected { box-shadow: 0 0 0 2px var(--ink); }
 .cal-item .conflict-dot { position: absolute; top: -5px; right: -5px; width: 14px; height: 14px; border-radius: 50%; background: var(--danger-ink); color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; }

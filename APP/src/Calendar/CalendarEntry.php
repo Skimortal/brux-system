@@ -31,6 +31,8 @@ final class CalendarEntry
         public readonly ?int $reservedSeats = null,
         /** A page to open instead of a side panel. */
         public readonly ?string $url = null,
+        /** Belongs to a production that is only pencilled in ("Vielleicht"). */
+        public readonly bool $tentative = false,
     ) {
     }
 
