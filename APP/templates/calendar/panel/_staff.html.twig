@@ -3,11 +3,13 @@
     <div class="row-card" data-collection-target="item">
         <div class="row-card-top">
             {{ form_widget(f.contact) }}
+            {{ form_widget(f.status, {attr: {class: 'select-status'}}) }}
             <button type="button" class="btn btn-ghost btn-icon btn-sm btn-danger" data-action="collection#remove" aria-label="Entfernen">{{ ux_icon('lucide:trash-2') }}</button>
         </div>
         {{ form_errors(f.contact) }}
+        {% if f.vars.data and f.vars.data.respondedAt %}<p class="small muted" style="margin:0">Antwort {{ f.vars.data.respondedAt|de_date('d.M. HH:mm') }}</p>{% endif %}
         <div class="toggles">
-            {% for field in [f.confirmed, f.lighting, f.sound, f.setup] %}
+            {% for field in [f.lighting, f.sound, f.setup] %}
                 <span class="toggle">{{ form_widget(field) }}<label for="{{ field.vars.id }}">{{ field.vars.label }}</label></span>
             {% endfor %}
         </div>

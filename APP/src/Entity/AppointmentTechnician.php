@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\TechnicianStatus;
 use App\Repository\AppointmentTechnicianRepository;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -21,8 +22,12 @@ class AppointmentTechnician
     #[ORM\JoinColumn(nullable: false)]
     private ?Contact $contact = null;
 
-    #[ORM\Column]
-    private bool $confirmed = false;
+    #[ORM\Column(length: 20, enumType: TechnicianStatus::class, options: ['default' => 'assigned'])]
+    private TechnicianStatus $status = TechnicianStatus::ASSIGNED;
+
+    /** When the technician last answered (accepted, declined or showed interest). */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $respondedAt = null;
 
     #[ORM\Column]
     private bool $lighting = false;
@@ -74,12 +79,32 @@ class AppointmentTechnician
 
     public function isConfirmed(): bool
     {
-        return $this->confirmed;
+        return $this->status === TechnicianStatus::CONFIRMED;
     }
 
-    public function setConfirmed(bool $confirmed): static
+    public function getStatus(): TechnicianStatus
     {
-        $this->confirmed = $confirmed;
+        return $this->status;
+    }
+
+    public function setStatus(TechnicianStatus $status): static
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+
+    public function getRespondedAt(): ?\DateTimeImmutable
+    {
+        return $this->respondedAt;
+    }
+
+    /** The technician's own answer from their area or an e-mail link. */
+    public function respond(TechnicianStatus $status, \DateTimeImmutable $at): static
+    {
+        $this->status = $status;
+        $this->respondedAt = $at;
+
         return $this;
     }
 

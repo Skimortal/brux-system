@@ -1,0 +1,25 @@
+{# Send an appointment out to all technicians as open; "a" is the appointment (may be unsaved for a performance), "action"/"close_action" the routes. #}
+{% set interested = a.id ? a.appointmentTechnicians|filter(t => t.status.value == 'interested') : [] %}
+<div class="panel-section stack-sm open-call">
+    <div class="between">
+        <h3>{{ ux_icon('lucide:megaphone') }} Technik gesucht</h3>
+        {% if a.openCallAt %}<span class="badge badge-accent">ausgeschrieben {{ a.openCallAt|de_date('d.M. HH:mm') }}</span>{% endif %}
+    </div>
+    {% if interested|length %}
+        <p class="small">Interesse: {{ interested|map(t => t.contact.name)|join(', ') }} – oben auf „eingeteilt“ stellen, um jemanden einzuteilen.</p>
+    {% endif %}
+    <div class="row" style="gap:6px">
+        <form method="post" action="{{ action }}" data-turbo-frame="_top" data-turbo-confirm="{{ a.openCallAt ? 'Nochmals an alle Techniker:innen schicken, die noch nicht eingeteilt sind?' : 'An alle Techniker:innen mit E-Mail-Adresse schicken, die noch nicht eingeteilt sind?' }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('open-call') }}">
+            <input type="hidden" name="_return" value="{{ return_url }}">
+            <button class="btn btn-sm" type="submit">{{ ux_icon('lucide:send') }} {{ a.openCallAt ? 'Erneut ausschreiben' : 'An alle Techniker:innen ausschreiben' }}</button>
+        </form>
+        {% if a.openCallAt %}
+            <form method="post" action="{{ close_action }}" data-turbo-frame="_top">
+                <input type="hidden" name="_token" value="{{ csrf_token('open-call') }}">
+                <input type="hidden" name="_return" value="{{ return_url }}">
+                <button class="btn btn-sm btn-ghost" type="submit">{{ ux_icon('lucide:circle-check') }} Ausschreibung beenden</button>
+            </form>
+        {% endif %}
+    </div>
+</div>

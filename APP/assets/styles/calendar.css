@@ -393,3 +393,18 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
     body:has(.prod-drawer) .grid-main-side > aside { order: -1; }
 }
 @media (max-width: 900px) { .prod-drawer { width: auto; box-shadow: none; } }
+
+/* technician area: own assignments, open calls, read-only details */
+.assignment-row { display: flex; align-items: center; gap: 10px; padding: 9px 18px; border-bottom: 1px solid var(--line-soft); }
+.assignment-row > a { color: inherit; text-decoration: none; display: flex; flex-direction: column; }
+.assignment-row > a:hover .name { text-decoration: underline; }
+.assignment-row .name { font-weight: 500; font-size: 14px; }
+.assignment-row .line { font-size: 12.5px; color: var(--muted); }
+.assignment-row.is-declined { opacity: .55; }
+.assignment-actions { padding: 0 18px 10px; border-bottom: 1px solid var(--line-soft); }
+.file-link { display: flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; padding: 6px 0; }
+.file-link:hover .grow { text-decoration: underline; }
+/* own assignments stand out in the technicians' calendar */
+.cal-item.is-mine { box-shadow: inset 4px 0 0 var(--ink); font-weight: 600; }
+.cal-item.is-mine-assigned { outline: 2px dashed var(--warn-ink); outline-offset: -2px; }
+.cal-board.is-readonly .cal-item { cursor: pointer; }

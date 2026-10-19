@@ -1,0 +1,8 @@
+{# Simple layout for the built-in mails; blocks "subject" and "body" are what gets sent. #}
+{% block subject %}{% endblock %}
+{% block body %}
+<div style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; line-height: 1.5; color: #1f1f1d; max-width: 560px;">
+    {% block content %}{% endblock %}
+    <p style="margin-top: 28px; color: #777; font-size: 13px;">BRUX / Freies Theater Innsbruck · Haussystem</p>
+</div>
+{% endblock %}

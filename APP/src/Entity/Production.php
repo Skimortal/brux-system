@@ -94,6 +94,24 @@ class Production extends Base
     #[ORM\Column(length: 20, options: ['default' => 'draft'])]
     private string $websiteStatus = 'draft';
 
+    /** Notes for the house technicians, kept here only (never sent to the website). */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $techNotesRoom = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $techNotesLight = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $techNotesSound = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $techNotesOther = null;
+
+    /** @var Collection<int, ProductionFile> */
+    #[ORM\OneToMany(targetEntity: ProductionFile::class, mappedBy: 'production', cascade: ['remove'])]
+    #[ORM\OrderBy(['createdAt' => 'DESC'])]
+    private Collection $files;
+
     /** Only pencilled in: its dates are held, but nothing goes to the website while it is set. */
     #[ORM\Column(options: ['default' => false])]
     private bool $tentative = false;
@@ -116,6 +134,7 @@ class Production extends Base
 
     public function __construct()
     {
+        $this->files = new ArrayCollection();
         $this->technicians = new ArrayCollection();
         $this->contactPersons = new ArrayCollection();
         $this->events = new ArrayCollection();
@@ -421,6 +440,77 @@ class Production extends Base
         $this->websiteStatus = $websiteStatus;
 
         return $this;
+    }
+
+    public function getTechNotesRoom(): ?string
+    {
+        return $this->techNotesRoom;
+    }
+
+    public function setTechNotesRoom(?string $notes): static
+    {
+        $this->techNotesRoom = $notes;
+
+        return $this;
+    }
+
+    public function getTechNotesLight(): ?string
+    {
+        return $this->techNotesLight;
+    }
+
+    public function setTechNotesLight(?string $notes): static
+    {
+        $this->techNotesLight = $notes;
+
+        return $this;
+    }
+
+    public function getTechNotesSound(): ?string
+    {
+        return $this->techNotesSound;
+    }
+
+    public function setTechNotesSound(?string $notes): static
+    {
+        $this->techNotesSound = $notes;
+
+        return $this;
+    }
+
+    public function getTechNotesOther(): ?string
+    {
+        return $this->techNotesOther;
+    }
+
+    public function setTechNotesOther(?string $notes): static
+    {
+        $this->techNotesOther = $notes;
+
+        return $this;
+    }
+
+    /**
+     * Filled technician notes by heading, for display.
+     *
+     * @return array<string, string>
+     */
+    public function getTechNotes(): array
+    {
+        return array_filter([
+            'Raumgestaltung' => trim((string) $this->techNotesRoom),
+            'Lichtsetup' => trim((string) $this->techNotesLight),
+            'Ton' => trim((string) $this->techNotesSound),
+            'Weiteres' => trim((string) $this->techNotesOther),
+        ], static fn (string $note) => $note !== '');
+    }
+
+    /**
+     * @return Collection<int, ProductionFile>
+     */
+    public function getFiles(): Collection
+    {
+        return $this->files;
     }
 
     public function isTentative(): bool

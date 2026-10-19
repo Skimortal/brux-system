@@ -116,6 +116,19 @@
                 </div>
             </section>
 
+            <section class="card" id="technik">
+                <div class="card-head"><h2>Technik im Haus</h2></div>
+                <div class="card-body form">
+                    <p class="small muted">Für unsere Techniker:innen; sie sehen die Notizen und Dateien bei jedem Termin der Produktion. Wird nicht an die Website übertragen.</p>
+                    <div class="form-grid-2">
+                        {{ form_row(form.techNotesRoom) }}
+                        {{ form_row(form.techNotesLight) }}
+                        {{ form_row(form.techNotesSound) }}
+                        {{ form_row(form.techNotesOther) }}
+                    </div>
+                </div>
+            </section>
+
             <section class="card" id="ansprechpersonen" data-controller="collection" data-collection-index-value="{{ form.contactPersons|length }}" data-collection-placeholder-value="__cp__">
                 <div class="card-head">
                     <h2>Ansprechpersonen</h2>
@@ -178,6 +191,33 @@
             </turbo-frame>
         {% endif %}
         {% if not is_new %}
+            <section class="card" id="dateien">
+                <div class="card-head"><h2>Dateien für die Technik <span class="badge">{{ production.files|length }}</span></h2></div>
+                <div>
+                    {% for file in production.files %}
+                        <div class="key-row file-row">
+                            {{ ux_icon(file.mimeType starts with 'image/' ? 'lucide:image' : 'lucide:file-text', {class: 'muted'}) }}
+                            <a class="grow" href="{{ path('app_production_file_download', {id: file.id}) }}" target="_blank" rel="noopener" data-turbo="false" style="min-width:0">
+                                <span class="name" style="display:block; overflow-wrap:anywhere">{{ file.originalName }}</span>
+                                <span class="line" style="display:block">{{ file.sizeLabel }} · {{ file.createdAt|de_date('d.M.y') }}</span>
+                            </a>
+                            <form method="post" action="{{ path('app_production_file_delete', {id: file.id}) }}" data-turbo-confirm="„{{ file.originalName }}“ löschen?">
+                                <input type="hidden" name="_token" value="{{ csrf_token('production-file') }}">
+                                <button class="btn btn-ghost btn-icon btn-sm" type="submit" aria-label="Datei löschen" title="Löschen">{{ ux_icon('lucide:trash-2') }}</button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="empty">Noch keine Dateien, z. B. Technical Rider oder Cue-Liste.</div>
+                    {% endfor %}
+                </div>
+                <form class="card-foot file-upload" method="post" action="{{ path('app_production_file_upload', {id: production.id}) }}" enctype="multipart/form-data" data-controller="autosubmit">
+                    <input type="hidden" name="_token" value="{{ csrf_token('production-file') }}">
+                    <label class="btn btn-sm">{{ ux_icon('lucide:upload') }} Dateien hochladen
+                        <input class="sr-only" type="file" name="files[]" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.odt,.ods,.txt,.csv,.zip" data-action="change->autosubmit#submit">
+                    </label>
+                    <span class="small muted">PDF, Bilder, Office, bis 10 MB</span>
+                </form>
+            </section>
             <section class="card">
                 <div class="card-head">
                     <h2>Vorstellungen <span class="badge">{{ performances|length }}</span></h2>

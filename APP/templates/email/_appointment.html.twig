@@ -1,0 +1,6 @@
+<table style="border-collapse: collapse; margin: 14px 0; font-size: 15px;">
+    <tr><td style="padding: 3px 14px 3px 0; color: #777;">Termin</td><td style="padding: 3px 0;"><strong>{{ appointment.title }}</strong></td></tr>
+    <tr><td style="padding: 3px 14px 3px 0; color: #777;">Wann</td><td style="padding: 3px 0;">{{ appointment.when }}</td></tr>
+    {% if appointment.room %}<tr><td style="padding: 3px 14px 3px 0; color: #777;">Raum</td><td style="padding: 3px 0;">{{ appointment.room }}</td></tr>{% endif %}
+    {% if appointment.tasks %}<tr><td style="padding: 3px 14px 3px 0; color: #777;">Aufgabe</td><td style="padding: 3px 0;">{{ appointment.tasks }}</td></tr>{% endif %}
+</table>

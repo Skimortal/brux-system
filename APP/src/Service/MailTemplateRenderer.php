@@ -27,6 +27,17 @@ class MailTemplateRenderer
             $this->defaultLocale
         );
 
+        if (!$tpl && $key instanceof EmailTemplateKey && $key->defaultTemplate() !== null) {
+            // built-in default: the template defines the blocks "subject" and "body"
+            $default = $this->twig->load($key->defaultTemplate());
+
+            return new RenderedMail(
+                trim($default->renderBlock('subject', $context)),
+                $default->renderBlock('body', $context),
+                null,
+            );
+        }
+
         if (!$tpl) {
             throw new \RuntimeException(sprintf(
                 'Mail-Template "%s" (%s) nicht gefunden.',

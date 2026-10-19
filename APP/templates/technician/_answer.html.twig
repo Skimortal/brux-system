@@ -1,0 +1,16 @@
+{# Accept / decline buttons for one's own assignment; expects "assignment". #}
+{% set status = assignment.status.value %}
+{% if status in ['assigned', 'accepted', 'declined'] %}
+    <div class="row" style="gap:6px">
+        {% for choice in [{value: 'accepted', label: 'Zusagen', icon: 'lucide:check'}, {value: 'declined', label: 'Absagen', icon: 'lucide:x'}] %}
+            {% if status != choice.value %}
+                <form method="post" action="{{ path('app_technician_respond', {id: assignment.id}) }}" data-turbo-frame="_top">
+                    <input type="hidden" name="_token" value="{{ csrf_token('technician') }}">
+                    <input type="hidden" name="_return" value="{{ return_url }}">
+                    <input type="hidden" name="status" value="{{ choice.value }}">
+                    <button class="btn btn-sm{{ choice.value == 'accepted' ? ' btn-primary' : '' }}" type="submit">{{ ux_icon(choice.icon) }} {{ choice.label }}</button>
+                </form>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}

@@ -18,7 +18,8 @@ security:
                 login_path: app_login
                 check_path: app_login
                 enable_csrf: true
-                default_target_path: app_calendar
+                # staff land in the calendar, technicians in their own area
+                default_target_path: app_start
             remember_me:
                 secret: '%kernel.secret%'
                 lifetime: 2592000
@@ -27,9 +28,14 @@ security:
                 target: app_login
 
     access_control:
-        - { path: ^/(login|forgot-password|reset-password), roles: PUBLIC_ACCESS }
+        - { path: ^/(login|logout|forgot-password|reset-password), roles: PUBLIC_ACCESS }
+        # signed links from the open-call mails work without logging in
+        - { path: ^/technik/interesse/, roles: PUBLIC_ACCESS }
+        # technicians only see their own area, documents and their profile (all read-only)
+        - { path: ^/(start$|technik|profil$|dateien/\d+$), roles: ROLE_TECHNICIAN }
         - { path: ^/, roles: ROLE_USER }
 
+    # ROLE_TECHNICIAN: read-only technician area (all appointments, own assignments)
     # ROLE_USER: calendar and all day-to-day data
     # ROLE_ADMIN: deleting, rooms, users, event categories, contact categories
     # ROLE_SUPERUSER: e-mail templates, granting admin rights
@@ -37,6 +43,7 @@ security:
         ROLE_SUPERUSER: [ ROLE_ADMIN ]
         ROLE_ADMIN: [ ROLE_EDITOR ]
         ROLE_EDITOR: [ ROLE_USER ]
+        ROLE_USER: [ ROLE_TECHNICIAN ]
 
 when@test:
     security:

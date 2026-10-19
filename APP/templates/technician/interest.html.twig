@@ -1,0 +1,19 @@
+{% extends 'layout/auth.html.twig' %}
+{% block title %}Technik gesucht{% endblock %}
+{% block auth %}
+    <h1 style="font-size:20px; margin-bottom:6px">Technik gesucht</h1>
+    <p class="muted" style="margin-bottom:14px">{{ appointment.title }}<br>{{ appointment.when }}{{ appointment.room ? ' · ' ~ appointment.room }}</p>
+    {% if message %}
+        <div class="note note-ok">{{ ux_icon('lucide:check') }}<span>{{ message }}</span></div>
+    {% elseif assignment %}
+        <div class="note">{{ ux_icon('lucide:info') }}<span>Hallo {{ name }}, du bist für diesen Termin bereits {{ assignment.status.label }}.</span></div>
+    {% elseif open %}
+        <p>Hallo {{ name }}, hast du Zeit für diesen Termin?</p>
+        <form method="post" action="{{ app.request.uri }}" style="margin-top:14px">
+            <button class="btn btn-primary" type="submit" style="width:100%">{{ ux_icon('lucide:hand') }} Ich habe Interesse</button>
+        </form>
+    {% else %}
+        <div class="note">{{ ux_icon('lucide:info') }}<span>Für diesen Termin wird keine Technik mehr gesucht.</span></div>
+    {% endif %}
+    <p class="small muted" style="margin-top:18px"><a href="{{ path('app_login') }}">Zum Haussystem</a></p>
+{% endblock %}

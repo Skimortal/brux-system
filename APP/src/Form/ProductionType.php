@@ -154,6 +154,10 @@ final class ProductionType extends AbstractType
                 'query_builder' => static fn (EntityRepository $r) => $r->createQueryBuilder('r')->orderBy('r.position', 'ASC'),
                 'choice_label' => 'name',
             ])
+            ->add('techNotesRoom', TextareaType::class, ['label' => 'Raumgestaltung', 'required' => false, 'attr' => ['rows' => 4]])
+            ->add('techNotesLight', TextareaType::class, ['label' => 'Lichtsetup', 'required' => false, 'attr' => ['rows' => 4]])
+            ->add('techNotesSound', TextareaType::class, ['label' => 'Ton', 'required' => false, 'attr' => ['rows' => 4]])
+            ->add('techNotesOther', TextareaType::class, ['label' => 'Weiteres', 'required' => false, 'attr' => ['rows' => 4]])
             ->add('contactPersons', CollectionType::class, [
                 'entry_type' => ProductionContactPersonType::class,
                 'label' => 'Ansprechpersonen',

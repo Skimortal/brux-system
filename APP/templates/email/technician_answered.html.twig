@@ -1,0 +1,8 @@
+{% extends 'email/_layout.html.twig' %}
+{% block subject %}{{ name }}: {{ status }} – {{ appointment.title }} am {{ appointment.date }}{% endblock %}
+{% block content %}
+    <p><strong>{{ name }}</strong> hat geantwortet: <strong>{{ status }}</strong>.</p>
+    {{ include('email/_appointment.html.twig') }}
+    {% if more ?? 0 %}<p>Das gilt auch für <strong>{{ more }} weitere Termine</strong>.</p>{% endif %}
+    {{ include('email/_button.html.twig', {url: url, label: 'Im Kalender öffnen'}) }}
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends 'email/_layout.html.twig' %}
+{% block subject %}Bestätigt: {{ appointment.title }} am {{ appointment.date }}{% endblock %}
+{% block content %}
+    <p>Hallo {{ name }},</p>
+    <p>dein Einsatz ist bestätigt. Danke!</p>
+    {{ include('email/_appointment.html.twig') }}
+    {% if more ?? 0 %}<p>Dazu kommen <strong>{{ more }} weitere Termine</strong> (z. B. einer Serie); du findest sie alle unter „Meine Einsätze“.</p>{% endif %}
+    {{ include('email/_button.html.twig', {url: url, label: 'Details und Unterlagen'}) }}
+{% endblock %}

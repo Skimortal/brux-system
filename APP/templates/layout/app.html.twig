@@ -7,12 +7,17 @@
     {route: 'app_key_index', icon: 'lucide:key-round', label: 'Schlüssel', match: 'app_key'},
     {route: 'app_cleaning_schedule_index', icon: 'lucide:spray-can', label: 'Reinigungsplan', match: 'app_cleaning'},
 ] %}
+{% set staff = is_granted('ROLE_USER') %}
+{% if not staff %}
+    {# technicians: only their read-only area #}
+    {% set nav = [{route: 'app_technician', icon: 'lucide:calendar', label: 'Termine', match: 'app_technician'}] %}
+{% endif %}
 {% set current = app.request.attributes.get('_route') ?? '' %}
 
 {% block body %}
 <div class="app">
     <nav class="rail" aria-label="Hauptnavigation">
-        <a href="{{ path('app_calendar') }}" class="rail-logo" aria-label="Zum Kalender">{{ include('components/_brux_logo.html.twig', {variant: 'b'}) }}</a>
+        <a href="{{ path(staff ? 'app_calendar' : 'app_technician') }}" class="rail-logo" aria-label="Zum Kalender">{{ include('components/_brux_logo.html.twig', {variant: 'b'}) }}</a>
         {% for item in nav %}
             <a href="{{ path(item.route) }}" class="rail-link" {% if current starts with item.match %}aria-current="page"{% endif %}>
                 {{ ux_icon(item.icon) }}<span class="rail-tip">{{ item.label }}</span><span class="sr-only">{{ item.label }}</span>
@@ -22,9 +27,11 @@
         <button type="button" class="rail-link" data-controller="theme" data-action="theme#toggle" style="background:none;border:0" aria-label="Hell/Dunkel umschalten">
             <span class="theme-icon-dark">{{ ux_icon('lucide:moon') }}</span><span class="theme-icon-light">{{ ux_icon('lucide:sun') }}</span><span class="rail-tip" data-theme-target="label">Dunkler Modus</span>
         </button>
+        {% if staff %}
         <a href="{{ path('app_settings') }}" class="rail-link" {% if current starts with 'app_settings' or current starts with 'app_room' or current starts with 'app_user' or current starts with 'app_event_category' or current starts with 'app_email_template' %}aria-current="page"{% endif %}>
             {{ ux_icon('lucide:settings') }}<span class="rail-tip">Verwaltung</span><span class="sr-only">Verwaltung</span>
         </a>
+        {% endif %}
         <div class="rail-menu" data-controller="dropdown">
             <button type="button" class="rail-link" data-action="dropdown#toggle" aria-haspopup="menu" aria-expanded="false" data-dropdown-target="button" style="background:none;border:0">
                 {% if app.user.avatarFilename %}

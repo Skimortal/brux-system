@@ -1,0 +1,9 @@
+{% extends 'email/_layout.html.twig' %}
+{% block subject %}Technik gesucht: {{ appointment.title }} am {{ appointment.date }}{% endblock %}
+{% block content %}
+    <p>Hallo {{ name }},</p>
+    <p>für diesen Termin suchen wir noch Technik. Hast du Zeit und Lust?</p>
+    {{ include('email/_appointment.html.twig') }}
+    {{ include('email/_button.html.twig', {url: interest_url, label: 'Ich habe Interesse'}) }}
+    <p style="color: #777; font-size: 13px;">Ein Klick genügt, wir melden uns dann mit der Einteilung.</p>
+{% endblock %}

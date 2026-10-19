@@ -56,6 +56,9 @@
         </div>
     {{ form_end(f) }}
 
+    {% if not is_new and a.type.hasAssignments and a.endDate > date() %}
+        {{ include('calendar/panel/_open_call.html.twig', {action: path('app_open_call', {id: a.id}), close_action: path('app_open_call_close', {id: a.id})}) }}
+    {% endif %}
     {% if not is_new %}
         {{ include('calendar/panel/_loans_for.html.twig', {loans: panel.loans, new_params: {panel: 'kl-new'}, extra: 'appointment=' ~ a.id}) }}
     {% endif %}

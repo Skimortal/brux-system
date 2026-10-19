@@ -1,0 +1,84 @@
+{# Read-only details of an appointment, performance or stay for technicians. #}
+{% set p = panel %}
+{% set a = p.appointment %}
+{% set chip = p.performance ? 'Vorstellung' : (a ? a.type.shortLabel : 'Im Haus') %}
+{% if a %}
+    {% set when = a.startDate|de_date('EEEE, d. MMMM y') ~ (a.allDay ? ', ganztägig' : ', ' ~ a.startDate|date('H:i') ~ '–' ~ a.endDate|date('H:i') ~ ' Uhr') ~ (a.room ? ' · ' ~ a.room.name : '') %}
+{% elseif p.performance %}
+    {% set when = p.performance.startsAt|de_date('EEEE, d. MMMM y, HH:mm') ~ ' Uhr' ~ (p.performance.room ? ' · ' ~ p.performance.room.name : '') %}
+{% elseif p.production.stayFrom %}
+    {% set when = 'im Haus ' ~ p.production.stayFrom|de_date('d.M.') ~ (p.production.stayUntil ? '–' ~ p.production.stayUntil|de_date('d.M.y') : '') ~ (p.production.stayRoom ? ' · ' ~ p.production.stayRoom.name : '') %}
+{% else %}
+    {% set when = null %}
+{% endif %}
+<div class="panel-head">
+    <div class="top">
+        <a class="btn btn-ghost btn-sm" href="{{ cal_path(query, {panel: null}) }}" style="padding-left:6px">{{ ux_icon('lucide:arrow-left') }} Meine Einsätze</a>
+        <span class="row" style="gap:6px">
+            {% if p.production and p.production.tentative %}<span class="badge badge-warn">Vielleicht</span>{% endif %}
+            <span class="badge">{{ chip }}</span>
+        </span>
+    </div>
+    <h2 id="panel-title">{{ p.performance ? p.production.title : (a ? a.displayTitle : p.production.title) }}</h2>
+    {% if when %}<div class="when">{{ when }}</div>{% endif %}
+</div>
+<div class="panel-body">
+    {% if p.performance and p.performance.cancelled %}<div class="note note-danger">{{ ux_icon('lucide:ban') }}<span>Abgesagt</span></div>{% endif %}
+
+    {% if p.mine %}
+        <section class="panel-section stack-sm my-assignment">
+            <div class="between"><h3>Mein Einsatz</h3><span class="badge {{ p.mine.status.badgeClass }}">{{ p.mine.status.label }}</span></div>
+            {% set tasks = [p.mine.lighting ? 'Licht', p.mine.sound ? 'Ton', p.mine.setup ? 'Aufbau']|filter(t => t) %}
+            {% if tasks %}<p class="small">Aufgabe: {{ tasks|join(', ') }}</p>{% endif %}
+            {% if not p.past %}{{ include('technician/_answer.html.twig', {assignment: p.mine}) }}{% endif %}
+        </section>
+    {% elseif a and a.openCallAt and not p.past and contact %}
+        <section class="panel-section stack-sm">
+            <h3>Technik gesucht</h3>
+            <form method="post" action="{{ path('app_technician_interest_here', {id: a.id}) }}" data-turbo-frame="_top">
+                <input type="hidden" name="_token" value="{{ csrf_token('technician') }}">
+                <input type="hidden" name="_return" value="{{ return_url }}">
+                <button class="btn btn-primary btn-sm" type="submit">{{ ux_icon('lucide:hand') }} Interesse melden</button>
+            </form>
+        </section>
+    {% endif %}
+
+    {% if p.assignments %}
+        <section class="panel-section stack-sm">
+            <h3>Technik</h3>
+            {% for t in p.assignments %}
+                <div class="between small">
+                    <span>{{ t.contact.name }}{% set tt = [t.lighting ? 'Licht', t.sound ? 'Ton', t.setup ? 'Aufbau']|filter(x => x) %}{% if tt %} <span class="muted">· {{ tt|join(', ') }}</span>{% endif %}</span>
+                    <span class="badge {{ t.status.badgeClass }}">{{ t.status.label }}</span>
+                </div>
+            {% endfor %}
+        </section>
+    {% endif %}
+
+    {% if p.production %}
+        {% set notes = p.production.techNotes %}
+        {% if notes %}
+            <section class="panel-section stack-sm">
+                <h3>Technik-Notizen</h3>
+                {% for heading, note in notes %}
+                    <div><div class="small muted">{{ heading }}</div><div style="white-space:pre-line">{{ note }}</div></div>
+                {% endfor %}
+            </section>
+        {% endif %}
+        {% if p.production.files|length %}
+            <section class="panel-section stack-sm">
+                <h3>Dateien</h3>
+                {% for file in p.production.files %}
+                    <a class="file-link" href="{{ path('app_production_file_download', {id: file.id}) }}" target="_blank" rel="noopener" data-turbo="false">
+                        {{ ux_icon(file.mimeType starts with 'image/' ? 'lucide:image' : 'lucide:file-text') }} <span class="grow">{{ file.originalName }}</span> <span class="small muted">{{ file.sizeLabel }}</span>
+                    </a>
+                {% endfor %}
+            </section>
+        {% endif %}
+        {% if a and a.description %}
+            <section class="panel-section stack-sm"><h3>Beschreibung</h3><div style="white-space:pre-line">{{ a.description }}</div></section>
+        {% endif %}
+    {% elseif a and a.description %}
+        <section class="panel-section stack-sm"><h3>Beschreibung</h3><div style="white-space:pre-line">{{ a.description }}</div></section>
+    {% endif %}
+</div>

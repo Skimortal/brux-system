@@ -2,6 +2,10 @@
 
 namespace App\Form;
 
+use App\Entity\Contact;
+use App\Enum\ContactRole;
+use App\Repository\ContactRepository;
+use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use App\Entity\User;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
@@ -34,7 +38,7 @@ final class UserType extends AbstractType
             ->add('position', TextType::class, ['label' => 'Funktion', 'required' => false]);
 
         if (!$options['profile']) {
-            $roles = ['Mitarbeit (Kalender, Daten)' => 'ROLE_USER', 'Verwaltung (Löschen, Benutzer, Räume)' => 'ROLE_ADMIN'];
+            $roles = ['Techniker:in (nur lesen, eigene Einsätze)' => 'ROLE_TECHNICIAN', 'Mitarbeit (Kalender, Daten)' => 'ROLE_USER', 'Verwaltung (Löschen, Benutzer, Räume)' => 'ROLE_ADMIN'];
             if ($options['can_grant_superuser']) {
                 $roles['Superadmin (E-Mail-Vorlagen, Rechte)'] = 'ROLE_SUPERUSER';
             }
@@ -47,6 +51,15 @@ final class UserType extends AbstractType
                     'choices' => $roles,
                     'data' => $options['current_role'],
                     'attr' => ['data-style' => 'checks'],
+                ])
+                ->add('contact', EntityType::class, [
+                    'class' => Contact::class,
+                    'label' => 'Kontakt in der Technik',
+                    'required' => false,
+                    'placeholder' => 'keiner',
+                    'query_builder' => static fn (ContactRepository $r) => $r->queryByRole(ContactRole::TECHNICIAN),
+                    'choice_label' => 'name',
+                    'help' => 'Für Techniker:innen: welche Einteilungen „Meine Einsätze“ sind.',
                 ])
                 ->add('isActive', CheckboxType::class, ['label' => 'Konto aktiv', 'required' => false]);
         }

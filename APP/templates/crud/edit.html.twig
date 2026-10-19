@@ -20,6 +20,7 @@
             <a class="btn btn-ghost" href="{{ back_url }}">Abbrechen</a>
         </div>
     {{ form_end(form) }}
+    {% if extra is defined and extra %}{{ include(extra.template, extra.vars) }}{% endif %}
     {% if delete_url is defined and delete_url %}
         <form method="post" action="{{ delete_url }}" data-turbo-confirm="Wirklich löschen?" style="margin-top:16px">
             <input type="hidden" name="_token" value="{{ csrf_token(delete_token) }}">

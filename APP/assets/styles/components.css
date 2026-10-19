@@ -181,3 +181,10 @@
 }
 
 #ansprechpersonen { scroll-margin-top: 16px; }
+
+/* documents of a production for the technicians */
+.file-row { display: flex; align-items: center; gap: 10px; }
+.file-row > a { color: inherit; text-decoration: none; }
+.file-row > a:hover .name { text-decoration: underline; }
+.file-upload { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.file-upload label.btn { cursor: pointer; }

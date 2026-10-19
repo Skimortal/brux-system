@@ -96,6 +96,10 @@ class Appointment
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private ?self $parentAppointment = null;
 
+    /** Sent out to all technicians as open ("Technik gesucht") at this time; null when not open. */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $openCallAt = null;
+
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $recurrenceFrequency = null;
 
@@ -117,6 +121,7 @@ class Appointment
         $this->recurrenceFrequency = null;
         $this->recurrenceEndDate = null;
         $this->productionEvent = null;
+        $this->openCallAt = null;
         $this->startDate = $this->startDate ? clone $this->startDate : null;
         $this->endDate = $this->endDate ? clone $this->endDate : null;
 
@@ -208,6 +213,30 @@ class Appointment
         $this->room = $room;
 
         return $this;
+    }
+
+    public function getOpenCallAt(): ?\DateTimeImmutable
+    {
+        return $this->openCallAt;
+    }
+
+    public function setOpenCallAt(?\DateTimeImmutable $openCallAt): static
+    {
+        $this->openCallAt = $openCallAt;
+
+        return $this;
+    }
+
+    /** The assignment of the given technician, if any. */
+    public function getAssignmentOf(?Contact $contact): ?AppointmentTechnician
+    {
+        foreach ($this->appointmentTechnicians as $assignment) {
+            if ($contact !== null && $assignment->getContact() === $contact) {
+                return $assignment;
+            }
+        }
+
+        return null;
     }
 
     public function getProduction(): ?Production

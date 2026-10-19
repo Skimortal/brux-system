@@ -74,4 +74,26 @@ class AppointmentRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Appointments sent out to all technicians that have not ended yet, by date.
+     *
+     * @return list<Appointment>
+     */
+    public function findOpenCalls(\DateTimeInterface $now): array
+    {
+        return $this->createQueryBuilder('a')
+            ->addSelect('r', 'pe', 'p', 'at', 'atc')
+            ->leftJoin('a.room', 'r')
+            ->leftJoin('a.productionEvent', 'pe')
+            ->leftJoin('a.production', 'p')
+            ->leftJoin('a.appointmentTechnicians', 'at')
+            ->leftJoin('at.contact', 'atc')
+            ->andWhere('a.openCallAt IS NOT NULL')
+            ->andWhere('a.endDate > :now')
+            ->setParameter('now', $now)
+            ->orderBy('a.startDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

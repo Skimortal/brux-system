@@ -6,6 +6,10 @@
 parameters:
     avatars_dir: '%kernel.project_dir%/public/uploads/avatars'
     production_images_dir: '%kernel.project_dir%/public/uploads/productions'
+    # documents for the technicians, outside public/ so they are only served after login
+    production_files_dir: '%kernel.project_dir%/var/production-files'
+    # gets the technicians' answers (accepted, declined, interested)
+    office_email: '%env(OFFICE_EMAIL)%'
     wordpress_api_url: '%env(WORDPRESS_API_URL)%'
     # Fields that WordPress owns. They are read-only here for records that come from
     # WordPress and are overwritten by every import. Since 2026-10 this system leads;

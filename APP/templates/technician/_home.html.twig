@@ -1,0 +1,52 @@
+{# Side column of the technician area: own assignments, open calls. #}
+<div class="side-scroll">
+    {% if contact is null %}
+        <div class="note" style="margin:14px 18px">{{ ux_icon('lucide:info') }}<span>Dein Zugang ist noch mit keinem Technik-Kontakt verknüpft. Bitte melde dich im Büro.</span></div>
+    {% endif %}
+    <section class="side-block" aria-labelledby="mine-title">
+        <div class="side-block-head">
+            <h2 id="mine-title">{{ ux_icon('lucide:user-check') }} Meine Einsätze <span class="count">{{ upcoming|filter(a => a.status.value != 'declined')|length }}</span></h2>
+        </div>
+        {% for assignment in upcoming %}
+            {% set a = assignment.appointment %}
+            <div class="assignment-row is-{{ assignment.status.value }}">
+                <a class="grow" href="{{ cal_path(query, {date: a.startDate|date('Y-m-d'), panel: a.productionEvent ? 'pe-' ~ a.productionEvent.id : 'a-' ~ a.id}) }}" style="min-width:0">
+                    <span class="name">{{ a.productionEvent ? a.productionEvent.production.title : a.displayTitle }}</span>
+                    <span class="line">{{ a.startDate|de_date('EE d.M.') }}{{ a.allDay ? '' : ', ' ~ a.startDate|date('H:i') }}{{ a.room ? ' · ' ~ a.room.name }}</span>
+                </a>
+                <span class="badge {{ assignment.status.badgeClass }}">{{ assignment.status.label }}</span>
+            </div>
+            {% if assignment.status.value in ['assigned'] %}
+                <div class="assignment-actions">{{ include('technician/_answer.html.twig') }}</div>
+            {% endif %}
+        {% else %}
+            <p class="small muted" style="padding: 4px 18px 14px">Keine anstehenden Einsätze.</p>
+        {% endfor %}
+    </section>
+
+    <section class="side-block" aria-labelledby="open-title">
+        <div class="side-block-head">
+            <h2 id="open-title">{{ ux_icon('lucide:megaphone') }} Technik gesucht <span class="count">{{ open_calls|length }}</span></h2>
+        </div>
+        {% for a in open_calls %}
+            {% set own = a.assignmentOf(contact) %}
+            <div class="assignment-row">
+                <a class="grow" href="{{ cal_path(query, {date: a.startDate|date('Y-m-d'), panel: a.productionEvent ? 'pe-' ~ a.productionEvent.id : 'a-' ~ a.id}) }}" style="min-width:0">
+                    <span class="name">{{ a.productionEvent ? a.productionEvent.production.title : a.displayTitle }}</span>
+                    <span class="line">{{ a.startDate|de_date('EE d.M.') }}{{ a.allDay ? '' : ', ' ~ a.startDate|date('H:i') }}{{ a.room ? ' · ' ~ a.room.name }}</span>
+                </a>
+                {% if own %}
+                    <span class="badge {{ own.status.badgeClass }}">{{ own.status.label }}</span>
+                {% elseif contact %}
+                    <form method="post" action="{{ path('app_technician_interest_here', {id: a.id}) }}" data-turbo-frame="_top">
+                        <input type="hidden" name="_token" value="{{ csrf_token('technician') }}">
+                        <input type="hidden" name="_return" value="{{ return_url }}">
+                        <button class="btn btn-xs" type="submit">{{ ux_icon('lucide:hand') }} Interesse</button>
+                    </form>
+                {% endif %}
+            </div>
+        {% else %}
+            <p class="small muted" style="padding: 4px 18px 14px">Gerade wird keine Technik gesucht.</p>
+        {% endfor %}
+    </section>
+</div>

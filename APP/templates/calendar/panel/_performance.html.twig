@@ -137,6 +137,9 @@
         {{ form_row(f.description) }}
         <button type="submit" class="btn btn-primary">{{ ux_icon('lucide:save') }} Besetzung speichern</button>
     {{ form_end(f) }}
+    {% if pe.startsAt and pe.endsAt and pe.endsAt > date() %}
+        {{ include('calendar/panel/_open_call.html.twig', {a: panel.staffing, action: path('app_open_call_performance', {id: pe.id}), close_action: path('app_open_call_performance_close', {id: pe.id})}) }}
+    {% endif %}
 
     {{ include('calendar/panel/_loans_for.html.twig', {loans: panel.loans, new_params: {panel: 'kl-new'}, extra: 'performance=' ~ pe.id}) }}
 </div>

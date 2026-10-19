@@ -4,6 +4,7 @@ namespace App\Twig;
 
 use App\Calendar\CalendarQuery;
 use App\Service\WordPressPushService;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
@@ -11,8 +12,11 @@ use Twig\TwigFunction;
 
 final class AppExtension extends AbstractExtension
 {
-    public function __construct(private readonly UrlGeneratorInterface $urls, private readonly WordPressPushService $push)
-    {
+    public function __construct(
+        private readonly UrlGeneratorInterface $urls,
+        private readonly WordPressPushService $push,
+        private readonly RequestStack $requests,
+    ) {
     }
 
     public function getFilters(): array
@@ -29,6 +33,7 @@ final class AppExtension extends AbstractExtension
     {
         return [
             new TwigFunction('cal_path', $this->calendarPath(...)),
+            new TwigFunction('cal_route', $this->calendarRoute(...)),
             // whether the WordPress write API is set up (reservations, pushes)
             new TwigFunction('wordpress_connected', fn (): bool => $this->push->isConfigured()),
         ];
@@ -65,6 +70,14 @@ final class AppExtension extends AbstractExtension
      */
     public function calendarPath(CalendarQuery $query, array $overrides = []): string
     {
-        return $this->urls->generate('app_calendar', $query->params($overrides));
+        return $this->urls->generate($this->calendarRoute(), $query->params($overrides));
+    }
+
+    /** The technicians' read-only calendar links to itself, everything else to the main calendar. */
+    public function calendarRoute(): string
+    {
+        $route = (string) $this->requests->getCurrentRequest()?->attributes->get('_route');
+
+        return str_starts_with($route, 'app_technician') ? 'app_technician' : 'app_calendar';
     }
 }

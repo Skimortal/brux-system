@@ -7,6 +7,7 @@ use App\Entity\KeyLoan;
 use App\Entity\ProductionEvent;
 use App\Entity\Room;
 use App\Enum\AppointmentTypeEnum;
+use App\Enum\TechnicianStatus;
 use App\Repository\AppointmentRepository;
 use App\Repository\CleaningScheduleRepository;
 use App\Repository\KeyLoanRepository;
@@ -287,16 +288,18 @@ final class CalendarBuilder
 
     private function technicianMeta(Appointment $appointment): ?string
     {
-        $total = \count($appointment->getAppointmentTechnicians());
-        if ($total === 0) {
+        $total = $confirmed = $interested = 0;
+        foreach ($appointment->getAppointmentTechnicians() as $technician) {
+            $total += $technician->getStatus()->isStaffed() ? 1 : 0;
+            $confirmed += $technician->isConfirmed() ? 1 : 0;
+            $interested += $technician->getStatus() === TechnicianStatus::INTERESTED ? 1 : 0;
+        }
+        if ($total === 0 && $interested === 0) {
             return null;
         }
-        $confirmed = 0;
-        foreach ($appointment->getAppointmentTechnicians() as $technician) {
-            $confirmed += $technician->isConfirmed() ? 1 : 0;
-        }
+        $meta = $total > 0 ? sprintf('Technik %d/%d%s', $confirmed, $total, $confirmed < $total ? ' offen' : '') : 'Technik offen';
 
-        return sprintf('Technik %d/%d%s', $confirmed, $total, $confirmed < $total ? ' offen' : '');
+        return $interested > 0 ? sprintf('%s · %d Interesse', $meta, $interested) : $meta;
     }
 
     /**

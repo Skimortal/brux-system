@@ -59,6 +59,10 @@ class User extends Base implements UserInterface, PasswordAuthenticatedUserInter
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $resetToken = null;
 
+    #[ORM\OneToOne(targetEntity: Contact::class)]
+    #[ORM\JoinColumn(nullable: true, unique: true, onDelete: 'SET NULL')]
+    private ?Contact $contact = null;
+
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $resetTokenExpiresAt = null;
 
@@ -86,9 +90,31 @@ class User extends Base implements UserInterface, PasswordAuthenticatedUserInter
     public function getRoles(): array
     {
         $roles = $this->roles;
-        $roles[] = 'ROLE_USER';
+        // technicians only get their read-only area, every other account works with the data
+        if (!$this->isTechnician()) {
+            $roles[] = 'ROLE_USER';
+        }
 
         return array_values(array_unique($roles));
+    }
+
+    /** A technician account: read-only access to all appointments and their own assignments. */
+    public function isTechnician(): bool
+    {
+        return $this->roles === ['ROLE_TECHNICIAN'];
+    }
+
+    /** The technician contact this account belongs to, for "my assignments". */
+    public function getContact(): ?Contact
+    {
+        return $this->contact;
+    }
+
+    public function setContact(?Contact $contact): static
+    {
+        $this->contact = $contact;
+
+        return $this;
     }
 
     /** @return string[] roles as stored, without the implicit ROLE_USER */

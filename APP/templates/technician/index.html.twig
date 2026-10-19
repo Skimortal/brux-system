@@ -1,0 +1,39 @@
+{% extends 'layout/app.html.twig' %}
+{# Technicians: all appointments read-only, their own assignments marked and listed. #}
+{% set readonly = true %}
+
+{% block title %}Termine{% endblock %}
+{% block main_class %}cal-page{% endblock %}
+
+{% block content %}
+<div class="cal-shell">
+    <section class="cal-main">
+        <turbo-frame id="calendar" data-turbo-action="advance">
+            {{ include('calendar/_toolbar.html.twig') }}
+            <div class="cal-board is-readonly" data-controller="scroll-keeper">
+                {% if query.effectiveLayout == 'grid' %}
+                    {{ include('calendar/_timegrid.html.twig') }}
+                {% elseif query.effectiveLayout == 'split' %}
+                    {{ include('calendar/_split.html.twig') }}
+                {% elseif query.view == 'month' %}
+                    {{ include('calendar/_month.html.twig') }}
+                {% else %}
+                    {{ include('calendar/_lanes.html.twig') }}
+                {% endif %}
+            </div>
+        </turbo-frame>
+    </section>
+    <div class="pane-handle" role="separator" aria-orientation="vertical" aria-label="Breite der rechten Spalte ändern (Doppelklick: zurücksetzen)" tabindex="0"
+         data-controller="pane-resize"
+         data-action="pointerdown->pane-resize#start pointermove->pane-resize#move pointerup->pane-resize#end pointercancel->pane-resize#end dblclick->pane-resize#reset keydown->pane-resize#key"></div>
+    <turbo-frame id="side" class="cal-side" data-turbo-action="advance">
+        <div class="side-content{{ panel ? ' has-panel' : '' }}">
+            {% if panel %}
+                {{ include('technician/_panel.html.twig') }}
+            {% else %}
+                {{ include('technician/_home.html.twig') }}
+            {% endif %}
+        </div>
+    </turbo-frame>
+</div>
+{% endblock %}

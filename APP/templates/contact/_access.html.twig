@@ -1,0 +1,20 @@
+{# Technician access of a contact: invite, re-send, status. #}
+<section class="card" style="margin-top:16px">
+    <div class="card-head"><h2>{{ ux_icon('lucide:key-round') }} Zugang zum Haussystem</h2></div>
+    <div class="card-body stack-sm">
+        {% if account %}
+            <p>Konto <strong>{{ account.username }}</strong>{{ account.isActive ? '' : ' (deaktiviert)' }}{{ account.technician ? ' · nur lesen, eigene Einsätze' : ' · Mitarbeit' }}.
+                {% if account.resetToken and account.resetTokenExpiresAt and account.resetTokenExpiresAt > date() %}Einladung offen bis {{ account.resetTokenExpiresAt|de_date('d.M.y HH:mm') }}.{% endif %}</p>
+        {% else %}
+            <p class="muted">Noch kein Zugang. Mit der Einladung bekommt {{ contact.name }} eine Mail mit einem Link, um ein eigenes Passwort festzulegen; danach sieht sie oder er alle Termine (nur lesend) und kann Einteilungen zu- oder absagen.</p>
+        {% endif %}
+        {% if not contact.email %}
+            <p class="small muted">Für eine Einladung braucht der Kontakt eine E-Mail-Adresse.</p>
+        {% elseif is_granted('ROLE_ADMIN') and (not account or account.technician) %}
+            <form method="post" action="{{ path('app_contact_invite', {id: contact.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('invite-contact-' ~ contact.id) }}">
+                <button class="btn btn-sm" type="submit">{{ ux_icon('lucide:send') }} {{ account ? 'Einladung erneut senden' : 'Zugang einladen' }}</button>
+            </form>
+        {% endif %}
+    </div>
+</section>
