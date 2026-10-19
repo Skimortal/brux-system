@@ -243,6 +243,8 @@ final class CalendarBuilder
             movable: !$this->ownership->isLocked($performance, 'date'),
             reservedSeats: $performance->getSeatsTaken(),
             tentative: $tentative,
+            premiere: $performance->getProduction()?->getPremiere() === $performance,
+            boardVisible: true,
         );
     }
 
@@ -283,6 +285,7 @@ final class CalendarBuilder
             meta: $meta,
             icon: $appointment->getEventType()?->icon() ?? ($appointment->isInSeries() ? 'lucide:repeat' : null),
             tentative: $tentative,
+            boardVisible: $appointment->isBoardVisible() || \in_array($type, [AppointmentTypeEnum::CLOSED_EVENT, AppointmentTypeEnum::SCHOOL_EVENT], true),
         );
     }
 

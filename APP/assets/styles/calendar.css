@@ -408,3 +408,7 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .cal-item.is-mine { box-shadow: inset 4px 0 0 var(--ink); font-weight: 600; }
 .cal-item.is-mine-assigned { outline: 2px dashed var(--warn-ink); outline-offset: -2px; }
 .cal-board.is-readonly .cal-item { cursor: pointer; }
+.feed-box > summary { cursor: pointer; list-style: none; }
+.feed-box > summary::-webkit-details-marker { display: none; }
+.cal-side .feed-link { grid-template-columns: minmax(0, 1fr) auto; }
+.cal-side .feed-link .feed-url { grid-column: 1 / -1; }

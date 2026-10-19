@@ -7,9 +7,13 @@ use App\Calendar\CalendarQuery;
 use App\Calendar\EntryGroup;
 use App\Entity\Appointment;
 use App\Entity\AppointmentTechnician;
+use App\Entity\CalendarFeed;
 use App\Entity\Contact;
 use App\Entity\User;
 use App\Enum\ContactRole;
+use App\Enum\FeedProfile;
+use App\Repository\CalendarFeedRepository;
+use App\Service\CalendarFeedLinks;
 use App\Enum\TechnicianStatus;
 use App\Repository\AppointmentRepository;
 use App\Repository\AppointmentTechnicianRepository;
@@ -49,7 +53,7 @@ final class TechnicianController extends AbstractController
 
     #[Route('/technik', name: 'app_technician', methods: ['GET'])]
     #[IsGranted('ROLE_TECHNICIAN')]
-    public function index(Request $request, CalendarBuilder $builder, ProductionEventRepository $performances, ProductionRepository $productions): Response
+    public function index(Request $request, CalendarBuilder $builder, ProductionEventRepository $performances, ProductionRepository $productions, CalendarFeedRepository $feeds, CalendarFeedLinks $links): Response
     {
         $now = $this->clock->now();
         $query = CalendarQuery::fromRequest($request, $now->setTime(0, 0));
@@ -66,7 +70,22 @@ final class TechnicianController extends AbstractController
             }
         }
 
+        // personal subscriptions: own assignments, and all appointments per room
+        $feedLinks = [];
+        if ($contact !== null) {
+            foreach ([FeedProfile::MINE, FeedProfile::TECHNICIANS] as $profile) {
+                $feed = $feeds->findOneForContact($contact, $profile);
+                if ($feed === null) {
+                    $feed = (new CalendarFeed())->setName((string) $contact->getName())->setProfile($profile)->setContact($contact);
+                    $this->em->persist($feed);
+                    $this->em->flush();
+                }
+                $feedLinks = [...$feedLinks, ...$links->links($feed)];
+            }
+        }
+
         return $this->render('technician/index.html.twig', [
+            'feed_links' => $feedLinks,
             'query' => $query,
             'cal' => $cal,
             'mine' => $mine,

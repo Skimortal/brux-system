@@ -33,6 +33,10 @@ final class CalendarEntry
         public readonly ?string $url = null,
         /** Belongs to a production that is only pencilled in ("Vielleicht"). */
         public readonly bool $tentative = false,
+        /** The premiere of its production. */
+        public readonly bool $premiere = false,
+        /** Shown in the board's calendar subscription (performances, released appointments). */
+        public readonly bool $boardVisible = false,
     ) {
     }
 

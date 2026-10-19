@@ -1,0 +1,10 @@
+{# Subscription links of one feed; "links" from CalendarFeedLinks. #}
+<div class="feed-links">
+    {% for link in links %}
+        <div class="feed-link">
+            <span class="grow">{{ link.label }}</span>
+            <a class="btn btn-xs" href="{{ link.webcal }}" title="Im Kalender-Programm abonnieren (Apple, Outlook)">{{ ux_icon('lucide:calendar-plus') }} Abonnieren</a>
+            <input class="input feed-url" value="{{ link.url }}" readonly aria-label="Link für {{ link.label }}" onclick="this.select()" title="Link kopieren, z. B. für Google Kalender „Per URL hinzufügen“">
+        </div>
+    {% endfor %}
+</div>

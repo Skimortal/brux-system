@@ -513,6 +513,27 @@ class Production extends Base
         return $this->files;
     }
 
+    /**
+     * The premiere: a performance marked as such on the website, else the first one that
+     * is not cancelled.
+     */
+    public function getPremiere(): ?ProductionEvent
+    {
+        $first = null;
+        foreach ($this->events as $event) {
+            foreach ($event->getCategories() as $category) {
+                if (str_contains((string) $category->getSlug(), 'premiere')) {
+                    return $event;
+                }
+            }
+            if (!$event->isCancelled() && $event->getStartsAt() !== null && ($first === null || $event->getStartsAt() < $first->getStartsAt())) {
+                $first = $event;
+            }
+        }
+
+        return $first;
+    }
+
     public function isTentative(): bool
     {
         return $this->tentative;

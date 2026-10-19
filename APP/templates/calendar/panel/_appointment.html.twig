@@ -45,6 +45,7 @@
             {{ form_row(f.eventType) }}
             {{ form_row(f.status) }}
             {{ form_row(f.internalTechniciansAttending) }}
+            {% if f.boardVisible is defined %}{{ form_row(f.boardVisible) }}{% endif %}
         </div>
 
         {{ form_row(f.cleaningContact) }}

@@ -1,0 +1,48 @@
+{% extends 'layout/page.html.twig' %}
+
+{% block title %}Kalender-Abos{% endblock %}
+{% block page_title %}Kalender-Abos{% endblock %}
+{% block crumbs %}<div class="crumbs"><a href="{{ path('app_settings') }}">Verwaltung</a> /</div>{% endblock %}
+
+{% block page %}
+<div style="max-width: 900px" class="stack-lg">
+    <p class="muted">Jede Person bekommt eigene Links. Wer den Link hat, sieht den Kalender – bei Bedarf lassen sich die Links erneuern (die alten funktionieren dann nicht mehr) oder löschen. Kalender-Apps holen Änderungen selbst ab, meist alle paar Stunden. Abos für Techniker:innen entstehen automatisch in ihrem Bereich.</p>
+
+    <form class="card" method="post">
+        <input type="hidden" name="_token" value="{{ csrf_token('calendar-feed') }}">
+        <div class="card-head"><h2>Neues Abo</h2></div>
+        <div class="card-body form">
+            <div class="form-grid-2">
+                <div class="field"><label for="feed-name">Für wen</label><input class="input" id="feed-name" name="name" maxlength="120" required placeholder="z. B. Vorstand – Maria Muster"></div>
+                <div class="field"><label for="feed-profile">Art</label>
+                    <select class="input" id="feed-profile" name="profile">
+                        {% for p in profiles %}<option value="{{ p.value }}">{{ p.label }} – {{ p.parts|map(x => x.label ~ (x.rooms ? ' je Raum' : ''))|join(', ') }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="card-foot"><button class="btn btn-primary" type="submit">{{ ux_icon('lucide:plus') }} Abo anlegen</button></div>
+    </form>
+
+    {% for feed in feeds %}
+        <section class="card">
+            <div class="card-head">
+                <h2>{{ feed.name }} <span class="badge">{{ feed.profile.label }}</span></h2>
+                <div class="row" style="gap:6px">
+                    <form method="post" action="{{ path('app_calendar_feed_renew', {id: feed.id}) }}" data-turbo-confirm="Neue Links erzeugen? Die bisherigen funktionieren dann nicht mehr.">
+                        <input type="hidden" name="_token" value="{{ csrf_token('calendar-feed') }}">
+                        <button class="btn btn-sm btn-ghost" type="submit">{{ ux_icon('lucide:refresh-cw') }} Erneuern</button>
+                    </form>
+                    <form method="post" action="{{ path('app_calendar_feed_delete', {id: feed.id}) }}" data-turbo-confirm="Abo „{{ feed.name }}“ löschen?">
+                        <input type="hidden" name="_token" value="{{ csrf_token('calendar-feed') }}">
+                        <button class="btn btn-sm btn-ghost btn-danger" type="submit">{{ ux_icon('lucide:trash-2') }}</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card-body">{{ include('calendar_feed/_links.html.twig', {links: links[feed.id]}) }}</div>
+        </section>
+    {% else %}
+        <div class="card"><div class="empty">Noch keine Abos.</div></div>
+    {% endfor %}
+</div>
+{% endblock %}

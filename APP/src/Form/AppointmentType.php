@@ -157,6 +157,7 @@ final class AppointmentType extends AbstractType
                 'required' => false,
                 'row_attr' => ['data-appointment-form-target' => 'productionOnly'],
             ])
+
             ->add('appointmentTechnicians', CollectionType::class, [
                 'entry_type' => AppointmentTechnicianType::class,
                 'label' => 'Technik',
@@ -178,6 +179,16 @@ final class AppointmentType extends AbstractType
                 'required' => false,
                 'attr' => ['rows' => 2],
             ]);
+
+        if (!$staffing) {
+            // a performance always shows to the board; other appointments only when released
+            $builder->add('boardVisible', CheckboxType::class, [
+                'label' => 'Für den Vorstand freigeben',
+                'required' => false,
+                'help' => 'Erscheint im Kalender-Abo des Vorstands, z. B. eine Probe, die er besuchen kann.',
+                'row_attr' => ['data-appointment-form-target' => 'productionOnly'],
+            ]);
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void

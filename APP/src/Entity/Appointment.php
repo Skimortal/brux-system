@@ -96,6 +96,10 @@ class Appointment
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private ?self $parentAppointment = null;
 
+    /** Released for the board's calendar subscription (e.g. a rehearsal they may visit). */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $boardVisible = false;
+
     /** Sent out to all technicians as open ("Technik gesucht") at this time; null when not open. */
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $openCallAt = null;
@@ -211,6 +215,18 @@ class Appointment
     public function setRoom(?Room $room): static
     {
         $this->room = $room;
+
+        return $this;
+    }
+
+    public function isBoardVisible(): bool
+    {
+        return $this->boardVisible;
+    }
+
+    public function setBoardVisible(bool $boardVisible): static
+    {
+        $this->boardVisible = $boardVisible;
 
         return $this;
     }

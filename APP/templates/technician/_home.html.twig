@@ -49,4 +49,16 @@
             <p class="small muted" style="padding: 4px 18px 14px">Gerade wird keine Technik gesucht.</p>
         {% endfor %}
     </section>
+
+    {% if feed_links %}
+        <section class="side-block">
+            <details class="feed-box">
+                <summary class="side-block-head"><h2>{{ ux_icon('lucide:calendar-plus') }} Kalender abonnieren</h2></summary>
+                <div style="padding: 0 18px 14px" class="stack-sm">
+                    <p class="small muted">Für iPhone, Mac oder Outlook „Abonnieren“ klicken; für Google Kalender den Link kopieren und unter „Weitere Kalender → Per URL“ einfügen. Jedem Kalender kannst du in der App eine eigene Farbe geben, z. B. „Meine Einsätze“ in Rot.</p>
+                    {{ include('calendar_feed/_links.html.twig', {links: feed_links}) }}
+                </div>
+            </details>
+        </section>
+    {% endif %}
 </div>
