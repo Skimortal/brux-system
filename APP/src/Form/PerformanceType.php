@@ -12,6 +12,7 @@ use App\Service\FieldOwnership;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
@@ -75,6 +76,11 @@ final class PerformanceType extends AbstractType
                 'query_builder' => static fn (EntityRepository $r) => $r->createQueryBuilder('r')->orderBy('r.position', 'ASC'),
                 'choice_label' => 'name',
                 'disabled' => $locked('room'),
+            ])
+            ->add('premiere', CheckboxType::class, [
+                'label' => 'Premiere',
+                'required' => false,
+                'help' => 'Für das Kalender-Abo des Vorstands. Ist keine Vorstellung markiert, gilt die erste als Premiere.',
             ])
             ->add('status', EnumType::class, ['class' => EventStatus::class, 'label' => 'Status', 'expanded' => true, 'required' => false, 'placeholder' => false, 'choice_label' => static fn (EventStatus $s) => $s->label(), 'disabled' => $locked('status')])
             ->add('reservationStatus', EnumType::class, ['class' => EventReservationStatus::class, 'label' => 'Online-Reservierung', 'expanded' => true, 'required' => false, 'placeholder' => false, 'choice_label' => static fn (EventReservationStatus $s) => $s === EventReservationStatus::ACTIVE ? 'Aktiv' : 'Inaktiv', 'disabled' => $locked('reservationStatus')])

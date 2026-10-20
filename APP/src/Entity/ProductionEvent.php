@@ -71,6 +71,10 @@ class ProductionEvent extends Base
     #[ORM\JoinTable(name: 'production_event_contact_person')]
     private Collection $contactPersons;
 
+    /** Marked as the premiere by hand; without any mark the first performance counts. */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $premiere = false;
+
     public function __construct()
     {
         $this->categories = new ArrayCollection();
@@ -453,5 +457,17 @@ class ProductionEvent extends Base
         }
 
         return $day->setTime((int) $m[1], (int) $m[2]);
+    }
+
+    public function isPremiere(): bool
+    {
+        return $this->premiere;
+    }
+
+    public function setPremiere(bool $premiere): static
+    {
+        $this->premiere = $premiere;
+
+        return $this;
     }
 }

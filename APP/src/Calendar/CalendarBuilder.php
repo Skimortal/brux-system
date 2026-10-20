@@ -243,7 +243,7 @@ final class CalendarBuilder
             movable: !$this->ownership->isLocked($performance, 'date'),
             reservedSeats: $performance->getSeatsTaken(),
             tentative: $tentative,
-            premiere: $performance->getProduction()?->getPremiere() === $performance,
+            premiere: (bool) $performance->getProduction()?->isPremiere($performance),
             boardVisible: true,
         );
     }

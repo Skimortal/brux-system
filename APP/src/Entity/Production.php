@@ -514,24 +514,27 @@ class Production extends Base
     }
 
     /**
-     * The premiere: a performance marked as such on the website, else the first one that
-     * is not cancelled.
+     * Whether a performance is a premiere: the ones marked as such (here or as a category on
+     * the website), else the first one that is not cancelled.
      */
-    public function getPremiere(): ?ProductionEvent
+    public function isPremiere(ProductionEvent $performance): bool
     {
+        $marked = [];
         $first = null;
         foreach ($this->events as $event) {
+            $isMarked = $event->isPremiere();
             foreach ($event->getCategories() as $category) {
-                if (str_contains((string) $category->getSlug(), 'premiere')) {
-                    return $event;
-                }
+                $isMarked = $isMarked || str_contains((string) $category->getSlug(), 'premiere');
+            }
+            if ($isMarked) {
+                $marked[] = $event;
             }
             if (!$event->isCancelled() && $event->getStartsAt() !== null && ($first === null || $event->getStartsAt() < $first->getStartsAt())) {
                 $first = $event;
             }
         }
 
-        return $first;
+        return $marked !== [] ? \in_array($performance, $marked, true) : $performance === $first;
     }
 
     public function isTentative(): bool

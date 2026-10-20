@@ -10,7 +10,6 @@ use App\Enum\EmailTemplateKey;
 use App\Enum\TechnicianStatus;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Clock\ClockInterface;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\UriSigner;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Address;
@@ -32,7 +31,7 @@ class TechnicianNotifier
         private readonly UriSigner $signer,
         private readonly ClockInterface $clock,
         private readonly LoggerInterface $logger,
-        #[Autowire('%office_email%')] private readonly string $officeEmail,
+        private readonly AppSettings $settings,
     ) {
     }
 
@@ -65,7 +64,7 @@ class TechnicianNotifier
         match ($assignment->getStatus()) {
             TechnicianStatus::ASSIGNED => $this->send(EmailTemplateKey::TECHNICIAN_ASSIGNED, $contact->getEmail(), $context + ['url' => $this->technicianUrl($appointment)]),
             TechnicianStatus::CONFIRMED => $this->send(EmailTemplateKey::TECHNICIAN_CONFIRMED, $contact->getEmail(), $context + ['url' => $this->technicianUrl($appointment)]),
-            default => $this->send(EmailTemplateKey::TECHNICIAN_ANSWERED, $this->officeEmail, $context + [
+            default => $this->send(EmailTemplateKey::TECHNICIAN_ANSWERED, $this->settings->officeEmail(), $context + [
                 'status' => $assignment->getStatus()->label(),
                 'url' => $this->officeUrl($appointment),
             ], replyTo: $contact->getEmail()),
@@ -180,7 +179,7 @@ class TechnicianNotifier
             $email = (new Email())
                 ->from(new Address(self::FROM, 'BRUX Haussystem'))
                 ->to(trim($to))
-                ->replyTo($replyTo !== null && trim($replyTo) !== '' ? trim($replyTo) : $this->officeEmail)
+                ->replyTo($replyTo !== null && trim($replyTo) !== '' ? trim($replyTo) : $this->settings->officeEmail())
                 ->subject($rendered->subject)
                 ->html($rendered->html);
             if ($rendered->text) {

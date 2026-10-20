@@ -278,7 +278,7 @@ final class CalendarPage
     /** Whether any field of this performance can be edited here. */
     private function hasEditableFields(ProductionEvent $performance): bool
     {
-        foreach (['date', 'timeFrom', 'timeTo', 'room', 'status', 'reservationStatus', 'quota', 'incomingTotal', 'freeSeats', 'reservationNote', 'categories', 'priceList'] as $field) {
+        foreach (['date', 'timeFrom', 'timeTo', 'room', 'status', 'reservationStatus', 'quota', 'incomingTotal', 'freeSeats', 'reservationNote', 'categories', 'priceList', 'premiere'] as $field) {
             if (!$this->ownership->isLocked($performance, $field)) {
                 return true;
             }

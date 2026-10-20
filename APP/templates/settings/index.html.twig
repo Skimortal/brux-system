@@ -25,6 +25,7 @@
             {% endif %}
         {% endfor %}
     </div>
+    <aside class="stack-lg">
     <section class="card">
         <div class="card-head"><h2>WordPress</h2><span class="badge {{ wordpress_leads ? 'badge-accent' : 'badge-ok' }}">{{ wordpress_leads ? 'WordPress führt' : 'Haussystem führt' }}</span></div>
         <div class="card-body stack">
@@ -39,5 +40,20 @@
             {% endif %}
         </div>
     </section>
+    {% if is_granted('ROLE_ADMIN') %}
+        <form class="card" method="post" action="{{ path('app_settings_save') }}">
+            <input type="hidden" name="_token" value="{{ csrf_token('settings') }}">
+            <div class="card-head"><h2>E-Mails</h2></div>
+            <div class="card-body form">
+                <div class="field">
+                    <label for="office-email">Antworten der Techniker:innen an</label>
+                    <input class="input" type="email" id="office-email" name="office_email" value="{{ office_email }}" required>
+                    <p class="help small muted">Zusagen, Absagen und Interesse an ausgeschriebenen Terminen.</p>
+                </div>
+            </div>
+            <div class="card-foot"><button class="btn btn-primary btn-sm" type="submit">{{ ux_icon('lucide:save') }} Speichern</button></div>
+        </form>
+    {% endif %}
+    </aside>
 </div>
 {% endblock %}
