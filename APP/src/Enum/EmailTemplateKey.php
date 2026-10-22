@@ -23,11 +23,8 @@ enum EmailTemplateKey: string
     }
 
     /** Twig template used while no template of this key has been saved in the administration. */
-    public function defaultTemplate(): ?string
+    public function defaultTemplate(): string
     {
-        return match($this) {
-            self::PASSWORD_RESET_REQUEST => null,
-            default => 'email/' . $this->value . '.html.twig',
-        };
+        return 'email/' . $this->value . '.html.twig';
     }
 }

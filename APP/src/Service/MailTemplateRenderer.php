@@ -27,7 +27,7 @@ class MailTemplateRenderer
             $this->defaultLocale
         );
 
-        if (!$tpl && $key instanceof EmailTemplateKey && $key->defaultTemplate() !== null) {
+        if (!$tpl && $key instanceof EmailTemplateKey) {
             // built-in default: the template defines the blocks "subject" and "body"
             $default = $this->twig->load($key->defaultTemplate());
 
