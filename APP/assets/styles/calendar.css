@@ -455,3 +455,4 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .tech-facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
 .tech-facts .fact { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 9px; background: var(--surface-3); font-size: 15px; }
 .tech-facts .fact svg { width: 17px; height: 17px; opacity: .7; }
+.assignment-subhead { padding: 12px 18px 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 1px solid var(--line-soft); }

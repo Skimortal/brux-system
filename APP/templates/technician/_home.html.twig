@@ -9,6 +9,9 @@
         </div>
         {% for assignment in upcoming %}
             {% set a = assignment.appointment %}
+            {% if assignment.status.value == 'declined' and (loop.first or upcoming[loop.index0 - 1].status.value != 'declined') %}
+                <div class="assignment-subhead">Abgesagt</div>
+            {% endif %}
             <div class="assignment-row is-{{ assignment.status.value }}">
                 <a class="grow" href="{{ cal_path(query, {date: a.startDate|date('Y-m-d'), panel: a.productionEvent ? 'pe-' ~ a.productionEvent.id : 'a-' ~ a.id}) }}" style="min-width:0">
                     <span class="name">{{ a.productionEvent ? a.productionEvent.production.title : a.displayTitle }}</span>

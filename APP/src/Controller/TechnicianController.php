@@ -91,7 +91,7 @@ final class TechnicianController extends AbstractController
             'mine' => $mine,
             'contact' => $contact,
             'panel' => $query->panel !== null ? $this->panel((string) $query->panel, $performances, $productions) : null,
-            'upcoming' => $contact !== null ? $this->assignments->findForContact($contact, $now) : [],
+            'upcoming' => $contact !== null ? self::declinedLast($this->assignments->findForContact($contact, $now)) : [],
             'open_calls' => $this->appointments->findOpenCalls($now),
             'return_url' => $request->getRequestUri(),
             'now' => $now,
@@ -212,6 +212,21 @@ final class TechnicianController extends AbstractController
             'mine' => $appointment?->getAssignmentOf($contact),
             'past' => $appointment !== null && $appointment->getEndDate() <= $this->clock->now(),
         ];
+    }
+
+    /**
+     * Own assignments by date, the declined ones after all others (also by date), so they
+     * stay at hand in case of a change of mind.
+     *
+     * @param list<AppointmentTechnician> $assignments by date
+     *
+     * @return list<AppointmentTechnician>
+     */
+    private static function declinedLast(array $assignments): array
+    {
+        $declined = static fn (AppointmentTechnician $a) => $a->getStatus() === TechnicianStatus::DECLINED;
+
+        return [...array_filter($assignments, static fn ($a) => !$declined($a)), ...array_filter($assignments, $declined)];
     }
 
     private function contact(): ?Contact
