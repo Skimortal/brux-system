@@ -429,3 +429,7 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .todo-row.is-done { align-items: center; padding: 5px 18px; font-size: 13.5px; color: var(--muted); }
 .todo-row.is-done .grow { text-decoration: line-through; text-decoration-color: var(--faint); }
 .todo-group .todo-row.is-done { padding-left: 30px; }
+/* multi-day bars of a tentative production, like single entries */
+.cal-run.is-tentative { opacity: .5; outline: 1.5px dashed currentColor; outline-offset: -1px; border-radius: 7px; }
+.cal-run.is-tentative:hover { opacity: .8; }
+.cal-run.is-mine { box-shadow: inset 4px 0 0 var(--ink); }
