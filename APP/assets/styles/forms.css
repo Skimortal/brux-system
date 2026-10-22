@@ -141,7 +141,7 @@
 .rte-content img.ProseMirror-selectednode { outline: 2px solid var(--accent); }
 .rte.has-error .rte-content { border-color: var(--danger-ink); }
 
-/* a checkbox shown as an on/off switch (row class "switch-row") */
+/* single yes/no fields are on/off switches (form theme: checkbox_row) */
 .switch-row .check { gap: 12px; font-weight: 500; }
 .switch-row input[type="checkbox"] {
     appearance: none; -webkit-appearance: none; flex-shrink: 0; margin: 0; cursor: pointer;

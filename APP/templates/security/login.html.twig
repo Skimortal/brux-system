@@ -16,7 +16,7 @@
             <label for="password">Passwort</label>
             <input type="password" id="password" name="_password" autocomplete="current-password" required>
         </div>
-        <label class="check"><input type="checkbox" name="_remember_me" checked> Angemeldet bleiben</label>
+        <div class="switch-row"><label class="check"><input type="checkbox" name="_remember_me" checked> Angemeldet bleiben</label></div>
         <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
         <button class="btn btn-primary btn-block" type="submit">Anmelden</button>
     </form>
