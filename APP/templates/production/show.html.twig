@@ -159,16 +159,19 @@
             </section>
             {% do form.contactPersons.setRendered %}
             {% do form.technicians.setRendered %}
-            <div class="form-actions">
+            {# stays at the bottom of the window while scrolling #}
+            <div class="form-actions sticky-actions">
                 <button class="btn btn-primary" type="submit">{{ ux_icon('lucide:save') }} Speichern</button>
                 <a class="btn btn-ghost" href="{{ path('app_production_index') }}">Zurück</a>
+                {% if not is_new and is_granted('ROLE_ADMIN') %}
+                    <button class="btn btn-sm btn-ghost btn-danger" type="submit" form="production-delete" style="margin-left:auto">{{ ux_icon('lucide:trash-2') }} Produktion löschen</button>
+                {% endif %}
             </div>
         {{ form_end(form) }}
 
         {% if not is_new and is_granted('ROLE_ADMIN') %}
-            <form method="post" action="{{ path('app_production_delete', {id: production.id}) }}" data-turbo-confirm="Produktion mit allen Vorstellungen löschen? Kommt sie aus WordPress, wird sie beim nächsten Import wieder angelegt.">
+            <form id="production-delete" method="post" action="{{ path('app_production_delete', {id: production.id}) }}" data-turbo-confirm="Produktion mit allen Vorstellungen löschen? Kommt sie aus WordPress, wird sie beim nächsten Import wieder angelegt." hidden>
                 <input type="hidden" name="_token" value="{{ csrf_token('delete-production-' ~ production.id) }}">
-                <button class="btn btn-sm btn-danger" type="submit">{{ ux_icon('lucide:trash-2') }} Produktion löschen</button>
             </form>
         {% endif %}
     </div>

@@ -15,16 +15,18 @@
             {{ form_errors(form) }}
             {{ form_widget(form) }}
         </div>
-        <div class="card-foot form-actions">
+        <div class="card-foot form-actions sticky-actions">
             <button class="btn btn-primary" type="submit">{{ ux_icon('lucide:save') }} Speichern</button>
             <a class="btn btn-ghost" href="{{ back_url }}">Abbrechen</a>
+            {% if delete_url is defined and delete_url %}
+                <button class="btn btn-sm btn-ghost btn-danger" type="submit" form="crud-delete" style="margin-left:auto">{{ ux_icon('lucide:trash-2') }} Löschen</button>
+            {% endif %}
         </div>
     {{ form_end(form) }}
     {% if extra is defined and extra %}{{ include(extra.template, extra.vars) }}{% endif %}
     {% if delete_url is defined and delete_url %}
-        <form method="post" action="{{ delete_url }}" data-turbo-confirm="Wirklich löschen?" style="margin-top:16px">
+        <form id="crud-delete" method="post" action="{{ delete_url }}" data-turbo-confirm="Wirklich löschen?" hidden>
             <input type="hidden" name="_token" value="{{ csrf_token(delete_token) }}">
-            <button class="btn btn-sm btn-danger" type="submit">{{ ux_icon('lucide:trash-2') }} Löschen</button>
         </form>
     {% endif %}
 </div>
