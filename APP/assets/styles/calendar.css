@@ -461,3 +461,10 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 /* premieres in the calendar */
 .premiere-star { color: #c58b00; font-size: 1.05em; }
 :root[data-theme="dark"] .premiere-star { color: #f0c040; }
+/* the subscription links open from a real button, not a heading bar */
+.feed-box { padding: 14px 18px; }
+.feed-box > summary.feed-toggle { width: 100%; justify-content: center; }
+.feed-box > summary.feed-toggle .feed-chevron { transition: transform .15s; }
+.feed-box[open] > summary.feed-toggle .feed-chevron { transform: rotate(180deg); }
+.feed-box[open] > summary.feed-toggle { margin-bottom: 12px; }
+.feed-box > div { padding: 0 !important; }
