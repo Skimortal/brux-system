@@ -5,5 +5,12 @@
     <p>wir haben dich für diesen Termin eingeteilt. Bitte sag uns kurz, ob du kannst:</p>
     {{ include('email/_appointment.html.twig') }}
     {% if more ?? 0 %}<p>Dazu kommen <strong>{{ more }} weitere Termine</strong> (z. B. einer Serie); du findest sie alle unter „Meine Einsätze“.</p>{% endif %}
-    {{ include('email/_button.html.twig', {url: url, label: 'Zusagen oder absagen'}) }}
+    {% if url %}
+        {{ include('email/_button.html.twig', {url: url, label: 'Zusagen oder absagen'}) }}
+    {% else %}
+        <p style="margin: 20px 0;">
+            <a href="{{ accept_url }}" style="display: inline-block; background: #14532d; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 8px; margin-right: 8px;">Zusagen</a>
+            <a href="{{ decline_url }}" style="display: inline-block; background: #ffffff; color: #1f1f1d; text-decoration: none; padding: 9px 17px; border-radius: 8px; border: 1px solid #cccccc;">Absagen</a>
+        </p>
+    {% endif %}
 {% endblock %}

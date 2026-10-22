@@ -31,6 +31,33 @@ enum TechnicianStatus: string
         return \in_array($this, [self::ASSIGNED, self::ACCEPTED, self::CONFIRMED], true);
     }
 
+    /**
+     * The answers a technician may give from this status. After declining the office may
+     * already have someone else, so only interest is left ("Doch Zeit").
+     *
+     * @return list<self>
+     */
+    public function answers(): array
+    {
+        return match ($this) {
+            self::ASSIGNED => [self::ACCEPTED, self::DECLINED],
+            self::ACCEPTED => [self::DECLINED],
+            self::DECLINED => [self::INTERESTED],
+            default => [],
+        };
+    }
+
+    /** What the technician's answer is called on its button. */
+    public function answerLabel(): string
+    {
+        return match ($this) {
+            self::ACCEPTED => 'Zusagen',
+            self::DECLINED => 'Absagen',
+            self::INTERESTED => 'Doch Zeit',
+            default => $this->label(),
+        };
+    }
+
     public function badgeClass(): string
     {
         return match ($this) {

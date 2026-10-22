@@ -8,6 +8,7 @@ use App\Entity\Contact;
 use App\Entity\User;
 use App\Enum\EmailTemplateKey;
 use App\Enum\TechnicianStatus;
+use App\Repository\UserRepository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\HttpFoundation\UriSigner;
@@ -32,6 +33,7 @@ class TechnicianNotifier
         private readonly ClockInterface $clock,
         private readonly LoggerInterface $logger,
         private readonly AppSettings $settings,
+        private readonly UserRepository $users,
     ) {
     }
 
@@ -61,9 +63,15 @@ class TechnicianNotifier
             'more' => \count($upcoming) - 1,
         ];
 
+        // without an account the mail itself carries the answers; with one it leads to their area
+        $account = $this->users->findOneBy(['contact' => $contact]) !== null;
+        $links = $account
+            ? ['url' => $this->technicianUrl($appointment)]
+            : ['url' => null, 'accept_url' => $this->answerUrl($assignment, TechnicianStatus::ACCEPTED), 'decline_url' => $this->answerUrl($assignment, TechnicianStatus::DECLINED)];
+
         match ($assignment->getStatus()) {
-            TechnicianStatus::ASSIGNED => $this->send(EmailTemplateKey::TECHNICIAN_ASSIGNED, $contact->getEmail(), $context + ['url' => $this->technicianUrl($appointment)]),
-            TechnicianStatus::CONFIRMED => $this->send(EmailTemplateKey::TECHNICIAN_CONFIRMED, $contact->getEmail(), $context + ['url' => $this->technicianUrl($appointment)]),
+            TechnicianStatus::ASSIGNED => $this->send(EmailTemplateKey::TECHNICIAN_ASSIGNED, $contact->getEmail(), $context + $links),
+            TechnicianStatus::CONFIRMED => $this->send(EmailTemplateKey::TECHNICIAN_CONFIRMED, $contact->getEmail(), $context + ['url' => $links['url']]),
             default => $this->send(EmailTemplateKey::TECHNICIAN_ANSWERED, $this->settings->officeEmail(), $context + [
                 'status' => $assignment->getStatus()->label(),
                 'url' => $this->officeUrl($appointment),
@@ -100,6 +108,15 @@ class TechnicianNotifier
             'set_password_url' => $setPasswordUrl,
             'login_url' => $this->urls->generate('app_login', [], UrlGeneratorInterface::ABSOLUTE_URL),
         ]);
+    }
+
+    /** Link that answers an assignment without logging in. */
+    public function answerUrl(AppointmentTechnician $assignment, TechnicianStatus $status): string
+    {
+        return $this->signer->sign($this->urls->generate('app_technician_answer', [
+            'id' => $assignment->getId(),
+            'status' => $status->value,
+        ], UrlGeneratorInterface::ABSOLUTE_URL));
     }
 
     /** Link that registers interest in an open appointment without logging in. */

@@ -1,0 +1,20 @@
+{% extends 'layout/auth.html.twig' %}
+{# Answering an assignment from the mail, without logging in. #}
+{% block title %}Einteilung{% endblock %}
+{% block auth %}
+    <h1 style="font-size:20px; margin-bottom:6px">{{ appointment.title }}</h1>
+    <p class="muted" style="margin-bottom:14px">{{ appointment.when }}{{ appointment.room ? ' · ' ~ appointment.room }}{% if appointment.tasks %}<br>Aufgabe: {{ appointment.tasks }}{% endif %}</p>
+    {% if result %}
+        <div class="note {{ result.ok ? 'note-ok' : 'note-warn' }}">{{ ux_icon(result.ok ? 'lucide:check' : 'lucide:info') }}<span>{{ result.message }}</span></div>
+        {% for link in next %}
+            <p class="small muted" style="margin-top:14px">Doch anders entschieden? <a href="{{ link.url }}">{{ link.label }}</a></p>
+        {% endfor %}
+    {% elseif possible %}
+        <p>Hallo {{ name }}, {{ wanted.value == 'accepted' ? 'kannst du diesen Termin übernehmen?' : (wanted.value == 'declined' ? 'du kannst diesen Termin nicht übernehmen?' : 'hast du doch Zeit für diesen Termin?') }}</p>
+        <form method="post" action="{{ app.request.uri }}" data-turbo="false" style="margin-top:14px">
+            <button class="btn {{ wanted.value == 'declined' ? '' : 'btn-primary' }}" type="submit" style="width:100%">{{ ux_icon(wanted.value == 'declined' ? 'lucide:x' : 'lucide:check') }} {{ wanted.answerLabel }}</button>
+        </form>
+    {% else %}
+        <div class="note">{{ ux_icon('lucide:info') }}<span>Hallo {{ name }}, dein Status für diesen Termin ist „{{ assignment.status.label }}“. {{ assignment.status.value == 'declined' and wanted.value == 'accepted' ? 'Nach einer Absage entscheidet das Büro – melde dich dort, falls du doch Zeit hast.' : 'Bei Fragen melde dich bitte direkt im Büro.' }}</span></div>
+    {% endif %}
+{% endblock %}

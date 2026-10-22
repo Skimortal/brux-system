@@ -33,7 +33,7 @@ security:
         # calendar subscriptions are reached by their secret token
         - { path: '^/kalender/[0-9a-f]{40}\.ics$', roles: PUBLIC_ACCESS }
         # signed links from the open-call mails work without logging in
-        - { path: ^/technik/interesse/, roles: PUBLIC_ACCESS }
+        - { path: ^/technik/(interesse|antwort)/, roles: PUBLIC_ACCESS }
         # technicians only see their own area, documents and their profile (all read-only)
         - { path: ^/(start$|technik|profil$|dateien/\d+$), roles: ROLE_TECHNICIAN }
         - { path: ^/, roles: ROLE_USER }

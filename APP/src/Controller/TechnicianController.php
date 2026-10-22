@@ -19,6 +19,7 @@ use App\Repository\AppointmentRepository;
 use App\Repository\AppointmentTechnicianRepository;
 use App\Repository\ProductionEventRepository;
 use App\Repository\ProductionRepository;
+use App\Repository\UserRepository;
 use App\Service\TechnicianNotifier;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -41,6 +42,7 @@ final class TechnicianController extends AbstractController
         private readonly EntityManagerInterface $em,
         private readonly AppointmentTechnicianRepository $assignments,
         private readonly AppointmentRepository $appointments,
+        private readonly UserRepository $users,
     ) {
     }
 
@@ -107,28 +109,61 @@ final class TechnicianController extends AbstractController
         if ($assignment->getContact() === null || $assignment->getContact() !== $this->contact()) {
             throw $this->createAccessDeniedException('Das ist nicht deine Einteilung.');
         }
-        $status = TechnicianStatus::tryFrom($request->request->getString('status'));
-        // after declining the office may have found someone else: "Doch Zeit" only shows interest
-        $allowed = match ($assignment->getStatus()) {
-            TechnicianStatus::ASSIGNED => [TechnicianStatus::ACCEPTED, TechnicianStatus::DECLINED],
-            TechnicianStatus::ACCEPTED => [TechnicianStatus::DECLINED],
-            TechnicianStatus::DECLINED => [TechnicianStatus::INTERESTED],
-            default => [],
-        };
-        if (!\in_array($status, $allowed, true)) {
-            $this->addFlash('warning', 'Das geht hier nicht mehr – bitte melde dich direkt im Büro.');
+        $result = $this->answer($assignment, TechnicianStatus::tryFrom($request->request->getString('status')));
+        $this->addFlash($result['ok'] ? 'success' : 'warning', $result['message']);
 
-            return $this->back($request);
+        return $this->back($request);
+    }
+
+    /**
+     * Accept or decline straight from the assignment mail, without logging in (for
+     * technicians without an account). The page only acts on its button.
+     */
+    #[Route('/technik/antwort/{id}/{status}', name: 'app_technician_answer', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
+    public function answerFromMail(AppointmentTechnician $assignment, string $status, Request $request, UriSigner $signer, TechnicianNotifier $notifier): Response
+    {
+        $wanted = TechnicianStatus::tryFrom($status);
+        if (!$signer->checkRequest($request) || $wanted === null || $assignment->getAppointment() === null) {
+            throw new NotFoundHttpException('Der Link ist ungültig.');
+        }
+        $result = null;
+        if ($request->isMethod('POST')) {
+            $result = $this->answer($assignment, $wanted);
+        }
+
+        return $this->render('technician/answer.html.twig', [
+            'appointment' => $notifier->describe($assignment->getAppointment(), $assignment),
+            'name' => $assignment->getContact()?->getName(),
+            'assignment' => $assignment,
+            'wanted' => $wanted,
+            'possible' => \in_array($wanted, $assignment->getStatus()->answers(), true) && $assignment->getAppointment()->getEndDate() > $this->clock->now(),
+            'result' => $result,
+            // the other answer from here, e.g. "Doch Zeit" after declining
+            'next' => $result !== null && $result['ok'] ? array_map(fn (TechnicianStatus $s) => ['label' => $s->answerLabel(), 'url' => $notifier->answerUrl($assignment, $s)], $assignment->getStatus()->answers()) : [],
+        ]);
+    }
+
+    /**
+     * A technician's answer, with the same rules from the area and from mails.
+     *
+     * @return array{ok: bool, message: string}
+     */
+    private function answer(AppointmentTechnician $assignment, ?TechnicianStatus $status): array
+    {
+        if ($status === null || !\in_array($status, $assignment->getStatus()->answers(), true)) {
+            return ['ok' => false, 'message' => 'Das geht hier nicht mehr – bitte melde dich direkt im Büro.'];
+        }
+        if ($assignment->getAppointment()?->getEndDate() <= $this->clock->now()) {
+            return ['ok' => false, 'message' => 'Der Termin ist schon vorbei.'];
         }
         $assignment->respond($status, $this->clock->now());
         $this->em->flush();
-        $this->addFlash('success', match ($status) {
-            TechnicianStatus::ACCEPTED => 'Danke! Deine Zusage ist beim Büro.',
-            TechnicianStatus::DECLINED => 'Absage ist beim Büro.',
-            default => 'Danke! Das Büro sieht, dass du doch Zeit hast, und meldet sich, falls du noch gebraucht wirst.',
-        });
 
-        return $this->back($request);
+        return ['ok' => true, 'message' => match ($status) {
+            TechnicianStatus::ACCEPTED => 'Danke! Deine Zusage ist beim Büro.',
+            TechnicianStatus::DECLINED => 'Deine Absage ist beim Büro.',
+            default => 'Danke! Das Büro sieht, dass du doch Zeit hast, und meldet sich, falls du noch gebraucht wirst.',
+        }];
     }
 
     /** Interest in an open appointment, from the technician area. */
@@ -162,6 +197,7 @@ final class TechnicianController extends AbstractController
             'message' => $message,
             'open' => $appointment->getOpenCallAt() !== null && $appointment->getEndDate() > $this->clock->now(),
             'assignment' => $appointment->getAssignmentOf($contact),
+            'has_account' => $this->users->findOneBy(['contact' => $contact]) !== null,
         ]);
     }
 
