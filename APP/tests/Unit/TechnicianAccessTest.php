@@ -25,6 +25,17 @@ final class TechnicianAccessTest extends TestCase
         self::assertContains('ROLE_USER', $admin->getRoles());
     }
 
+    public function testBoardAccountOnlyReads(): void
+    {
+        $board = (new User())->setRoles(['ROLE_BOARD']);
+        self::assertTrue($board->isBoard());
+        self::assertTrue($board->isReadOnly());
+        self::assertSame(['ROLE_BOARD'], $board->getRoles());
+        self::assertSame('app_board', $board->getHomeRoute());
+        self::assertSame('app_technician', (new User())->setRoles(['ROLE_TECHNICIAN'])->getHomeRoute());
+        self::assertSame('app_calendar', (new User())->setRoles([])->getHomeRoute());
+    }
+
     public function testOnlyPlannedPeopleCountAsStaffed(): void
     {
         self::assertTrue(TechnicianStatus::ASSIGNED->isStaffed());
