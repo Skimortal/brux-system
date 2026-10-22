@@ -50,8 +50,7 @@ final class CalendarBuilder
 
         $entries = array_filter(
             $this->collectEntries($from, $to),
-            // a tentative production's stay is how its dates are held, so it always shows
-            static fn (CalendarEntry $e) => !$query->isHidden($e->group) || ($e->group === EntryGroup::STAY && $e->tentative)
+            static fn (CalendarEntry $e) => !$query->isHidden($e->group)
         );
         usort($entries, static fn (CalendarEntry $a, CalendarEntry $b) => [$a->allDay ? 0 : 1, $a->start] <=> [$b->allDay ? 0 : 1, $b->start]);
         $this->markConflicts($entries);
