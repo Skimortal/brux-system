@@ -108,16 +108,25 @@ final class TechnicianController extends AbstractController
             throw $this->createAccessDeniedException('Das ist nicht deine Einteilung.');
         }
         $status = TechnicianStatus::tryFrom($request->request->getString('status'));
-        if (!\in_array($status, [TechnicianStatus::ACCEPTED, TechnicianStatus::DECLINED], true)) {
-            throw $this->createAccessDeniedException();
+        // after declining the office may have found someone else: "Doch Zeit" only shows interest
+        $allowed = match ($assignment->getStatus()) {
+            TechnicianStatus::ASSIGNED => [TechnicianStatus::ACCEPTED, TechnicianStatus::DECLINED],
+            TechnicianStatus::ACCEPTED => [TechnicianStatus::DECLINED],
+            TechnicianStatus::DECLINED => [TechnicianStatus::INTERESTED],
+            default => [],
+        };
+        if (!\in_array($status, $allowed, true)) {
+            $this->addFlash('warning', 'Das geht hier nicht mehr – bitte melde dich direkt im Büro.');
+
+            return $this->back($request);
         }
-        if ($assignment->getStatus() === TechnicianStatus::CONFIRMED && $status === TechnicianStatus::ACCEPTED) {
-            $this->addFlash('success', 'Dein Einsatz ist schon bestätigt.');
-        } else {
-            $assignment->respond($status, $this->clock->now());
-            $this->em->flush();
-            $this->addFlash('success', $status === TechnicianStatus::ACCEPTED ? 'Danke! Deine Zusage ist beim Büro.' : 'Absage ist beim Büro.');
-        }
+        $assignment->respond($status, $this->clock->now());
+        $this->em->flush();
+        $this->addFlash('success', match ($status) {
+            TechnicianStatus::ACCEPTED => 'Danke! Deine Zusage ist beim Büro.',
+            TechnicianStatus::DECLINED => 'Absage ist beim Büro.',
+            default => 'Danke! Das Büro sieht, dass du doch Zeit hast, und meldet sich, falls du noch gebraucht wirst.',
+        });
 
         return $this->back($request);
     }

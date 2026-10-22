@@ -19,7 +19,7 @@
                 </a>
                 <span class="badge {{ assignment.status.badgeClass }}">{{ assignment.status.label }}</span>
             </div>
-            {% if assignment.status.value in ['assigned'] %}
+            {% if assignment.status.value in ['assigned', 'declined'] %}
                 <div class="assignment-actions">{{ include('technician/_answer.html.twig') }}</div>
             {% endif %}
         {% else %}

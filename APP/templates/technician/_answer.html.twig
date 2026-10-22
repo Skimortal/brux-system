@@ -1,16 +1,21 @@
-{# Accept / decline buttons for one's own assignment; expects "assignment". #}
-{% set status = assignment.status.value %}
-{% if status in ['assigned', 'accepted', 'declined'] %}
+{# The technician's own answer to an assignment; expects "assignment". After declining
+   there is no going back to "accepted" - "Doch Zeit" asks the office again (interest). #}
+{% set choices = {
+    assigned: [{value: 'accepted', label: 'Zusagen', icon: 'lucide:check', primary: true}, {value: 'declined', label: 'Absagen', icon: 'lucide:x'}],
+    accepted: [{value: 'declined', label: 'Absagen', icon: 'lucide:x'}],
+    declined: [{value: 'interested', label: 'Doch Zeit', icon: 'lucide:hand', primary: true}],
+}[assignment.status.value] ?? [] %}
+{% if choices %}
     <div class="row" style="gap:6px">
-        {% for choice in [{value: 'accepted', label: 'Zusagen', icon: 'lucide:check'}, {value: 'declined', label: 'Absagen', icon: 'lucide:x'}] %}
-            {% if status != choice.value %}
-                <form method="post" action="{{ path('app_technician_respond', {id: assignment.id}) }}" data-turbo-frame="_top">
-                    <input type="hidden" name="_token" value="{{ csrf_token('technician') }}">
-                    <input type="hidden" name="_return" value="{{ return_url }}">
-                    <input type="hidden" name="status" value="{{ choice.value }}">
-                    <button class="btn btn-sm{{ choice.value == 'accepted' ? ' btn-primary' : '' }}" type="submit">{{ ux_icon(choice.icon) }} {{ choice.label }}</button>
-                </form>
-            {% endif %}
+        {% for choice in choices %}
+            <form method="post" action="{{ path('app_technician_respond', {id: assignment.id}) }}" data-turbo-frame="_top">
+                <input type="hidden" name="_token" value="{{ csrf_token('technician') }}">
+                <input type="hidden" name="_return" value="{{ return_url }}">
+                <input type="hidden" name="status" value="{{ choice.value }}">
+                <button class="btn btn-sm{{ choice.primary ?? false ? ' btn-primary' : '' }}" type="submit">{{ ux_icon(choice.icon) }} {{ choice.label }}</button>
+            </form>
         {% endfor %}
     </div>
+    {% if assignment.status.value == 'declined' %}<p class="small muted" style="margin:4px 0 0">Das Büro entscheidet dann, ob du noch gebraucht wirst.</p>{% endif %}
 {% endif %}
+{% if assignment.status.value == 'interested' %}<p class="small muted" style="margin:4px 0 0">Das Büro entscheidet noch, ob du eingeteilt wirst.</p>{% endif %}
