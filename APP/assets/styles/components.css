@@ -233,3 +233,13 @@ body:has(.action-bar) .page { padding-bottom: 96px; }
 /* technician notes two by two where the column is wide enough */
 .tech-notes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 @media (min-width: 1900px) { .tech-notes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* shown while a form is being sent */
+.saving-note {
+    position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 110;
+    display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 999px;
+    background: var(--ink); color: var(--surface); font-size: 14px; font-weight: 500; box-shadow: var(--shadow-pop, 0 8px 24px rgb(0 0 0 / .2));
+}
+.saving-note[hidden] { display: none; }
+.saving-spinner { width: 15px; height: 15px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: saving-spin .7s linear infinite; }
+@keyframes saving-spin { to { transform: rotate(360deg); } }
