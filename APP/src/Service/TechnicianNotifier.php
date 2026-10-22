@@ -94,6 +94,8 @@ class TechnicianNotifier
                 'name' => $contact->getName(),
                 'appointment' => $this->describe($appointment, null),
                 'interest_url' => $this->interestUrl($appointment, $contact),
+                // people with an account also find all open calls in their area
+                'area_url' => $this->users->findOneBy(['contact' => $contact]) !== null ? $this->urls->generate('app_technician', [], UrlGeneratorInterface::ABSOLUTE_URL) : null,
             ]) ? 1 : 0;
         }
 

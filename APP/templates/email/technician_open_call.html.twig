@@ -6,4 +6,5 @@
     {{ include('email/_appointment.html.twig') }}
     {{ include('email/_button.html.twig', {url: interest_url, label: 'Ich habe Interesse'}) }}
     <p style="color: #777; font-size: 13px;">Ein Klick genügt, wir melden uns dann mit der Einteilung.</p>
+    {% if area_url ?? null %}<p style="font-size: 13px;"><a href="{{ area_url }}" style="color: #1f1f1d;">Alle gesuchten Termine im Haussystem ansehen</a></p>{% endif %}
 {% endblock %}
