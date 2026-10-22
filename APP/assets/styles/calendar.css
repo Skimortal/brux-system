@@ -458,3 +458,6 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .assignment-subhead { padding: 12px 18px 4px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 1px solid var(--line-soft); }
 /* nothing can be created in the technicians' calendar, so no "+" cursor on empty days */
 .cal-board.is-readonly .cal-mday, .cal-board.is-readonly .cal-bgcell, .cal-board.is-readonly .tg-allday, .cal-board.is-readonly .tg-col { cursor: default; }
+/* premieres in the calendar */
+.premiere-star { color: #c58b00; font-size: 1.05em; }
+:root[data-theme="dark"] .premiere-star { color: #f0c040; }

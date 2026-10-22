@@ -4,13 +4,13 @@
 <a href="{{ e.url ?: (panel_link is defined and e.panel starts with 'pe-' ? panel_link ~ e.panel : cal_path(query, {panel: e.panel})) }}" data-turbo-frame="{{ e.url ? '_top' : (link_frame ?? 'side') }}" data-turbo-action="advance"
    data-panel="{{ e.panel }}"{% if e.movable and link_frame is not defined and not readonly %} draggable="true" data-move-url="{{ path('app_performance_move', {id: e.panel|slice(3)}) }}" data-date="{{ e.start|date('Y-m-d') }}" data-room="{{ e.roomId }}" data-seats="{{ e.reservedSeats ?? 0 }}"{% endif %} data-action="{{ link_frame is defined or readonly ? '' : 'quick-create#select' }}"
    class="cal-item t-{{ e.colorKey }}{{ e.isPast(cal.now) ? ' is-past' }}{{ e.cancelled ? ' is-cancelled' }}{{ e.tentative ? ' is-tentative' }}{{ (mine ?? {})[e.panel] is defined ? ' is-mine is-mine-' ~ mine[e.panel] }}{{ e.conflict ? ' has-conflict' }}{{ query.panel == e.panel ? ' is-selected' }}{{ e.color ? ' has-color' }}"{% if e.color %} style="--cat: {{ e.color }}"{% endif %}
-   title="{{ e.title }} · {{ day is defined ? e.timeLabelOn(day) : e.timeLabel }}{{ e.conflict ? ' · ' ~ e.conflict }}">
+   title="{{ e.premiere ? 'Premiere: ' }}{{ e.title }} · {{ day is defined ? e.timeLabelOn(day) : e.timeLabel }}{{ e.conflict ? ' · ' ~ e.conflict }}">
     {% if (mine ?? {})[e.panel] is defined %}<span class="mine-badge">{{ ({assigned: 'Antwort?', accepted: 'zugesagt', declined: 'abgesagt', confirmed: '✓ bestätigt', interested: 'Interesse'})[mine[e.panel]] ?? '' }}</span>{% endif %}
     {% if compact %}
-        <span class="title">{% if not e.allDay %}<span class="mono small">{{ e.start|date('H:i') }}</span> {% endif %}{{ e.title }}</span>
+        <span class="title">{% if not e.allDay %}<span class="mono small">{{ e.start|date('H:i') }}</span> {% endif %}{% if e.premiere %}<span class="premiere-star" title="Premiere">★</span> {% endif %}{{ e.title }}</span>
     {% else %}
         <span class="t">{% if e.icon %}{{ ux_icon(e.icon) }}{% endif %}{{ day is defined ? e.timeLabelOn(day) : e.timeLabel }}</span>
-        <span class="title">{{ e.title }}</span>
+        <span class="title">{% if e.premiere %}<span class="premiere-star" title="Premiere">★</span> {% endif %}{{ e.title }}</span>
         {% if room_label ?? null %}<span class="meta">{{ room_label }}</span>{% endif %}
         {% if e.meta %}<span class="meta">{{ e.meta }}</span>{% endif %}
     {% endif %}
