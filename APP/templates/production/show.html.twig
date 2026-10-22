@@ -151,18 +151,22 @@
             </div>
             {% do form.contactPersons.setRendered %}
             {% do form.technicians.setRendered %}
-            {# stays at the bottom of the window while scrolling #}
-            <div class="form-actions sticky-actions">
-                <button class="btn btn-primary" type="submit">{{ ux_icon('lucide:save') }} Speichern</button>
-                <a class="btn btn-ghost" href="{{ path('app_production_index') }}">Zurück</a>
-                {% if not is_new and is_granted('ROLE_ADMIN') %}
-                    <button class="btn btn-sm btn-ghost btn-danger" type="submit" form="production-delete" style="margin-left:auto">{{ ux_icon('lucide:trash-2') }} Produktion löschen</button>
-                {% endif %}
-            </div>
             {{ form_widget(form._token) }}
         {# the technician notes sit in the side column and belong to the form by its id #}
         {{ form_end(form, {render_rest: false}) }}
 
+        {# one bar over the whole width, always at the bottom of the window #}
+        <div class="action-bar">
+            <div class="action-bar-title">
+                <strong>{{ is_new ? 'Neue Produktion' : production.title }}</strong>
+                {% if production.tentative %}<span class="badge badge-warn">Vielleicht</span>{% endif %}
+            </div>
+            <a class="btn btn-ghost" href="{{ path('app_production_index') }}">Zurück</a>
+            {% if not is_new and is_granted('ROLE_ADMIN') %}
+                <button class="btn btn-ghost btn-danger" type="submit" form="production-delete">{{ ux_icon('lucide:trash-2') }} Löschen</button>
+            {% endif %}
+            <button class="btn btn-primary" type="submit" form="production-form">{{ ux_icon('lucide:save') }} Speichern</button>
+        </div>
         {% if not is_new and is_granted('ROLE_ADMIN') %}
             <form id="production-delete" method="post" action="{{ path('app_production_delete', {id: production.id}) }}" data-turbo-confirm="Produktion mit allen Vorstellungen löschen? Kommt sie aus WordPress, wird sie beim nächsten Import wieder angelegt." hidden>
                 <input type="hidden" name="_token" value="{{ csrf_token('delete-production-' ~ production.id) }}">
@@ -215,9 +219,11 @@
             <div class="card-head"><h2>{{ ux_icon('lucide:wrench') }} Technik im Haus</h2></div>
             <div class="card-body form">
                 <p class="small muted">Für unsere Techniker:innen: Sie sehen Notizen und Dateien bei jedem Termin der Produktion. Geht nicht an die Website.</p>
-                {% for field in [form.techNotesRoom, form.techNotesLight, form.techNotesSound, form.techNotesOther] %}
-                    {{ form_row(field, {attr: {form: 'production-form', rows: 3}}) }}
-                {% endfor %}
+                <div class="tech-notes">
+                    {% for field in [form.techNotesRoom, form.techNotesLight, form.techNotesSound, form.techNotesOther] %}
+                        {{ form_row(field, {attr: {form: 'production-form', rows: 3}}) }}
+                    {% endfor %}
+                </div>
             </div>
             {% if is_new %}
                 <div class="card-foot small muted">Dateien lassen sich nach dem ersten Speichern hochladen.</div>

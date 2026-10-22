@@ -210,3 +210,26 @@
 }
 .card-subhead { border-top: 1px solid var(--line); padding-top: 12px; padding-bottom: 10px; }
 .card-subhead h3 { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+
+/* page-wide save bar fixed to the bottom of the window (production page) */
+.action-bar {
+    position: fixed; bottom: 0; left: var(--rail-w); right: 0; z-index: 30;
+    display: flex; align-items: center; gap: 10px; padding: 10px 40px;
+    background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(6px);
+    border-top: 1px solid var(--line); box-shadow: 0 -6px 18px rgb(0 0 0 / .07);
+}
+.action-bar-title { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
+.action-bar-title strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body:has(.action-bar) .page { padding-bottom: 96px; }
+@media (min-width: 901px) {
+    /* stops at the docked performance panel */
+    body:has(.prod-drawer) .action-bar { right: max(var(--panel-w), min(600px, 42vw)); }
+}
+@media (max-width: 900px) {
+    .action-bar { left: 0; bottom: 64px; padding: 8px 16px; }
+    .action-bar-title { display: none; }
+    body:has(.action-bar) .page { padding-bottom: 150px; }
+}
+/* technician notes two by two where the column is wide enough */
+.tech-notes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+@media (min-width: 1900px) { .tech-notes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
