@@ -148,12 +148,48 @@
                     <p data-collection-target="empty" hidden></p>
                 </div>
             </section>
+            <section class="card prod-tech" id="technik">
+                <div class="card-head"><h2>{{ ux_icon('lucide:wrench') }} Technik im Haus</h2></div>
+                <div class="card-body form">
+                    <p class="small muted">Für unsere Techniker:innen: Sie sehen Notizen und Dateien bei jedem Termin der Produktion. Geht nicht an die Website.</p>
+                    <div class="tech-notes">
+                        {% for field in [form.techNotesRoom, form.techNotesLight, form.techNotesSound, form.techNotesOther] %}
+                            {{ form_row(field, {attr: {rows: 3}}) }}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if is_new %}
+                    <div class="card-foot small muted">Dateien lassen sich nach dem ersten Speichern hochladen.</div>
+                {% else %}
+                    {# the file forms live outside the production form; these controls point at them by id #}
+                    <div class="card-head card-subhead"><h3>Dateien <span class="badge">{{ production.files|length }}</span></h3></div>
+                    <div>
+                        {% for file in production.files %}
+                            <div class="key-row file-row">
+                                {{ ux_icon(file.mimeType starts with 'image/' ? 'lucide:image' : 'lucide:file-text', {class: 'muted'}) }}
+                                <a class="grow" href="{{ path('app_production_file_download', {id: file.id}) }}" target="_blank" rel="noopener" data-turbo="false" style="min-width:0">
+                                    <span class="name" style="display:block; overflow-wrap:anywhere">{{ file.originalName }}</span>
+                                    <span class="line" style="display:block">{{ file.sizeLabel }} · {{ file.createdAt|de_date('d.M.y') }}</span>
+                                </a>
+                                <button class="btn btn-ghost btn-icon btn-sm" type="submit" form="file-delete-{{ file.id }}" aria-label="Datei löschen" title="Löschen">{{ ux_icon('lucide:trash-2') }}</button>
+                            </div>
+                        {% else %}
+                            <div class="empty">Noch keine Dateien, z. B. Technical Rider oder Cue-Liste.</div>
+                        {% endfor %}
+                    </div>
+                    <div class="card-foot file-upload">
+                        <label class="btn btn-sm">{{ ux_icon('lucide:upload') }} Dateien hochladen
+                            <input class="sr-only" type="file" name="files[]" form="file-upload" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.odt,.ods,.txt,.csv,.zip" onchange="this.form.requestSubmit()">
+                        </label>
+                        <span class="small muted">PDF, Bilder, Office, bis 10 MB</span>
+                    </div>
+                {% endif %}
+            </section>
             </div>
             {% do form.contactPersons.setRendered %}
             {% do form.technicians.setRendered %}
             {{ form_widget(form._token) }}
-        {# the technician notes sit in the side column and belong to the form by its id #}
-        {{ form_end(form, {render_rest: false}) }}
+        {{ form_end(form) }}
 
         {# one bar over the whole width, always at the bottom of the window #}
         <div class="action-bar">
@@ -167,6 +203,16 @@
             {% endif %}
             <button class="btn btn-primary" type="submit" form="production-form">{{ ux_icon('lucide:save') }} Speichern</button>
         </div>
+        {% if not is_new %}
+            <form id="file-upload" method="post" action="{{ path('app_production_file_upload', {id: production.id}) }}" enctype="multipart/form-data" hidden>
+                <input type="hidden" name="_token" value="{{ csrf_token('production-file') }}">
+            </form>
+            {% for file in production.files %}
+                <form id="file-delete-{{ file.id }}" method="post" action="{{ path('app_production_file_delete', {id: file.id}) }}" data-turbo-confirm="„{{ file.originalName }}“ löschen?" hidden>
+                    <input type="hidden" name="_token" value="{{ csrf_token('production-file') }}">
+                </form>
+            {% endfor %}
+        {% endif %}
         {% if not is_new and is_granted('ROLE_ADMIN') %}
             <form id="production-delete" method="post" action="{{ path('app_production_delete', {id: production.id}) }}" data-turbo-confirm="Produktion mit allen Vorstellungen löschen? Kommt sie aus WordPress, wird sie beim nächsten Import wieder angelegt." hidden>
                 <input type="hidden" name="_token" value="{{ csrf_token('delete-production-' ~ production.id) }}">
@@ -215,46 +261,6 @@
                 </div>
             </section>
         {% endif %}
-        <section class="card prod-tech" id="technik">
-            <div class="card-head"><h2>{{ ux_icon('lucide:wrench') }} Technik im Haus</h2></div>
-            <div class="card-body form">
-                <p class="small muted">Für unsere Techniker:innen: Sie sehen Notizen und Dateien bei jedem Termin der Produktion. Geht nicht an die Website.</p>
-                <div class="tech-notes">
-                    {% for field in [form.techNotesRoom, form.techNotesLight, form.techNotesSound, form.techNotesOther] %}
-                        {{ form_row(field, {attr: {form: 'production-form', rows: 3}}) }}
-                    {% endfor %}
-                </div>
-            </div>
-            {% if is_new %}
-                <div class="card-foot small muted">Dateien lassen sich nach dem ersten Speichern hochladen.</div>
-            {% else %}
-                <div class="card-head card-subhead"><h3>Dateien <span class="badge">{{ production.files|length }}</span></h3></div>
-                <div>
-                    {% for file in production.files %}
-                        <div class="key-row file-row">
-                            {{ ux_icon(file.mimeType starts with 'image/' ? 'lucide:image' : 'lucide:file-text', {class: 'muted'}) }}
-                            <a class="grow" href="{{ path('app_production_file_download', {id: file.id}) }}" target="_blank" rel="noopener" data-turbo="false" style="min-width:0">
-                                <span class="name" style="display:block; overflow-wrap:anywhere">{{ file.originalName }}</span>
-                                <span class="line" style="display:block">{{ file.sizeLabel }} · {{ file.createdAt|de_date('d.M.y') }}</span>
-                            </a>
-                            <form method="post" action="{{ path('app_production_file_delete', {id: file.id}) }}" data-turbo-confirm="„{{ file.originalName }}“ löschen?">
-                                <input type="hidden" name="_token" value="{{ csrf_token('production-file') }}">
-                                <button class="btn btn-ghost btn-icon btn-sm" type="submit" aria-label="Datei löschen" title="Löschen">{{ ux_icon('lucide:trash-2') }}</button>
-                            </form>
-                        </div>
-                    {% else %}
-                        <div class="empty">Noch keine Dateien, z. B. Technical Rider oder Cue-Liste.</div>
-                    {% endfor %}
-                </div>
-                <form class="card-foot file-upload" method="post" action="{{ path('app_production_file_upload', {id: production.id}) }}" enctype="multipart/form-data" data-controller="autosubmit">
-                    <input type="hidden" name="_token" value="{{ csrf_token('production-file') }}">
-                    <label class="btn btn-sm">{{ ux_icon('lucide:upload') }} Dateien hochladen
-                        <input class="sr-only" type="file" name="files[]" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.odt,.ods,.txt,.csv,.zip" data-action="change->autosubmit#submit">
-                    </label>
-                    <span class="small muted">PDF, Bilder, Office, bis 10 MB</span>
-                </form>
-            {% endif %}
-        </section>
     </aside>
 </div>
 
