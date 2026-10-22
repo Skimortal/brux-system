@@ -5,12 +5,14 @@ namespace App\Tests\Unit;
 use App\Calendar\CalendarBuilder;
 use App\Calendar\CalendarQuery;
 use App\Entity\Appointment;
+use App\Entity\Production;
 use App\Entity\Room;
 use App\Enum\AppointmentTypeEnum;
 use App\Repository\AppointmentRepository;
 use App\Repository\CleaningScheduleRepository;
 use App\Repository\KeyLoanRepository;
 use App\Repository\ProductionEventRepository;
+use App\Repository\ProductionRepository;
 use App\Repository\RoomRepository;
 use App\Service\FieldOwnership;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +20,33 @@ use Symfony\Component\Clock\MockClock;
 
 final class CalendarBuilderTest extends TestCase
 {
+    public function testTentativeStayShowsEvenWhenStaysAreHidden(): void
+    {
+        $tentative = (new Production())->setTitle('Vielleicht im Haus')->setTentative(true)
+            ->setStayFrom(new \DateTimeImmutable('2026-10-15'))->setStayUntil(new \DateTimeImmutable('2026-10-16'));
+        $confirmed = (new Production())->setTitle('Fix im Haus')
+            ->setStayFrom(new \DateTimeImmutable('2026-10-15'))->setStayUntil(new \DateTimeImmutable('2026-10-16'));
+
+        $appointments = $this->createStub(AppointmentRepository::class);
+        $appointments->method('findOverlapping')->willReturn([]);
+        $performances = $this->createStub(ProductionEventRepository::class);
+        $performances->method('findBetween')->willReturn([]);
+        $schedules = $this->createStub(CleaningScheduleRepository::class);
+        $schedules->method('findActiveBetween')->willReturn([]);
+        $loans = $this->createStub(KeyLoanRepository::class);
+        $loans->method('findOverlapping')->willReturn([]);
+        $rooms = $this->createStub(RoomRepository::class);
+        $rooms->method('findBy')->willReturn([]);
+        $productions = $this->createStub(ProductionRepository::class);
+        $productions->method('findStaysBetween')->willReturn([$tentative, $confirmed]);
+
+        $builder = new CalendarBuilder($appointments, $performances, $schedules, $loans, $rooms, new MockClock('2026-10-14 12:00'), new FieldOwnership([]), $productions);
+        // stays are hidden by default
+        $view = $builder->build(new CalendarQuery(new \DateTimeImmutable('2026-10-15'), 'week', layout: 'all'));
+
+        self::assertSame(['Vielleicht im Haus'], array_map(static fn ($e) => $e->title, array_values($view->entries)));
+    }
+
     public function testOverlappingEntriesInTheSameRoomAreFlagged(): void
     {
         $room = new Room();
