@@ -33,9 +33,12 @@ final class UserType extends AbstractType
             ->add('lastName', TextType::class, ['label' => 'Nachname', 'constraints' => [new NotBlank()]])
             ->add('email', EmailType::class, ['label' => 'E-Mail', 'constraints' => [new NotBlank(), new Email()]])
             ->add('phoneNumber', TelType::class, ['label' => 'Telefon', 'required' => false])
-            ->add('mobileNumber', TelType::class, ['label' => 'Mobil', 'required' => false])
-            ->add('department', TextType::class, ['label' => 'Bereich', 'required' => false])
-            ->add('position', TextType::class, ['label' => 'Funktion', 'required' => false]);
+            ->add('mobileNumber', TelType::class, ['label' => 'Mobil', 'required' => false]);
+        if (!$options['technician']) {
+            $builder
+                ->add('department', TextType::class, ['label' => 'Bereich', 'required' => false])
+                ->add('position', TextType::class, ['label' => 'Funktion', 'required' => false]);
+        }
 
         if (!$options['profile']) {
             $roles = ['Techniker:in (nur lesen, eigene Einsätze)' => 'ROLE_TECHNICIAN', 'Mitarbeit (Kalender, Daten)' => 'ROLE_USER', 'Verwaltung (Löschen, Benutzer, Räume)' => 'ROLE_ADMIN'];
@@ -89,6 +92,8 @@ final class UserType extends AbstractType
         $resolver->setDefaults([
             'data_class' => User::class,
             'profile' => false,
+            // a technician's own profile: no office fields
+            'technician' => false,
             'password_required' => false,
             'can_grant_superuser' => false,
             'current_role' => 'ROLE_USER',
