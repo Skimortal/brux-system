@@ -61,6 +61,7 @@ final class ProductionType extends AbstractType
             ->add('tentative', CheckboxType::class, [
                 'label' => 'Vielleicht – Termine nur vorreserviert',
                 'required' => false,
+                'row_attr' => ['class' => 'switch-row'],
                 // a production already on the website cannot be taken back this way
                 'disabled' => $production->isFromWordPress() && !$production->isTentative(),
                 'help' => $production->isFromWordPress() && !$production->isTentative()

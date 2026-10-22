@@ -37,8 +37,9 @@
 {% endblock %}
 
 {# Checkbox as inline label #}
+{# row_attr.class "switch-row" shows the checkbox as an on/off switch #}
 {% block checkbox_row %}
-    <div class="field{% if row_attr.class is defined %} {{ row_attr.class }}{% endif %}">
+    <div class="field{% if row_attr.class is defined %} {{ row_attr.class }}{% endif %}"{% for k, v in row_attr|filter((v, k) => k != 'class') %} {{ k }}="{{ v }}"{% endfor %}>
         <label class="check">{{ form_widget(form) }} {{ label is not same as(false) ? label : '' }}</label>
         {{ form_help(form) }}
         {{ form_errors(form) }}
