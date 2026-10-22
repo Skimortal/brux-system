@@ -10,7 +10,7 @@
     <section class="cal-main">
         <turbo-frame id="calendar" data-turbo-action="advance">
             {{ include('calendar/_toolbar.html.twig') }}
-            <div class="cal-board is-readonly" data-controller="scroll-keeper">
+            <div class="cal-board is-readonly is-technician" data-controller="scroll-keeper">
                 {% if query.effectiveLayout == 'grid' %}
                     {{ include('calendar/_timegrid.html.twig') }}
                 {% elseif query.effectiveLayout == 'split' %}

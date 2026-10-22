@@ -409,8 +409,8 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .file-link:hover .grow { text-decoration: underline; }
 /* own assignments stand out in the technicians' calendar */
 /* technicians' calendar: everyone else's appointments step back, own ones show their status */
-.cal-board.is-readonly .cal-item:not(.is-mine), .cal-board.is-readonly .cal-run:not(.is-mine) { opacity: .38; }
-.cal-board.is-readonly .cal-item:not(.is-mine):hover, .cal-board.is-readonly .cal-run:not(.is-mine):hover { opacity: .75; }
+.cal-board.is-technician .cal-item:not(.is-mine), .cal-board.is-technician .cal-run:not(.is-mine) { opacity: .38; }
+.cal-board.is-technician .cal-item:not(.is-mine):hover, .cal-board.is-technician .cal-run:not(.is-mine):hover { opacity: .75; }
 .cal-item.is-mine { box-shadow: inset 4px 0 0 var(--ink); font-weight: 600; opacity: 1; }
 .cal-item.is-mine-assigned { outline: 2px dashed var(--warn-ink); outline-offset: -2px; box-shadow: inset 4px 0 0 var(--warn-ink); }
 .cal-item.is-mine-accepted { outline: 2px solid var(--ink); outline-offset: -2px; }
