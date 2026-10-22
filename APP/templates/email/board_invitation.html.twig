@@ -1,0 +1,9 @@
+{% extends 'email/_layout.html.twig' %}
+{% block subject %}Dein Zugang zum BRUX Haussystem{% endblock %}
+{% block content %}
+    <p>Hallo {{ name }},</p>
+    <p>du hast jetzt einen eigenen Zugang zum BRUX Haussystem. Dort siehst du alle Vorstellungen, geschlossenen und Schulveranstaltungen sowie Proben, die wir für den Vorstand freigeben – Premieren sind mit einem Stern markiert. Mit einem Klick kannst du alles auch als Kalender auf Handy oder Computer abonnieren.</p>
+    <p>Dein Benutzername ist <strong>{{ username }}</strong>. Bitte lege über den Button dein Passwort fest; der Link gilt sieben Tage.</p>
+    {{ include('email/_button.html.twig', {url: set_password_url, label: 'Passwort festlegen'}) }}
+    <p>Danach meldest du dich unter <a href="{{ login_url }}">{{ login_url }}</a> an.</p>
+{% endblock %}

@@ -37,7 +37,10 @@ final class CalendarBuilder
     ) {
     }
 
-    public function build(CalendarQuery $query): CalendarView
+    /**
+     * @param (callable(CalendarEntry): bool)|null $keep further narrows the entries, e.g. to what the board sees
+     */
+    public function build(CalendarQuery $query, ?callable $keep = null): CalendarView
     {
         $from = $query->rangeStart();
         $to = $query->rangeEnd();
@@ -50,7 +53,7 @@ final class CalendarBuilder
 
         $entries = array_filter(
             $this->collectEntries($from, $to),
-            static fn (CalendarEntry $e) => !$query->isHidden($e->group)
+            static fn (CalendarEntry $e) => !$query->isHidden($e->group) && ($keep === null || $keep($e))
         );
         usort($entries, static fn (CalendarEntry $a, CalendarEntry $b) => [$a->allDay ? 0 : 1, $a->start] <=> [$b->allDay ? 0 : 1, $b->start]);
         $this->markConflicts($entries);
@@ -244,7 +247,8 @@ final class CalendarBuilder
             reservedSeats: $performance->getSeatsTaken(),
             tentative: $tentative,
             premiere: (bool) $performance->getProduction()?->isPremiere($performance),
-            boardVisible: true,
+            // pencilled-in productions are not the board's business yet
+            boardVisible: !$tentative,
         );
     }
 
@@ -285,7 +289,7 @@ final class CalendarBuilder
             meta: $meta,
             icon: $appointment->getEventType()?->icon() ?? ($appointment->isInSeries() ? 'lucide:repeat' : null),
             tentative: $tentative,
-            boardVisible: $appointment->isBoardVisible() || \in_array($type, [AppointmentTypeEnum::CLOSED_EVENT, AppointmentTypeEnum::SCHOOL_EVENT], true),
+            boardVisible: !$tentative && ($appointment->isBoardVisible() || \in_array($type, [AppointmentTypeEnum::CLOSED_EVENT, AppointmentTypeEnum::SCHOOL_EVENT], true)),
         );
     }
 

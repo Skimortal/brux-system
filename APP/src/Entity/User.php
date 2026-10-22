@@ -90,8 +90,8 @@ class User extends Base implements UserInterface, PasswordAuthenticatedUserInter
     public function getRoles(): array
     {
         $roles = $this->roles;
-        // technicians only get their read-only area, every other account works with the data
-        if (!$this->isTechnician()) {
+        // technicians and the board only get their read-only area, every other account works with the data
+        if (!$this->isReadOnly()) {
             $roles[] = 'ROLE_USER';
         }
 
@@ -102,6 +102,28 @@ class User extends Base implements UserInterface, PasswordAuthenticatedUserInter
     public function isTechnician(): bool
     {
         return $this->roles === ['ROLE_TECHNICIAN'];
+    }
+
+    /** A board account: read-only access to performances, events and released rehearsals. */
+    public function isBoard(): bool
+    {
+        return $this->roles === ['ROLE_BOARD'];
+    }
+
+    /** Technician and board accounts only read, in their own area. */
+    public function isReadOnly(): bool
+    {
+        return $this->isTechnician() || $this->isBoard();
+    }
+
+    /** Where the account starts after logging in. */
+    public function getHomeRoute(): string
+    {
+        return match (true) {
+            $this->isTechnician() => 'app_technician',
+            $this->isBoard() => 'app_board',
+            default => 'app_calendar',
+        };
     }
 
     /** The technician contact this account belongs to, for "my assignments". */

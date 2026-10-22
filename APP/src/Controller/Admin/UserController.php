@@ -101,7 +101,7 @@ final class UserController extends AbstractController
     private static function highestRole(User $user): string
     {
         $roles = $user->getAssignedRoles();
-        foreach (['ROLE_SUPERUSER', 'ROLE_ADMIN', 'ROLE_TECHNICIAN'] as $role) {
+        foreach (['ROLE_SUPERUSER', 'ROLE_ADMIN', 'ROLE_TECHNICIAN', 'ROLE_BOARD'] as $role) {
             if (\in_array($role, $roles, true)) {
                 return $role;
             }
@@ -116,6 +116,7 @@ final class UserController extends AbstractController
             'ROLE_SUPERUSER' => 'Superadmin',
             'ROLE_ADMIN' => 'Verwaltung',
             'ROLE_TECHNICIAN' => 'Techniker:in',
+            'ROLE_BOARD' => 'Vorstand',
             default => 'Mitarbeit',
         };
     }

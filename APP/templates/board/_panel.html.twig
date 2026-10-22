@@ -1,0 +1,34 @@
+{# Read-only details of a performance or event for the board. #}
+{% set pe = panel.performance %}
+{% set a = panel.appointment %}
+{% set production = panel.production %}
+{% set start = pe ? pe.startsAt : a.startDate %}
+{% set end = pe ? pe.endsAt : a.endDate %}
+{% set all_day = pe ? pe.allDay : a.allDay %}
+{% set room = pe ? pe.room : a.room %}
+<div class="panel-head">
+    <div class="top">
+        <a class="btn btn-ghost btn-sm" href="{{ cal_path(query, {panel: null}) }}" style="padding-left:6px">{{ ux_icon('lucide:arrow-left') }} Übersicht</a>
+        <span class="row" style="gap:6px">
+            {% if pe and production and production.isPremiere(pe) %}<span class="badge badge-warn"><span class="premiere-star">★</span> Premiere</span>{% endif %}
+            {% if production and production.tentative %}<span class="badge badge-warn">Vielleicht</span>{% endif %}
+            <span class="badge">{{ pe ? 'Vorstellung' : a.type.shortLabel }}</span>
+        </span>
+    </div>
+    <h2 id="panel-title">{{ pe ? production.title : a.displayTitle }}</h2>
+    <div class="tech-facts">
+        <div class="fact">{{ ux_icon('lucide:calendar') }}<strong>{{ start|de_date('EEEE, d. MMMM') }}</strong></div>
+        <div class="fact">{{ ux_icon('lucide:clock') }}<strong>{{ all_day ? 'ganztägig' : start|date('H:i') ~ (end ? '–' ~ end|date('H:i') : '') ~ ' Uhr' }}</strong></div>
+        <div class="fact">{{ ux_icon('lucide:map-pin') }}<strong>{{ room ? room.name : 'ganzes Haus' }}</strong></div>
+    </div>
+</div>
+<div class="panel-body">
+    {% if pe and pe.cancelled %}<div class="note note-danger">{{ ux_icon('lucide:ban') }}<span>Abgesagt</span></div>{% endif %}
+    {% if production and production.subtitle %}<p class="muted">{{ production.subtitle }}</p>{% endif %}
+    {% if pe and pe.quota and not pe.cancelled %}
+        <p class="small">{{ pe.seatsTaken ?? 0 }} von {{ pe.quota }} Plätzen reserviert</p>
+    {% endif %}
+    {% if production and production.permalink %}
+        <a class="btn btn-sm" href="{{ production.permalink }}" target="_blank" rel="noopener">{{ ux_icon('lucide:globe') }} Auf der Website ansehen</a>
+    {% endif %}
+</div>

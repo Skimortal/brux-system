@@ -102,9 +102,9 @@ class TechnicianNotifier
         return $sent;
     }
 
-    public function invite(User $user, string $setPasswordUrl): bool
+    public function invite(User $user, string $setPasswordUrl, bool $board = false): bool
     {
-        return $this->send(EmailTemplateKey::TECHNICIAN_INVITATION, $user->getEmail(), [
+        return $this->send($board ? EmailTemplateKey::BOARD_INVITATION : EmailTemplateKey::TECHNICIAN_INVITATION, $user->getEmail(), [
             'name' => $user->getFirstName(),
             'username' => $user->getUsername(),
             'set_password_url' => $setPasswordUrl,

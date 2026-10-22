@@ -1,0 +1,21 @@
+{# Side column of the board area: what the calendar shows, and the subscription. #}
+<div class="side-scroll">
+    <section class="side-block">
+        <div class="side-block-head"><h2>{{ ux_icon('lucide:calendar-days') }} Veranstaltungen</h2></div>
+        <div style="padding: 0 18px 14px" class="stack-sm small">
+            <p>Hier siehst du alle Vorstellungen sowie geschlossene und Schulveranstaltungen. Proben erscheinen, wenn das Büro sie für den Vorstand freigegeben hat.</p>
+            <p><span class="premiere-star">★</span> markiert Premieren. Ein Klick auf einen Termin zeigt die Details.</p>
+        </div>
+    </section>
+    {% if feed_links %}
+        <section class="side-block">
+            <details class="feed-box">
+                <summary class="btn feed-toggle">{{ ux_icon('lucide:calendar-plus') }} Kalender abonnieren {{ ux_icon('lucide:chevron-down', {class: 'feed-chevron'}) }}</summary>
+                <div class="stack-sm">
+                    <p class="small muted">Für iPhone, Mac oder Outlook „Abonnieren“ klicken; für Google Kalender den Link kopieren und unter „Weitere Kalender → Per URL“ einfügen. „Premieren“ ist ein eigener Kalender, dem du in der App eine eigene Farbe geben kannst.</p>
+                    {{ include('calendar_feed/_links.html.twig', {links: feed_links}) }}
+                </div>
+            </details>
+        </section>
+    {% endif %}
+</div>

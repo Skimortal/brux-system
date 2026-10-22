@@ -34,11 +34,14 @@ security:
         - { path: '^/kalender/[0-9a-f]{40}\.ics$', roles: PUBLIC_ACCESS }
         # signed links from the open-call mails work without logging in
         - { path: ^/technik/(interesse|antwort)/, roles: PUBLIC_ACCESS }
-        # technicians only see their own area, documents and their profile (all read-only)
-        - { path: ^/(start$|technik|profil$|dateien/\d+$), roles: ROLE_TECHNICIAN }
+        # technicians and the board only see their own area (and technicians the documents)
+        - { path: ^/(start$|profil$), roles: [ROLE_TECHNICIAN, ROLE_BOARD] }
+        - { path: ^/(technik|dateien/\d+$), roles: ROLE_TECHNICIAN }
+        - { path: ^/vorstand, roles: ROLE_BOARD }
         - { path: ^/, roles: ROLE_USER }
 
     # ROLE_TECHNICIAN: read-only technician area (all appointments, own assignments)
+    # ROLE_BOARD: read-only board area (performances, events, released rehearsals)
     # ROLE_USER: calendar and all day-to-day data
     # ROLE_ADMIN: deleting, rooms, users, event categories, contact categories
     # ROLE_SUPERUSER: e-mail templates, granting admin rights
@@ -46,7 +49,7 @@ security:
         ROLE_SUPERUSER: [ ROLE_ADMIN ]
         ROLE_ADMIN: [ ROLE_EDITOR ]
         ROLE_EDITOR: [ ROLE_USER ]
-        ROLE_USER: [ ROLE_TECHNICIAN ]
+        ROLE_USER: [ ROLE_TECHNICIAN, ROLE_BOARD ]
 
 when@test:
     security:

@@ -42,6 +42,18 @@ class ContactRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    /**
+     * @param list<ContactRole> $roles
+     */
+    public function queryByRoles(array $roles): QueryBuilder
+    {
+        return $this->createQueryBuilder('c')
+            ->innerJoin('c.category', 'cat')
+            ->andWhere('cat.role IN (:roles)')
+            ->setParameter('roles', array_map(static fn (ContactRole $r) => $r->value, $roles))
+            ->orderBy('c.name', 'ASC');
+    }
+
     public function queryByRole(ContactRole $role): QueryBuilder
     {
         return $this->createQueryBuilder('c')

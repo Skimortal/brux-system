@@ -19,7 +19,7 @@ final class ProfileController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
-        $form = $this->createForm(UserType::class, $user, ['profile' => true, 'technician' => $user->isTechnician()]);
+        $form = $this->createForm(UserType::class, $user, ['profile' => true, 'technician' => $user->isReadOnly()]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
@@ -56,7 +56,7 @@ final class ProfileController extends AbstractController
             'title' => 'Mein Profil',
             'crumbs' => [],
             'form' => $form,
-            'back_url' => $this->generateUrl($user->isTechnician() ? 'app_technician' : 'app_calendar'),
+            'back_url' => $this->generateUrl($user->getHomeRoute()),
             'intro' => $user->getContact() !== null ? 'Name, E-Mail und Telefon werden auch in deinen Kontakt beim Büro übernommen. Angemeldet wirst du weiterhin mit deinem Benutzernamen ' . $user->getUsername() . '.' : null,
         ], new Response(null, $form->isSubmitted() ? 422 : 200));
     }

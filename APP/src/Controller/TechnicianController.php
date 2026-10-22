@@ -46,11 +46,13 @@ final class TechnicianController extends AbstractController
     ) {
     }
 
-    /** Landing page after login: technicians go to their area, everyone else to the calendar. */
+    /** Landing page after login: technicians and the board go to their area, everyone else to the calendar. */
     #[Route('/start', name: 'app_start', methods: ['GET'])]
     public function start(): Response
     {
-        return $this->redirectToRoute($this->isGranted('ROLE_USER') ? 'app_calendar' : 'app_technician');
+        $user = $this->getUser();
+
+        return $this->redirectToRoute($user instanceof User ? $user->getHomeRoute() : 'app_calendar');
     }
 
     #[Route('/technik', name: 'app_technician', methods: ['GET'])]

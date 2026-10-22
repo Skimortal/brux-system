@@ -41,7 +41,7 @@ final class UserType extends AbstractType
         }
 
         if (!$options['profile']) {
-            $roles = ['Techniker:in (nur lesen, eigene Einsätze)' => 'ROLE_TECHNICIAN', 'Mitarbeit (Kalender, Daten)' => 'ROLE_USER', 'Verwaltung (Löschen, Benutzer, Räume)' => 'ROLE_ADMIN'];
+            $roles = ['Vorstand (nur lesen, Veranstaltungen)' => 'ROLE_BOARD', 'Techniker:in (nur lesen, eigene Einsätze)' => 'ROLE_TECHNICIAN', 'Mitarbeit (Kalender, Daten)' => 'ROLE_USER', 'Verwaltung (Löschen, Benutzer, Räume)' => 'ROLE_ADMIN'];
             if ($options['can_grant_superuser']) {
                 $roles['Superadmin (E-Mail-Vorlagen, Rechte)'] = 'ROLE_SUPERUSER';
             }
@@ -57,12 +57,12 @@ final class UserType extends AbstractType
                 ])
                 ->add('contact', EntityType::class, [
                     'class' => Contact::class,
-                    'label' => 'Kontakt in der Technik',
+                    'label' => 'Verknüpfter Kontakt',
                     'required' => false,
                     'placeholder' => 'keiner',
-                    'query_builder' => static fn (ContactRepository $r) => $r->queryByRole(ContactRole::TECHNICIAN),
+                    'query_builder' => static fn (ContactRepository $r) => $r->queryByRoles([ContactRole::TECHNICIAN, ContactRole::BOARD]),
                     'choice_label' => 'name',
-                    'help' => 'Für Techniker:innen: welche Einteilungen „Meine Einsätze“ sind.',
+                    'help' => 'Für Techniker:innen und Vorstand: ihr Kontakt (bei Technik: welche Einteilungen „Meine Einsätze“ sind).',
                 ])
                 ->add('isActive', CheckboxType::class, ['label' => 'Konto aktiv', 'required' => false]);
         }

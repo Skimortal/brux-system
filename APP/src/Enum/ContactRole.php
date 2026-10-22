@@ -10,6 +10,7 @@ enum ContactRole: string
     case TECHNICIAN = 'technician';
     case VOLUNTEER = 'volunteer';
     case CLEANING = 'cleaning';
+    case BOARD = 'board';
 
     public function label(): string
     {
@@ -17,6 +18,7 @@ enum ContactRole: string
             self::TECHNICIAN => 'Technik',
             self::VOLUNTEER => 'Freiwillige',
             self::CLEANING => 'Reinigung',
+            self::BOARD => 'Vorstand',
         };
     }
 }

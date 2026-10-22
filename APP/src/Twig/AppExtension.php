@@ -73,11 +73,15 @@ final class AppExtension extends AbstractExtension
         return $this->urls->generate($this->calendarRoute(), $query->params($overrides));
     }
 
-    /** The technicians' read-only calendar links to itself, everything else to the main calendar. */
+    /** The read-only calendars (technicians, board) link to themselves, everything else to the main calendar. */
     public function calendarRoute(): string
     {
         $route = (string) $this->requests->getCurrentRequest()?->attributes->get('_route');
 
-        return str_starts_with($route, 'app_technician') ? 'app_technician' : 'app_calendar';
+        return match (true) {
+            str_starts_with($route, 'app_technician') => 'app_technician',
+            str_starts_with($route, 'app_board') => 'app_board',
+            default => 'app_calendar',
+        };
     }
 }

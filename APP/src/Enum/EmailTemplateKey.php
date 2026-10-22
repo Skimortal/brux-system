@@ -9,6 +9,7 @@ enum EmailTemplateKey: string
     case TECHNICIAN_CONFIRMED = 'technician_confirmed';
     case TECHNICIAN_ANSWERED = 'technician_answered';
     case TECHNICIAN_OPEN_CALL = 'technician_open_call';
+    case BOARD_INVITATION = 'board_invitation';
 
     public function label(): string
     {
@@ -19,6 +20,7 @@ enum EmailTemplateKey: string
             self::TECHNICIAN_CONFIRMED       => 'Technik: Einsatz bestätigt',
             self::TECHNICIAN_ANSWERED        => 'Technik: Antwort an das Büro',
             self::TECHNICIAN_OPEN_CALL       => 'Technik: offener Termin',
+            self::BOARD_INVITATION           => 'Vorstand: Einladung zum Zugang',
         };
     }
 

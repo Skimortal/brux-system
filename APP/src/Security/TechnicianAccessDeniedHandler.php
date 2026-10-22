@@ -13,8 +13,8 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Http\Authorization\AccessDeniedHandlerInterface;
 
 /**
- * Technicians who open a page of the office land in their own area instead of on an
- * error page; everyone else keeps the usual "access denied".
+ * Technicians and board members who open a page of the office land in their own area
+ * instead of on an error page; everyone else keeps the usual "access denied".
  */
 final class TechnicianAccessDeniedHandler implements AccessDeniedHandlerInterface
 {
@@ -25,14 +25,14 @@ final class TechnicianAccessDeniedHandler implements AccessDeniedHandlerInterfac
     public function handle(Request $request, AccessDeniedException $accessDeniedException): ?Response
     {
         $user = $this->security->getUser();
-        if (!$user instanceof User || !$user->isTechnician() || !$request->isMethod('GET')) {
+        if (!$user instanceof User || !$user->isReadOnly() || !$request->isMethod('GET')) {
             return null;
         }
         $session = $request->hasSession() ? $request->getSession() : null;
         if ($session instanceof FlashBagAwareSessionInterface) {
-            $session->getFlashBag()->add('warning', 'Diese Seite ist nur für das Büro. Hier siehst du alle Termine und deine Einsätze.');
+            $session->getFlashBag()->add('warning', $user->isBoard() ? 'Diese Seite ist nur für das Büro. Hier siehst du alle Veranstaltungen.' : 'Diese Seite ist nur für das Büro. Hier siehst du alle Termine und deine Einsätze.');
         }
 
-        return new RedirectResponse($this->urls->generate('app_technician'));
+        return new RedirectResponse($this->urls->generate($user->getHomeRoute()));
     }
 }

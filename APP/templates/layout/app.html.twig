@@ -9,15 +9,16 @@
 ] %}
 {% set staff = is_granted('ROLE_USER') %}
 {% if not staff %}
-    {# technicians: only their read-only area #}
-    {% set nav = [{route: 'app_technician', icon: 'lucide:calendar', label: 'Termine', match: 'app_technician'}] %}
+    {# technicians and the board: only their read-only area #}
+    {% set home = app.user.homeRoute %}
+    {% set nav = [{route: home, icon: 'lucide:calendar', label: home == 'app_board' ? 'Veranstaltungen' : 'Termine', match: home}] %}
 {% endif %}
 {% set current = app.request.attributes.get('_route') ?? '' %}
 
 {% block body %}
 <div class="app">
     <nav class="rail" aria-label="Hauptnavigation">
-        <a href="{{ path(staff ? 'app_calendar' : 'app_technician') }}" class="rail-logo" aria-label="Zum Kalender">{{ include('components/_brux_logo.html.twig', {variant: 'b'}) }}</a>
+        <a href="{{ path(staff ? 'app_calendar' : app.user.homeRoute) }}" class="rail-logo" aria-label="Zum Kalender">{{ include('components/_brux_logo.html.twig', {variant: 'b'}) }}</a>
         {% for item in nav %}
             <a href="{{ path(item.route) }}" class="rail-link" {% if current starts with item.match %}aria-current="page"{% endif %}>
                 {{ ux_icon(item.icon) }}<span class="rail-tip">{{ item.label }}</span><span class="sr-only">{{ item.label }}</span>

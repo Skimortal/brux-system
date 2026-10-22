@@ -23,7 +23,7 @@
     {% endif %}
 </div>
 <div class="cal-filters">
-    {% for group in groups|filter(g => not (readonly ?? false) or g.value != 'keys') %}
+    {% for group in (hide_filters ?? false) ? [] : groups|filter(g => not (readonly ?? false) or g.value != 'keys') %}
         {% set off = query.isHidden(group) %}
         <a class="chip{{ off ? ' is-off' : '' }}" href="{{ path(cal_route(), query.toggleParams(group)) }}" aria-pressed="{{ off ? 'false' : 'true' }}" title="{{ off ? 'Einblenden' : 'Ausblenden' }}">
             <span class="chip-swatch swatch-{{ group.colorKey }}"></span>{{ group.label }}

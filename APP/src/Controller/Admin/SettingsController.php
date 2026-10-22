@@ -22,7 +22,8 @@ final class SettingsController extends AbstractController
     public function index(BruxApiSyncService $sync, WordPressPushService $push, FieldOwnership $ownership, ContactCategoryRepository $categories, AppSettings $settings): Response
     {
         $missingRoles = [];
-        foreach (\App\Enum\ContactRole::cases() as $role) {
+        // the board category is optional; the others feed choices in the calendar
+        foreach (array_filter(\App\Enum\ContactRole::cases(), static fn ($r) => $r !== \App\Enum\ContactRole::BOARD) as $role) {
             if ($categories->findOneBy(['role' => $role]) === null) {
                 $missingRoles[] = $role->label();
             }

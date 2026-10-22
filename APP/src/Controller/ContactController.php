@@ -85,15 +85,21 @@ final class ContactController extends AbstractController
             throw $this->createAccessDeniedException('Ungültiges Formular. Bitte Seite neu laden.');
         }
         $email = mb_strtolower(trim((string) $contact->getEmail()));
-        if ($contact->getCategory()?->getRole() !== ContactRole::TECHNICIAN || $email === '') {
-            $this->addFlash('danger', 'Einen Zugang gibt es nur für Kontakte in der Technik mit E-Mail-Adresse.');
+        // the contact's category decides which read-only area the account gets
+        $role = match ($contact->getCategory()?->getRole()) {
+            ContactRole::TECHNICIAN => 'ROLE_TECHNICIAN',
+            ContactRole::BOARD => 'ROLE_BOARD',
+            default => null,
+        };
+        if ($role === null || $email === '') {
+            $this->addFlash('danger', 'Einen Zugang gibt es nur für Kontakte in der Technik oder im Vorstand mit E-Mail-Adresse.');
 
             return $this->redirectToRoute('app_contact_edit', ['id' => $contact->getId()], 303);
         }
 
         $user = $this->users->findOneBy(['contact' => $contact]) ?? $this->users->findOneBy(['email' => $email]);
-        if ($user !== null && !$user->isTechnician()) {
-            // a staff account with the same address: it simply gets the technician's assignments
+        if ($user !== null && !$user->isReadOnly()) {
+            // a staff account with the same address: it is simply linked to the contact
             $user->setContact($contact);
             $em->flush();
             $this->addFlash('success', 'Das bestehende Konto ' . $user->getUsername() . ' ist jetzt mit diesem Kontakt verknüpft.');
@@ -107,7 +113,7 @@ final class ContactController extends AbstractController
             $user->setEmail($email);
             $user->setFirstName($parts[0] !== '' ? $parts[0] : $email);
             $user->setLastName($parts[1] ?? '');
-            $user->setRoles(['ROLE_TECHNICIAN']);
+            $user->setRoles([$role]);
             $user->setIsActive(true);
             // nobody knows this password; the person sets their own through the link
             $user->setPassword($hasher->hashPassword($user, bin2hex(random_bytes(24))));
@@ -118,7 +124,7 @@ final class ContactController extends AbstractController
         $user->setResetToken($token)->setResetTokenExpiresAt($clock->now()->modify('+7 days'));
         $em->flush();
 
-        $sent = $notifier->invite($user, $this->generateUrl('app_reset_password', ['token' => $token], UrlGeneratorInterface::ABSOLUTE_URL));
+        $sent = $notifier->invite($user, $this->generateUrl('app_reset_password', ['token' => $token], UrlGeneratorInterface::ABSOLUTE_URL), $role === 'ROLE_BOARD');
         $this->addFlash($sent ? 'success' : 'danger', $sent
             ? 'Einladung an ' . $email . ' verschickt. Benutzername: ' . $user->getUsername()
             : 'Konto angelegt, aber die Einladung konnte nicht verschickt werden.');
@@ -145,7 +151,7 @@ final class ContactController extends AbstractController
             'back_url' => $this->generateUrl('app_contact_index'),
             'delete_url' => $contact->getId() && $this->isGranted('ROLE_ADMIN') ? $this->generateUrl('app_contact_delete', ['id' => $contact->getId()]) : null,
             'delete_token' => 'delete-contact-' . $contact->getId(),
-            'extra' => $contact->getId() && $contact->getCategory()?->getRole() === ContactRole::TECHNICIAN
+            'extra' => $contact->getId() && \in_array($contact->getCategory()?->getRole(), [ContactRole::TECHNICIAN, ContactRole::BOARD], true)
                 ? ['template' => 'contact/_access.html.twig', 'vars' => ['contact' => $contact, 'account' => $this->users->findOneBy(['contact' => $contact])]]
                 : null,
         ], new Response(null, $form->isSubmitted() ? 422 : 200));
