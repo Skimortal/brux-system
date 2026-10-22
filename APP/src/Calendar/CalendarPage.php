@@ -131,6 +131,8 @@ final class CalendarPage
             'todos' => $this->todos->findBy(['done' => false, 'group' => null], ['id' => 'ASC']),
             'todo_groups' => $this->todoGroups->findAllWithTodos(),
             'todo_count' => $this->todos->count(['done' => false]),
+            'todos_done' => $this->todos->findRecentlyDone(),
+            'todos_done_count' => $this->todos->count(['done' => true, 'group' => null]),
             'last_sync' => $this->sync->getLastSyncTime(),
             'cleaning_contacts' => $this->contacts->findByRole(ContactRole::CLEANING),
             'return_url' => $this->url($query),

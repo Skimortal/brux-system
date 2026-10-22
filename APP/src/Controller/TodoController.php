@@ -68,6 +68,16 @@ final class TodoController extends AbstractController
         return $this->backToCalendar($request, $this->page, ['side' => 'todos']);
     }
 
+    #[Route('/{id}/wieder-oeffnen', name: 'app_todo_reopen', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function reopen(Todo $todo, Request $request): Response
+    {
+        $this->requireCsrf($request, $this->csrf, 'todo');
+        $todo->setDone(false);
+        $this->em->flush();
+
+        return $this->backToCalendar($request, $this->page, ['side' => 'todos']);
+    }
+
     #[Route('/gruppen', name: 'app_todo_group_create', methods: ['POST'])]
     public function createGroup(Request $request): Response
     {

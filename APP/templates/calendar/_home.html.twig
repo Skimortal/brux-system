@@ -14,6 +14,7 @@
             {% else %}
                 {% if todo_groups is empty %}<p class="small muted" style="padding: 4px 18px 10px">Keine offenen Todos.</p>{% endif %}
             {% endfor %}
+            {{ _self.todo_done(todos_done, todos_done_count, return_url) }}
             {% for group in todo_groups %}
                 <div class="todo-group">
                     <div class="todo-group-head">
@@ -34,6 +35,7 @@
                         {{ _self.todo_row(todo, return_url) }}
                     {% endfor %}
                     {{ _self.todo_add(group, return_url) }}
+                    {{ _self.todo_done(group.doneTodos, group.countDoneTodos, return_url) }}
                 </div>
             {% endfor %}
         </div>
@@ -104,4 +106,23 @@
         <input class="input" name="description" placeholder="{{ group ? 'Todo zu „' ~ group.name ~ '“ …' : 'Neues Todo …' }}" maxlength="255" required aria-label="{{ group ? 'Neues Todo in ' ~ group.name : 'Neues Todo' }}">
         <button class="btn btn-dark btn-icon" type="submit" aria-label="Todo anlegen" title="Anlegen">{{ ux_icon('lucide:plus') }}</button>
     </form>
+{% endmacro %}
+
+{% macro todo_done(done, count, return_url) %}
+    {% if count > 0 %}
+        <details class="todo-done">
+            <summary>{{ ux_icon('lucide:check-check') }} Erledigt ({{ count }})</summary>
+            {% for todo in done %}
+                <div class="todo-row is-done">
+                    <span class="grow">{{ todo.description }} <span class="small muted">· {{ todo.doneAt|de_date('d.M.') }}</span></span>
+                    <form method="post" action="{{ path('app_todo_reopen', {id: todo.id}) }}" data-turbo-frame="_top">
+                        <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
+                        <input type="hidden" name="_return" value="{{ return_url }}">
+                        <button class="btn btn-ghost btn-xs" type="submit" title="Wieder öffnen">{{ ux_icon('lucide:rotate-ccw') }} öffnen</button>
+                    </form>
+                </div>
+            {% endfor %}
+            {% if count > done|length %}<p class="small muted" style="padding: 2px 18px 8px">… und {{ count - done|length }} ältere</p>{% endif %}
+        </details>
+    {% endif %}
 {% endmacro %}

@@ -46,6 +46,24 @@ class TodoGroup extends Base
         return array_values($this->todos->filter(static fn (Todo $t) => !$t->isDone())->toArray());
     }
 
+    /**
+     * The most recently ticked-off todos, newest first.
+     *
+     * @return list<Todo>
+     */
+    public function getDoneTodos(int $limit = 20): array
+    {
+        $done = array_values($this->todos->filter(static fn (Todo $t) => $t->isDone())->toArray());
+        usort($done, static fn (Todo $a, Todo $b) => $b->getDoneAt() <=> $a->getDoneAt());
+
+        return \array_slice($done, 0, $limit);
+    }
+
+    public function countDoneTodos(): int
+    {
+        return $this->todos->filter(static fn (Todo $t) => $t->isDone())->count();
+    }
+
     public function __toString(): string
     {
         return $this->name ?? '';

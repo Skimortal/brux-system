@@ -14,6 +14,10 @@ class Todo extends Base
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $done = false;
 
+    /** When it was ticked off; todos done before this was recorded fall back to their last change. */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $doneAt = null;
+
     /** Deleting a group keeps its todos as general ones. */
     #[ORM\ManyToOne(inversedBy: 'todos')]
     #[ORM\JoinColumn(name: 'todo_group_id', onDelete: 'SET NULL')]
@@ -51,6 +55,12 @@ class Todo extends Base
     public function setDone(bool $done): void
     {
         $this->done = $done;
+        $this->doneAt = $done ? new \DateTimeImmutable() : null;
+    }
+
+    public function getDoneAt(): ?\DateTimeInterface
+    {
+        return $this->doneAt ?? $this->updatedAt ?? $this->createdAt;
     }
 
     public function __toString(): string
