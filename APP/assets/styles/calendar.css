@@ -391,6 +391,9 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
     /* with the panel open the page is narrow: one column, performances first */
     body:has(.prod-drawer) .grid-main-side { grid-template-columns: minmax(0, 1fr); }
     body:has(.prod-drawer) .grid-main-side > aside { order: -1; }
+    body:has(.prod-drawer) .prod-layout { grid-template-columns: minmax(0, 1fr); }
+    body:has(.prod-drawer) .prod-layout > aside { order: -1; }
+    body:has(.prod-drawer) .prod-form { display: flex; }
 }
 @media (max-width: 900px) { .prod-drawer { width: auto; box-shadow: none; } }
 

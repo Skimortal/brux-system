@@ -3,7 +3,7 @@
 
 {% block title %}{{ is_new ? 'Neue Produktion' : production.title }}{% endblock %}
 {% block content %}
-<div class="page">
+<div class="page page-wide">
     <div class="crumbs small muted" style="margin-bottom:10px"><a href="{{ path('app_production_index') }}">Produktionen</a> /</div>
     {% set has_text = production.contentHtml or production.excerptHtml %}
     <header class="prod-hero{{ production.postThumbnailUrl ? ' has-image' : '' }}">
@@ -39,15 +39,17 @@
 
 {% block page %}
 {% import 'production/_rows.html.twig' as rows %}
-<div class="grid-main-side">
+{# wide screens: website texts | organisation | calendar, performances and technicians #}
+<div class="prod-layout">
     <div class="stack-lg">
         {% if production.lastPushError == constant('App\\Service\\WordPressPushService::PENDING') %}
             <div class="note">{{ ux_icon('lucide:clock') }}<span>{{ production.lastPushError }}</span></div>
         {% elseif production.lastPushError %}
             <div class="note note-danger">{{ ux_icon('lucide:triangle-alert') }}<span>Letzte Übertragung an die Website fehlgeschlagen: {{ production.lastPushError }}</span></div>
         {% endif %}
-        {{ form_start(form, {attr: {class: 'stack-lg', novalidate: 'novalidate', enctype: 'multipart/form-data'}}) }}
+        {{ form_start(form, {attr: {id: 'production-form', class: 'prod-form', novalidate: 'novalidate', enctype: 'multipart/form-data'}}) }}
             {% set wp_locked = form.title.vars.disabled %}
+            <div class="prod-col">
             <section class="card">
                 <div class="card-head">
                     <h2>Website-Inhalt</h2>
@@ -89,6 +91,8 @@
                 </div>
             </section>
 
+            </div>
+            <div class="prod-col">
             <section class="card">
                 <div class="card-head"><h2>Technik &amp; Bühne</h2></div>
                 <div class="card-body form">
@@ -112,19 +116,6 @@
                         {{ form_row(form.stayFrom) }}
                         {{ form_row(form.stayUntil) }}
                         {{ form_row(form.stayRoom) }}
-                    </div>
-                </div>
-            </section>
-
-            <section class="card" id="technik">
-                <div class="card-head"><h2>Technik im Haus</h2></div>
-                <div class="card-body form">
-                    <p class="small muted">Für unsere Techniker:innen; sie sehen die Notizen und Dateien bei jedem Termin der Produktion. Wird nicht an die Website übertragen.</p>
-                    <div class="form-grid-2">
-                        {{ form_row(form.techNotesRoom) }}
-                        {{ form_row(form.techNotesLight) }}
-                        {{ form_row(form.techNotesSound) }}
-                        {{ form_row(form.techNotesOther) }}
                     </div>
                 </div>
             </section>
@@ -157,6 +148,7 @@
                     <p data-collection-target="empty" hidden></p>
                 </div>
             </section>
+            </div>
             {% do form.contactPersons.setRendered %}
             {% do form.technicians.setRendered %}
             {# stays at the bottom of the window while scrolling #}
@@ -167,7 +159,9 @@
                     <button class="btn btn-sm btn-ghost btn-danger" type="submit" form="production-delete" style="margin-left:auto">{{ ux_icon('lucide:trash-2') }} Produktion löschen</button>
                 {% endif %}
             </div>
-        {{ form_end(form) }}
+            {{ form_widget(form._token) }}
+        {# the technician notes sit in the side column and belong to the form by its id #}
+        {{ form_end(form, {render_rest: false}) }}
 
         {% if not is_new and is_granted('ROLE_ADMIN') %}
             <form id="production-delete" method="post" action="{{ path('app_production_delete', {id: production.id}) }}" data-turbo-confirm="Produktion mit allen Vorstellungen löschen? Kommt sie aus WordPress, wird sie beim nächsten Import wieder angelegt." hidden>
@@ -194,8 +188,41 @@
             </turbo-frame>
         {% endif %}
         {% if not is_new %}
-            <section class="card" id="dateien">
-                <div class="card-head"><h2>Dateien für die Technik <span class="badge">{{ production.files|length }}</span></h2></div>
+            <section class="card">
+                <div class="card-head">
+                    <h2>Vorstellungen <span class="badge">{{ performances|length }}</span></h2>
+                    {% if can_add_performance %}
+                        <a class="btn btn-sm" href="{{ path('app_production_show', {id: production.id, monat: month|date('Y-m'), panel: 'pe-new', production: production.id, from: performances ? (performances|last).id : null}) }}">{{ ux_icon('lucide:plus') }} Vorstellung</a>
+                    {% endif %}
+                </div>
+                <div>
+                    {% for pe in performances %}
+                        {% set past = pe.date and pe.date < today %}
+                        <a class="key-row{{ panel and panel.performance.id == pe.id ? ' is-selected' }}" href="{{ path('app_production_show', {id: production.id, panel: 'pe-' ~ pe.id, monat: pe.date ? pe.date|date('Y-m') : null}) }}" style="{{ past ? 'opacity:.55' }}">
+                            <span class="grow">
+                                <span class="name" style="display:block">{{ pe.startsAt ? pe.startsAt|de_date('EE d. MMM y') : 'ohne Datum' }}{{ pe.timeFrom ? ' · ' ~ pe.timeFrom : '' }}</span>
+                                <span class="line" style="display:block">{{ pe.room ? pe.room.name : 'ohne Raum' }}{% if pe.quota %} · {{ pe.seatsTaken ?? 0 }}/{{ pe.quota }} reserviert{% endif %}{% if pe.appointment %} · Besetzung{% endif %}</span>
+                            </span>
+                            {{ ux_icon('lucide:chevron-right') }}
+                        </a>
+                    {% else %}
+                        <div class="empty">Noch keine Vorstellungen.</div>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endif %}
+        <section class="card prod-tech" id="technik">
+            <div class="card-head"><h2>{{ ux_icon('lucide:wrench') }} Technik im Haus</h2></div>
+            <div class="card-body form">
+                <p class="small muted">Für unsere Techniker:innen: Sie sehen Notizen und Dateien bei jedem Termin der Produktion. Geht nicht an die Website.</p>
+                {% for field in [form.techNotesRoom, form.techNotesLight, form.techNotesSound, form.techNotesOther] %}
+                    {{ form_row(field, {attr: {form: 'production-form', rows: 3}}) }}
+                {% endfor %}
+            </div>
+            {% if is_new %}
+                <div class="card-foot small muted">Dateien lassen sich nach dem ersten Speichern hochladen.</div>
+            {% else %}
+                <div class="card-head card-subhead"><h3>Dateien <span class="badge">{{ production.files|length }}</span></h3></div>
                 <div>
                     {% for file in production.files %}
                         <div class="key-row file-row">
@@ -220,30 +247,8 @@
                     </label>
                     <span class="small muted">PDF, Bilder, Office, bis 10 MB</span>
                 </form>
-            </section>
-            <section class="card">
-                <div class="card-head">
-                    <h2>Vorstellungen <span class="badge">{{ performances|length }}</span></h2>
-                    {% if can_add_performance %}
-                        <a class="btn btn-sm" href="{{ path('app_production_show', {id: production.id, monat: month|date('Y-m'), panel: 'pe-new', production: production.id, from: performances ? (performances|last).id : null}) }}">{{ ux_icon('lucide:plus') }} Vorstellung</a>
-                    {% endif %}
-                </div>
-                <div>
-                    {% for pe in performances %}
-                        {% set past = pe.date and pe.date < today %}
-                        <a class="key-row{{ panel and panel.performance.id == pe.id ? ' is-selected' }}" href="{{ path('app_production_show', {id: production.id, panel: 'pe-' ~ pe.id, monat: pe.date ? pe.date|date('Y-m') : null}) }}" style="{{ past ? 'opacity:.55' }}">
-                            <span class="grow">
-                                <span class="name" style="display:block">{{ pe.startsAt ? pe.startsAt|de_date('EE d. MMM y') : 'ohne Datum' }}{{ pe.timeFrom ? ' · ' ~ pe.timeFrom : '' }}</span>
-                                <span class="line" style="display:block">{{ pe.room ? pe.room.name : 'ohne Raum' }}{% if pe.quota %} · {{ pe.seatsTaken ?? 0 }}/{{ pe.quota }} reserviert{% endif %}{% if pe.appointment %} · Besetzung{% endif %}</span>
-                            </span>
-                            {{ ux_icon('lucide:chevron-right') }}
-                        </a>
-                    {% else %}
-                        <div class="empty">Noch keine Vorstellungen.</div>
-                    {% endfor %}
-                </div>
-            </section>
-        {% endif %}
+            {% endif %}
+        </section>
     </aside>
 </div>
 
