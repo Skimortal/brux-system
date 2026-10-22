@@ -85,7 +85,7 @@ final class UserController extends AbstractController
             $em->flush();
             $this->addFlash('success', 'Benutzer:in gespeichert.');
 
-            return $this->redirectToRoute('app_user_index', [], 303);
+            return $this->afterSave($request, 'app_user_index', [], 'app_user_edit', $user->getId());
         }
 
         return $this->render('crud/edit.html.twig', [

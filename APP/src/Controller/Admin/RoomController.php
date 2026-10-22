@@ -62,7 +62,7 @@ final class RoomController extends AbstractController
             $em->flush();
             $this->addFlash('success', 'Raum gespeichert.');
 
-            return $this->redirectToRoute('app_room_index', [], 303);
+            return $this->afterSave($request, 'app_room_index', [], 'app_room_edit', $room->getId());
         }
 
         return $this->render('crud/edit.html.twig', [

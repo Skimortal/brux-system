@@ -2,6 +2,7 @@
 
 namespace App\Controller\Admin;
 
+use App\Controller\CrudTrait;
 use App\Entity\ProductionCategory;
 use App\Form\ProductionCategoryType;
 use App\Repository\ProductionCategoryRepository;
@@ -19,6 +20,8 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 #[IsGranted('ROLE_ADMIN')]
 final class ProductionCategoryController extends AbstractController
 {
+    use CrudTrait;
+
     #[Route('', name: 'app_production_category_index', methods: ['GET'])]
     public function index(ProductionCategoryRepository $categories): Response
     {
@@ -72,7 +75,7 @@ final class ProductionCategoryController extends AbstractController
                 $this->addFlash('success', 'Kategorie gespeichert.');
             }
 
-            return $this->redirectToRoute('app_production_category_index', [], 303);
+            return $this->afterSave($request, 'app_production_category_index', [], 'app_production_category_edit', $category->getId());
         }
 
         return $this->render('crud/edit.html.twig', [

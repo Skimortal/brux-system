@@ -201,6 +201,7 @@
             {% if not is_new and is_granted('ROLE_ADMIN') %}
                 <button class="btn btn-ghost btn-danger" type="submit" form="production-delete">{{ ux_icon('lucide:trash-2') }} Löschen</button>
             {% endif %}
+            <button class="btn" type="submit" form="production-form" name="_after" value="back">{{ ux_icon('lucide:corner-up-left') }} Speichern und zurück</button>
             <button class="btn btn-primary" type="submit" form="production-form">{{ ux_icon('lucide:save') }} Speichern</button>
         </div>
         {% if not is_new %}

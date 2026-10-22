@@ -51,7 +51,7 @@ final class CleaningScheduleController extends AbstractController
             $em->flush();
             $this->addFlash('success', 'Reinigungsplan gespeichert.');
 
-            return $this->redirectToRoute('app_cleaning_schedule_index', [], 303);
+            return $this->afterSave($request, 'app_cleaning_schedule_index', [], 'app_cleaning_schedule_edit', $schedule->getId());
         }
 
         return $this->render('crud/edit.html.twig', [

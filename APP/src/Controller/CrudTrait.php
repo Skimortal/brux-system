@@ -14,6 +14,21 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
  */
 trait CrudTrait
 {
+    /**
+     * After saving: stay on the record ("Speichern"), or go back to the list
+     * ("Speichern und zurück" sends _after=back).
+     *
+     * @param array<string, mixed> $listParams
+     */
+    private function afterSave(Request $request, string $listRoute, array $listParams, string $editRoute, ?int $id): RedirectResponse
+    {
+        if ($request->request->get('_after') === 'back' || $id === null) {
+            return $this->redirectToRoute($listRoute, $listParams, 303);
+        }
+
+        return $this->redirectToRoute($editRoute, ['id' => $id], 303);
+    }
+
     private function deleteEntity(Request $request, EntityManagerInterface $em, object $entity, string $tokenId, string $redirectRoute, string $label): RedirectResponse
     {
         if (!$this->isCsrfTokenValid($tokenId, (string) $request->request->get('_token'))) {

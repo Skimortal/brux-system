@@ -88,7 +88,7 @@ final class ProductionController extends AbstractController
                 return $this->redirectToRoute('app_production_show', ['id' => $production->getId(), 'monat' => $start->format('Y-m'), 'panel' => 'pe-new', 'production' => $production->getId(), 'start' => $start->format('Y-m-d\TH:i')], 303);
             }
 
-            return $this->redirectToRoute('app_production_show', ['id' => $production->getId()], 303);
+            return $this->afterSave($request, 'app_production_index', [], 'app_production_show', $production->getId());
         }
 
         $performances = $production->getEvents()->toArray();

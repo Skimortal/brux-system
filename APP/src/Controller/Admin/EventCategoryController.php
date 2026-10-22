@@ -44,7 +44,7 @@ final class EventCategoryController extends AbstractController
             $em->flush();
             $this->addFlash('success', 'Kategorie gespeichert.');
 
-            return $this->redirectToRoute('app_event_category_index', [], 303);
+            return $this->afterSave($request, 'app_event_category_index', [], 'app_event_category_edit', $category->getId());
         }
 
         return $this->render('crud/edit.html.twig', [

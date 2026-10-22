@@ -51,7 +51,7 @@ final class KeyController extends AbstractController
             $em->flush();
             $this->addFlash('success', 'Schlüssel gespeichert.');
 
-            return $this->redirectToRoute('app_key_index', [], 303);
+            return $this->afterSave($request, 'app_key_index', [], 'app_key_edit', $key->getId());
         }
 
         return $this->render('crud/edit.html.twig', [

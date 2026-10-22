@@ -49,7 +49,7 @@ final class ProfileController extends AbstractController
             $em->flush();
             $this->addFlash('success', 'Profil gespeichert.');
 
-            return $this->redirectToRoute('app_profile', [], 303);
+            return $this->redirectToRoute($request->request->get('_after') === 'back' ? $user->getHomeRoute() : 'app_profile', [], 303);
         }
 
         return $this->render('crud/edit.html.twig', [

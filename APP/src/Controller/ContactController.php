@@ -141,7 +141,7 @@ final class ContactController extends AbstractController
             $em->flush();
             $this->addFlash('success', 'Kontakt gespeichert.');
 
-            return $this->redirectToRoute('app_contact_index', ['kategorie' => $contact->getCategory()?->getId()], 303);
+            return $this->afterSave($request, 'app_contact_index', ['kategorie' => $contact->getCategory()?->getId()], 'app_contact_edit', $contact->getId());
         }
 
         return $this->render('crud/edit.html.twig', [

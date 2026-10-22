@@ -64,7 +64,7 @@ final class EmailTemplateController extends AbstractController
             $em->flush();
             $this->addFlash('success', 'Vorlage gespeichert.');
 
-            return $this->redirectToRoute('app_email_template_index', [], 303);
+            return $this->afterSave($request, 'app_email_template_index', [], 'app_email_template_edit', $template->getId());
         }
 
         return $this->render('crud/edit.html.twig', [
