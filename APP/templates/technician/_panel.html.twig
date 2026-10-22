@@ -2,15 +2,11 @@
 {% set p = panel %}
 {% set a = p.appointment %}
 {% set chip = p.performance ? 'Vorstellung' : (a ? a.type.shortLabel : 'Im Haus') %}
-{% if a %}
-    {% set when = a.startDate|de_date('EEEE, d. MMMM y') ~ (a.allDay ? ', ganztägig' : ', ' ~ a.startDate|date('H:i') ~ '–' ~ a.endDate|date('H:i') ~ ' Uhr') ~ (a.room ? ' · ' ~ a.room.name : '') %}
-{% elseif p.performance %}
-    {% set when = p.performance.startsAt|de_date('EEEE, d. MMMM y, HH:mm') ~ ' Uhr' ~ (p.performance.room ? ' · ' ~ p.performance.room.name : '') %}
-{% elseif p.production.stayFrom %}
-    {% set when = 'im Haus ' ~ p.production.stayFrom|de_date('d.M.') ~ (p.production.stayUntil ? '–' ~ p.production.stayUntil|de_date('d.M.y') : '') ~ (p.production.stayRoom ? ' · ' ~ p.production.stayRoom.name : '') %}
-{% else %}
-    {% set when = null %}
-{% endif %}
+{# date, time and room, shown big: that is what a technician needs first #}
+{% set start = a ? a.startDate : (p.performance ? p.performance.startsAt : null) %}
+{% set end = a ? a.endDate : (p.performance ? p.performance.endsAt : null) %}
+{% set all_day = a ? a.allDay : (p.performance ? p.performance.allDay : false) %}
+{% set room = a ? a.room : (p.performance ? p.performance.room : (p.production ? p.production.stayRoom : null)) %}
 <div class="panel-head">
     <div class="top">
         <a class="btn btn-ghost btn-sm" href="{{ cal_path(query, {panel: null}) }}" style="padding-left:6px">{{ ux_icon('lucide:arrow-left') }} Meine Einsätze</a>
@@ -20,7 +16,15 @@
         </span>
     </div>
     <h2 id="panel-title">{{ p.performance ? p.production.title : (a ? a.displayTitle : p.production.title) }}</h2>
-    {% if when %}<div class="when">{{ when }}</div>{% endif %}
+    <div class="tech-facts">
+        {% if start %}
+            <div class="fact">{{ ux_icon('lucide:calendar') }}<strong>{{ start|de_date('EEEE, d. MMMM') }}</strong></div>
+            <div class="fact">{{ ux_icon('lucide:clock') }}<strong>{{ all_day ? 'ganztägig' : start|date('H:i') ~ (end ? '–' ~ end|date('H:i') : '') ~ ' Uhr' }}</strong></div>
+        {% elseif p.production and p.production.stayFrom %}
+            <div class="fact">{{ ux_icon('lucide:house') }}<strong>im Haus {{ p.production.stayFrom|de_date('d.M.') }}{{ p.production.stayUntil ? '–' ~ p.production.stayUntil|de_date('d.M.') }}</strong></div>
+        {% endif %}
+        <div class="fact">{{ ux_icon('lucide:map-pin') }}<strong>{{ room ? room.name : 'ganzes Haus' }}</strong></div>
+    </div>
 </div>
 <div class="panel-body">
     {% if p.performance and p.performance.cancelled %}<div class="note note-danger">{{ ux_icon('lucide:ban') }}<span>Abgesagt</span></div>{% endif %}
