@@ -412,3 +412,12 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .feed-box > summary::-webkit-details-marker { display: none; }
 .cal-side .feed-link { grid-template-columns: minmax(0, 1fr) auto; }
 .cal-side .feed-link .feed-url { grid-column: 1 / -1; }
+
+/* the blocks of the side column (todos, keys; own assignments, open calls) each start
+   with a dark heading bar, so they read as separate areas */
+.side-block + .side-block { margin-top: 12px; border-top: 1px solid var(--line); }
+.side-block-head { background: var(--ink); color: var(--surface); padding: 11px 18px; margin-bottom: 10px; }
+.side-block-head h2 { font-size: 15px; font-weight: 700; }
+.side-block-head h2 svg { opacity: .85; }
+.side-block-head .count { color: inherit; opacity: .7; }
+.side-block-head .btn { background: var(--surface); color: var(--ink); border-color: transparent; }
