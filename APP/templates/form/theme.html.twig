@@ -36,10 +36,13 @@
     {% endif %}
 {% endblock %}
 
-{# A single yes/no field: an on/off switch with its label #}
+{# A single yes/no field: an on/off switch with its label. On a record that is already saved
+   the switch saves at once, unless the field has its own action (e.g. "ganztägig" only
+   switches the form) or opts out with attr data-autosave="false". #}
 {% block checkbox_row %}
+    {% set autosave = (form.parent.vars.data.id ?? null) is not null and attr['data-action'] is not defined and (attr['data-autosave'] ?? 'true') != 'false' %}
     <div class="field switch-row{% if row_attr.class is defined %} {{ row_attr.class }}{% endif %}"{% for k, v in row_attr|filter((v, k) => k != 'class') %} {{ k }}="{{ v }}"{% endfor %}>
-        <label class="check">{{ form_widget(form) }} {{ label is not same as(false) ? label : '' }}</label>
+        <label class="check">{{ form_widget(form, autosave ? {attr: attr|merge({'data-controller': 'switch-save', 'data-action': 'change->switch-save#save'})} : {}) }} {{ label is not same as(false) ? label : '' }}</label>
         {{ form_help(form) }}
         {{ form_errors(form) }}
     </div>
