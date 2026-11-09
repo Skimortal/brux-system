@@ -80,7 +80,7 @@ final class PerformanceType extends AbstractType
             ->add('premiere', CheckboxType::class, [
                 'label' => 'Premiere',
                 'required' => false,
-                'help' => 'Für das Kalender-Abo des Vorstands. Ist keine Vorstellung markiert, gilt die erste als Premiere.',
+                'help' => 'Es gibt nur eine Premiere: Wer sie hier setzt, nimmt sie der bisherigen weg. Ist keine Vorstellung markiert, gilt die erste als Premiere.',
             ])
             ->add('status', EnumType::class, ['class' => EventStatus::class, 'label' => 'Status', 'expanded' => true, 'required' => false, 'placeholder' => false, 'choice_label' => static fn (EventStatus $s) => $s->label(), 'disabled' => $locked('status')])
             ->add('reservationStatus', EnumType::class, ['class' => EventReservationStatus::class, 'label' => 'Online-Reservierung', 'expanded' => true, 'required' => false, 'placeholder' => false, 'choice_label' => static fn (EventReservationStatus $s) => $s === EventReservationStatus::ACTIVE ? 'Aktiv' : 'Inaktiv', 'disabled' => $locked('reservationStatus')])

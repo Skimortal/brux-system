@@ -464,8 +464,16 @@ class ProductionEvent extends Base
         return $this->premiere;
     }
 
+    /** A production has one premiere: marking this one unmarks the others. */
     public function setPremiere(bool $premiere): static
     {
+        if ($premiere && !$this->premiere) {
+            foreach ($this->production?->getEvents() ?? [] as $other) {
+                if ($other !== $this) {
+                    $other->premiere = false;
+                }
+            }
+        }
         $this->premiere = $premiere;
 
         return $this;
