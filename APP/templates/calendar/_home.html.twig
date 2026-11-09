@@ -16,9 +16,9 @@
             {% endfor %}
             {{ _self.todo_done(todos_done, todos_done_count, return_url) }}
             {% for group in todo_groups %}
-                <div class="todo-group">
+                <div class="todo-group" data-controller="collapse" data-collapse-key-value="todo-group-{{ group.id }}">
                     <div class="todo-group-head">
-                        {{ ux_icon('lucide:folder', {class: 'muted'}) }}
+                        <button class="btn btn-ghost btn-icon btn-xs todo-group-toggle" type="button" data-action="collapse#toggle" data-collapse-target="button" aria-expanded="true" aria-label="Gruppe ein- oder ausklappen" title="Ein- oder ausklappen">{{ ux_icon('lucide:chevron-down') }}</button>
                         <form class="edit" method="post" action="{{ path('app_todo_group_update', {id: group.id}) }}" data-turbo-frame="_top" data-controller="autosubmit">
                             <input type="hidden" name="_token" value="{{ csrf_token('todo') }}">
                             <input type="hidden" name="_return" value="{{ return_url }}">
@@ -31,11 +31,13 @@
                             <button class="btn btn-ghost btn-icon btn-xs" type="submit" aria-label="Gruppe löschen" title="Gruppe löschen">{{ ux_icon('lucide:trash-2') }}</button>
                         </form>
                     </div>
-                    {% for todo in group.openTodos %}
-                        {{ _self.todo_row(todo, return_url) }}
-                    {% endfor %}
-                    {{ _self.todo_add(group, return_url) }}
-                    {{ _self.todo_done(group.doneTodos, group.countDoneTodos, return_url) }}
+                    <div class="todo-group-body">
+                        {% for todo in group.openTodos %}
+                            {{ _self.todo_row(todo, return_url) }}
+                        {% endfor %}
+                        {{ _self.todo_add(group, return_url) }}
+                        {{ _self.todo_done(group.doneTodos, group.countDoneTodos, return_url) }}
+                    </div>
                 </div>
             {% endfor %}
         </div>

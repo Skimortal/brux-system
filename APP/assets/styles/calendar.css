@@ -332,6 +332,11 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .todo-group-head .edit input:focus { outline: none; box-shadow: none; border-bottom: 1px solid var(--accent); }
 .todo-group-head .count { color: var(--muted); font-size: 12.5px; }
 .todo-group .todo-row { padding-left: 30px; }
+.todo-group-toggle { margin-left: -6px; color: var(--muted); }
+.todo-group-toggle svg { transition: transform .15s ease; }
+.todo-group.is-collapsed .todo-group-toggle svg { transform: rotate(-90deg); }
+.todo-group.is-collapsed .todo-group-body { display: none; }
+.todo-group.is-collapsed .todo-group-head { padding-bottom: 10px; }
 .todo-add.in-group { padding: 4px 18px 10px 30px; }
 .todo-add.in-group .input { height: 32px; font-size: 13px; }
 .todo-add.in-group .btn { height: 32px; width: 32px; }
