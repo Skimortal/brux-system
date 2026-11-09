@@ -46,6 +46,7 @@
             <template data-collection-target="prototype">{{ _self.volunteer_row(form.appointmentVolunteers.vars.prototype) }}</template>
             <p class="small muted" data-collection-target="empty" {% if form.appointmentVolunteers|length %}hidden{% endif %}>Noch niemand eingeteilt.</p>
         </div>
+        {% if form.openCall is defined %}{{ form_row(form.openCall) }}{% endif %}
     </div>
     {% do form.appointmentTechnicians.setRendered %}
     {% do form.appointmentVolunteers.setRendered %}

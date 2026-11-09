@@ -11,6 +11,7 @@ use App\Repository\ProductionRepository;
 use App\Repository\RoomRepository;
 use App\Service\AppointmentManager;
 use App\Service\FieldOwnership;
+use App\Service\OpenCall;
 use App\Service\WordPressPushService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -30,7 +31,7 @@ final class PerformanceController extends AbstractController
     }
 
     #[Route('/neu', name: 'app_performance_new', methods: ['POST'])]
-    public function new(Request $request, EntityManagerInterface $em, FieldOwnership $ownership, WordPressPushService $push, ProductionRepository $productions): Response
+    public function new(Request $request, EntityManagerInterface $em, FieldOwnership $ownership, WordPressPushService $push, ProductionRepository $productions, AppointmentManager $manager, OpenCall $openCall): Response
     {
         $performance = new ProductionEvent();
         // the form has one price row per price of the production, so it needs the production up front
@@ -51,6 +52,11 @@ final class PerformanceController extends AbstractController
                 $this->addFlash('warning', 'Angelegt, aber die Übertragung an die Website ist fehlgeschlagen: ' . ($result['message'] ?? ''));
             } else {
                 $this->addFlash('success', 'Vorstellung angelegt.');
+            }
+            if ($form->get('openCall')->getData()) {
+                $staffing = $manager->staffingFor($performance);
+                $manager->saveStaffing($performance, $staffing);
+                $this->addFlash(...OpenCall::message($openCall->send($staffing)));
             }
 
             return $this->backToCalendar($request, $this->page, ['panel' => 'pe-' . $performance->getId(), 'date' => $performance->getDate()?->format('Y-m-d')]);

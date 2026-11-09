@@ -15,6 +15,7 @@
     </div>
     {{ form_row(f.room) }}
     {{ form_row(f.premiere) }}
+    {% if f.openCall is defined %}{{ form_row(f.openCall) }}{% endif %}
     <div class="form-grid-2">
         <div class="field">
             <span class="field-label">Status</span>

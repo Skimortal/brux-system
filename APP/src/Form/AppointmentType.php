@@ -189,6 +189,15 @@ final class AppointmentType extends AbstractType
                 'row_attr' => ['data-appointment-form-target' => 'productionOnly'],
             ]);
         }
+        if (!$staffing && $appointment?->getId() === null) {
+            // sent out right after saving, like the requests to technicians assigned here
+            $builder->add('openCall', CheckboxType::class, [
+                'label' => 'Gleich an alle Techniker:innen ausschreiben',
+                'mapped' => false,
+                'required' => false,
+                'help' => 'Alle aus der Kategorie Techniker bekommen beim Speichern eine Mail und können Interesse melden. Bei Serien wird nur der erste Termin ausgeschrieben.',
+            ]);
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void

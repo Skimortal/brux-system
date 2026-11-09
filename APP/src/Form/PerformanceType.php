@@ -64,6 +64,16 @@ final class PerformanceType extends AbstractType
             ]);
         }
 
+        if ($performance->getId() === null) {
+            // the staffing only exists once the performance is saved; this sends it out right after
+            $builder->add('openCall', CheckboxType::class, [
+                'label' => 'Technik gleich ausschreiben',
+                'mapped' => false,
+                'required' => false,
+                'help' => 'Alle aus der Kategorie Techniker bekommen beim Speichern eine Mail und können Interesse melden.',
+            ]);
+        }
+
         $builder
             ->add('date', DateType::class, ['label' => 'Datum', 'widget' => 'single_text', 'disabled' => $locked('date'), 'constraints' => [new NotNull(message: 'Bitte ein Datum angeben.')]])
             ->add('timeFrom', TimeType::class, ['label' => 'Beginn', 'widget' => 'single_text', 'input' => 'string', 'input_format' => 'H:i', 'with_seconds' => false, 'required' => false, 'disabled' => $locked('timeFrom')])

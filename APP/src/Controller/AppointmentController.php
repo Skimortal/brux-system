@@ -6,6 +6,7 @@ use App\Calendar\CalendarPage;
 use App\Entity\Appointment;
 use App\Form\AppointmentType;
 use App\Service\AppointmentManager;
+use App\Service\OpenCall;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,7 +25,7 @@ final class AppointmentController extends AbstractController
     }
 
     #[Route('/neu', name: 'app_appointment_create', methods: ['POST'])]
-    public function create(Request $request): Response
+    public function create(Request $request, OpenCall $openCall): Response
     {
         $appointment = new Appointment();
         $form = $this->createForm(AppointmentType::class, $appointment);
@@ -34,6 +35,9 @@ final class AppointmentController extends AbstractController
             [$frequency, $until] = $this->recurrence($form);
             $this->manager->create($appointment, $frequency, $until);
             $this->addFlash('success', $frequency ? 'Terminserie angelegt.' : 'Termin angelegt.');
+            if ($form->has('openCall') && $form->get('openCall')->getData() && $appointment->getType()->hasAssignments()) {
+                $this->addFlash(...OpenCall::message($openCall->send($appointment)));
+            }
 
             // the dialog closes after saving
             return $this->backToCalendar($request, $this->page, ['panel' => null]);

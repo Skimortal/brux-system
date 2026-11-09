@@ -4,15 +4,11 @@ namespace App\Controller;
 
 use App\Calendar\CalendarPage;
 use App\Entity\Appointment;
-use App\Entity\Contact;
 use App\Entity\ProductionEvent;
-use App\Enum\ContactRole;
-use App\Repository\ContactRepository;
 use App\Service\AppointmentManager;
-use App\Service\TechnicianNotifier;
+use App\Service\OpenCall;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Clock\ClockInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -30,9 +26,7 @@ final class OpenCallController extends AbstractController
         private readonly CalendarPage $page,
         private readonly EntityManagerInterface $em,
         private readonly CsrfTokenManagerInterface $csrf,
-        private readonly TechnicianNotifier $notifier,
-        private readonly ContactRepository $contacts,
-        private readonly ClockInterface $clock,
+        private readonly OpenCall $openCall,
     ) {
     }
 
@@ -80,23 +74,7 @@ final class OpenCallController extends AbstractController
 
     private function sendOut(Appointment $appointment, Request $request): Response
     {
-        if ($appointment->getEndDate() <= $this->clock->now()) {
-            $this->addFlash('danger', 'Der Termin ist schon vorbei.');
-
-            return $this->backToCalendar($request, $this->page);
-        }
-        $appointment->setOpenCallAt($this->clock->now());
-        $this->em->flush();
-
-        // everyone in the technicians' category with an address who has no assignment here yet
-        $recipients = array_filter(
-            $this->contacts->queryByRole(ContactRole::TECHNICIAN)->getQuery()->getResult(),
-            static fn (Contact $c) => trim((string) $c->getEmail()) !== '' && $appointment->getAssignmentOf($c) === null,
-        );
-        $sent = $this->notifier->openCall($appointment, $recipients);
-        $this->addFlash($sent > 0 ? 'success' : 'warning', $sent > 0
-            ? sprintf('Ausgeschrieben an %d Techniker:in%s.', $sent, $sent === 1 ? '' : 'nen')
-            : 'Ausgeschrieben, aber niemand bekam eine Mail (keine Techniker:innen mit E-Mail-Adresse ohne Einteilung).');
+        $this->addFlash(...OpenCall::message($this->openCall->send($appointment)));
 
         return $this->backToCalendar($request, $this->page);
     }
