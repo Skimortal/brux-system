@@ -1,0 +1,9 @@
+{% extends 'email/_layout.html.twig' %}
+{% block subject %}Eingeteilt: {{ appointment.title }} am {{ appointment.date }}{% endblock %}
+{% block content %}
+    <p>Hallo {{ name }},</p>
+    <p>danke, dass du mithilfst! Wir haben dich für diesen Termin eingeteilt:</p>
+    {{ include('email/_appointment.html.twig') }}
+    {% if more ?? 0 %}<p>Dazu kommen <strong>{{ more }} weitere Termine</strong> (z. B. einer Serie).</p>{% endif %}
+    <p>Falls du doch nicht kannst, antworte bitte einfach auf diese Mail.</p>
+{% endblock %}

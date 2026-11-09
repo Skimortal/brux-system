@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\Appointment;
 use App\Entity\AppointmentTechnician;
+use App\Entity\AppointmentVolunteer;
 use App\Entity\Contact;
 use App\Entity\User;
 use App\Enum\EmailTemplateKey;
@@ -19,7 +20,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 /**
  * E-mails around technician assignments: to the technician when assigned or confirmed and
- * for open calls, to the office when a technician answers.
+ * for open calls, to the office when a technician answers. Volunteers hear when assigned.
  */
 class TechnicianNotifier
 {
@@ -77,6 +78,27 @@ class TechnicianNotifier
                 'url' => $this->officeUrl($appointment),
             ], replyTo: $contact->getEmail()),
         };
+    }
+
+    /**
+     * Mail to a volunteer newly assigned (several for a series), about the first one still to
+     * come; past appointments stay quiet. Only for information, there is nothing to answer.
+     *
+     * @param list<AppointmentVolunteer> $assignments same person, by date
+     */
+    public function volunteerAssigned(array $assignments): void
+    {
+        $now = $this->clock->now();
+        $upcoming = array_values(array_filter($assignments, static fn (AppointmentVolunteer $a) => $a->getAppointment()?->getEndDate() !== null && $a->getAppointment()->getEndDate() >= $now));
+        if ($upcoming === [] || ($contact = $upcoming[0]->getContact()) === null) {
+            return;
+        }
+        $tasks = array_map(static fn ($task) => $task->label(), $upcoming[0]->getTaskEnums());
+        $this->send(EmailTemplateKey::VOLUNTEER_ASSIGNED, $contact->getEmail(), [
+            'name' => $contact->getName(),
+            'appointment' => ['tasks' => $tasks !== [] ? implode(', ', $tasks) : null] + $this->describe($upcoming[0]->getAppointment(), null),
+            'more' => \count($upcoming) - 1,
+        ]);
     }
 
     /**
