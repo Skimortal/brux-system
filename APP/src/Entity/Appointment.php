@@ -110,6 +110,9 @@ class Appointment
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $recurrenceEndDate = null;
 
+    /** Not stored: the people assigned while saving this hear nothing (e.g. a copy). */
+    private bool $quiet = false;
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
@@ -120,6 +123,7 @@ class Appointment
     public function __clone()
     {
         $this->id = null;
+        $this->quiet = false;
         $this->createdAt = new \DateTime();
         $this->parentAppointment = null;
         $this->recurrenceFrequency = null;
@@ -497,5 +501,17 @@ class Appointment
     public function isPast(?\DateTimeInterface $now = null): bool
     {
         return $this->endDate !== null && $this->endDate < ($now ?? new \DateTimeImmutable());
+    }
+
+    public function isQuiet(): bool
+    {
+        return $this->quiet;
+    }
+
+    public function markQuiet(): static
+    {
+        $this->quiet = true;
+
+        return $this;
     }
 }

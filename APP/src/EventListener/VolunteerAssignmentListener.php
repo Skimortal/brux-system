@@ -36,7 +36,7 @@ final class VolunteerAssignmentListener
             }
         }
         foreach ($uow->getScheduledEntityInsertions() as $entity) {
-            if ($entity instanceof AppointmentVolunteer && !isset($removed[self::key($entity)])) {
+            if ($entity instanceof AppointmentVolunteer && !$entity->getAppointment()?->isQuiet() && !isset($removed[self::key($entity)])) {
                 $this->added[] = $entity;
             }
         }

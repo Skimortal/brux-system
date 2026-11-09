@@ -81,7 +81,8 @@ final class AppointmentManager
 
     public function duplicate(Appointment $appointment): Appointment
     {
-        $copy = clone $appointment;
+        // a copy keeps its people but is not news for them: the date is usually changed next
+        $copy = (clone $appointment)->markQuiet();
         if (!$copy->getType()->hasDerivedTitle()) {
             $title = (string) $copy->getTitle();
             $copy->setTitle(str_ends_with($title, '(Kopie)') ? $title : $title . ' (Kopie)');

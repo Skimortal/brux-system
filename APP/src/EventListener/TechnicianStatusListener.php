@@ -37,7 +37,7 @@ final class TechnicianStatusListener
             }
         }
         foreach ($uow->getScheduledEntityInsertions() as $entity) {
-            if ($entity instanceof AppointmentTechnician && ($removed[self::key($entity)] ?? null) !== $entity->getStatus()) {
+            if ($entity instanceof AppointmentTechnician && !$entity->getAppointment()?->isQuiet() && ($removed[self::key($entity)] ?? null) !== $entity->getStatus()) {
                 $this->changed[] = $entity;
             }
         }
