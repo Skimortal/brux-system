@@ -71,6 +71,57 @@ final class WebsiteContent
         }
     }
 
+    /**
+     * The texts visitors read on the website, by heading, for reading here (technicians,
+     * board). Leaves the production as it is; the stock general info is left out.
+     *
+     * @return array<string, string> heading => HTML
+     */
+    public function readableSections(Production $production): array
+    {
+        $fields = $this->sectionsOf($production);
+        $headings = ['intro' => 'Stückbeschreibung', 'description' => 'Stückbeschreibung', 'pressQuotes' => 'Pressestimmen', 'credits' => 'Credits', 'additionalInfo' => 'Zusätzliche Informationen', 'generalInfo' => 'Allgemeine Infos'];
+        $sections = [];
+        foreach ($headings as $field => $heading) {
+            $html = trim((string) ($fields[$field] ?? ''));
+            if ($html === '' || ($field === 'generalInfo' && $html === self::DEFAULT_GENERAL_INFO)) {
+                continue;
+            }
+            // the intro comes before the description and reads as its start
+            $sections[$heading] = isset($sections[$heading]) ? $sections[$heading] . $html : $html;
+        }
+
+        return $sections;
+    }
+
+    /** The infoscreen text of a production as plain text, '' when there is none. */
+    public function infoscreenText(Production $production): string
+    {
+        return self::plainText($this->sectionsOf($production)['shortDescription'] ?? null);
+    }
+
+    /**
+     * The section fields, from the production or read from its post, without changing it.
+     *
+     * @return array<string, string|null>
+     */
+    private function sectionsOf(Production $production): array
+    {
+        if ($this->hasSections($production)) {
+            $fields = [];
+            foreach (array_keys(self::SECTIONS) as $field) {
+                $fields[$field] = $production->{'get' . ucfirst($field)}();
+            }
+
+            return $fields;
+        }
+        if (trim((string) $production->getContentHtml()) === '') {
+            return [];
+        }
+
+        return $this->parse($production->getContentHtml()) ?: ['description' => $production->getContentHtml()];
+    }
+
     /** Splits the post again, replacing what the sections hold (post newly taken from WordPress). */
     public function refillSections(Production $production): void
     {
@@ -283,5 +334,22 @@ final class WebsiteContent
         }
 
         return $html;
+    }
+
+    /** WordPress HTML as clean plain text with paragraphs. */
+    public static function plainText(?string $html): string
+    {
+        if ($html === null || trim($html) === '') {
+            return '';
+        }
+        // sections the website hides (empty template paragraphs)
+        $html = preg_replace('#<(p|h[1-6]|ul|ol)\b[^>]*class="[^"]*\bdisplaynone\b[^"]*"[^>]*>.*?</\1>#is', '', $html) ?? $html;
+        $text = preg_replace('#<(br|/p|/h[1-6]|/li|/div|/blockquote|/figure)\b[^>]*>#i', "\n", $html) ?? $html;
+        $text = html_entity_decode(strip_tags($text), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
+        $text = str_replace("\u{00A0}", ' ', $text);
+        $lines = array_map('trim', preg_split('/\R/u', $text) ?: []);
+        $text = implode("\n", $lines);
+
+        return trim(preg_replace("/\n{3,}/", "\n\n", $text) ?? $text);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Twig;
 
 use App\Calendar\CalendarQuery;
+use App\Service\WebsiteContent;
 use App\Service\WordPressPushService;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -16,6 +17,7 @@ final class AppExtension extends AbstractExtension
         private readonly UrlGeneratorInterface $urls,
         private readonly WordPressPushService $push,
         private readonly RequestStack $requests,
+        private readonly WebsiteContent $content,
     ) {
     }
 
@@ -36,23 +38,14 @@ final class AppExtension extends AbstractExtension
             new TwigFunction('cal_route', $this->calendarRoute(...)),
             // whether the WordPress write API is set up (reservations, pushes)
             new TwigFunction('wordpress_connected', fn (): bool => $this->push->isConfigured()),
+            // heading => HTML of a production's website texts, for reading in the app
+            new TwigFunction('website_sections', $this->content->readableSections(...)),
         ];
     }
 
     public function plainText(?string $html): string
     {
-        if ($html === null || trim($html) === '') {
-            return '';
-        }
-        // sections the website hides (empty template paragraphs)
-        $html = preg_replace('#<(p|h[1-6]|ul|ol)\b[^>]*class="[^"]*\bdisplaynone\b[^"]*"[^>]*>.*?</\1>#is', '', $html) ?? $html;
-        $text = preg_replace('#<(br|/p|/h[1-6]|/li|/div|/blockquote|/figure)\b[^>]*>#i', "\n", $html) ?? $html;
-        $text = html_entity_decode(strip_tags($text), \ENT_QUOTES | \ENT_HTML5, 'UTF-8');
-        $text = str_replace("\u{00A0}", ' ', $text);
-        $lines = array_map('trim', preg_split('/\R/u', $text) ?: []);
-        $text = implode("\n", $lines);
-
-        return trim(preg_replace("/\n{3,}/", "\n\n", $text) ?? $text);
+        return WebsiteContent::plainText($html);
     }
 
     public function formatDate(?\DateTimeInterface $date, string $pattern = 'd.M.y'): string

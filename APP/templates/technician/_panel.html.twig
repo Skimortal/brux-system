@@ -85,4 +85,6 @@
     {% elseif a and a.description %}
         <section class="panel-section stack-sm"><h3>Beschreibung</h3><div style="white-space:pre-line">{{ a.description }}</div></section>
     {% endif %}
+
+    {% if p.production %}{{ include('calendar/panel/_website_info.html.twig', {production: p.production, collapsed: true}) }}{% endif %}
 </div>

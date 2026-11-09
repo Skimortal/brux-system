@@ -28,7 +28,5 @@
     {% if pe and pe.quota and not pe.cancelled %}
         <p class="small">{{ pe.seatsTaken ?? 0 }} von {{ pe.quota }} Plätzen reserviert</p>
     {% endif %}
-    {% if production and production.permalink %}
-        <a class="btn btn-sm" href="{{ production.permalink }}" target="_blank" rel="noopener">{{ ux_icon('lucide:globe') }} Auf der Website ansehen</a>
-    {% endif %}
+    {% if production %}{{ include('calendar/panel/_website_info.html.twig', {production: production, with_image: true}) }}{% endif %}
 </div>

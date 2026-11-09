@@ -1,0 +1,28 @@
+{# The website texts of a production, read-only. production; collapsed: folded away as "Weitere Infos" (technicians); with_image: the production image on top (board) #}
+{% set sections = website_sections(production) %}
+{% set image = (with_image ?? false) ? production.postThumbnailUrl : null %}
+{% if sections or image %}
+    {% if collapsed ?? false %}
+        <details class="panel-section website-info">
+            <summary><h3>{{ ux_icon('lucide:info') }} Weitere Infos</h3>{{ ux_icon('lucide:chevron-down', {class: 'website-info-chevron'}) }}</summary>
+            {{ _self.body(production, sections, image) }}
+        </details>
+    {% else %}
+        <section class="panel-section website-info">
+            {{ _self.body(production, sections, image) }}
+        </section>
+    {% endif %}
+{% endif %}
+
+{% macro body(production, sections, image) %}
+    {% if image %}<img class="website-info-image" src="{{ image }}" alt="{{ production.title }}" loading="lazy">{% endif %}
+    {% for heading, html in sections %}
+        <div class="website-info-section">
+            <h4>{{ heading }}</h4>
+            <div class="website-info-text">{{ html|sanitize_html('app.website_content') }}</div>
+        </div>
+    {% endfor %}
+    {% if production.permalink %}
+        <a class="btn btn-sm" href="{{ production.permalink }}" target="_blank" rel="noopener">{{ ux_icon('lucide:globe') }} Auf der Website ansehen</a>
+    {% endif %}
+{% endmacro %}
