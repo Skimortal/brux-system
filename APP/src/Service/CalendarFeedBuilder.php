@@ -6,9 +6,13 @@ use App\Calendar\CalendarBuilder;
 use App\Calendar\CalendarEntry;
 use App\Calendar\EntryGroup;
 use App\Entity\CalendarFeed;
+use App\Entity\Production;
 use App\Entity\Room;
 use App\Enum\FeedProfile;
+use App\Repository\AppointmentRepository;
 use App\Repository\AppointmentTechnicianRepository;
+use App\Repository\ProductionEventRepository;
+use App\Repository\ProductionRepository;
 use App\Repository\RoomRepository;
 use Symfony\Component\Clock\ClockInterface;
 
@@ -27,6 +31,10 @@ class CalendarFeedBuilder
         private readonly AppointmentTechnicianRepository $assignments,
         private readonly RoomRepository $rooms,
         private readonly ClockInterface $clock,
+        private readonly ProductionRepository $productions,
+        private readonly ProductionEventRepository $performances,
+        private readonly AppointmentRepository $appointments,
+        private readonly WebsiteContent $content,
     ) {
     }
 
@@ -74,6 +82,7 @@ class CalendarFeedBuilder
                 $entry->premiere && $profile === FeedProfile::BOARD && $part === 'veranstaltungen' => 'PREMIERE: ',
                 default => '',
             };
+            $production = $this->productionOf($entry->panel);
             $events[] = [
                 'uid' => $entry->panel . '-' . $entry->start->format('Ymd'),
                 'summary' => $prefix . $entry->title,
@@ -81,7 +90,8 @@ class CalendarFeedBuilder
                 'end' => $entry->end,
                 'allDay' => $entry->allDay,
                 'location' => $entry->roomId !== null ? ($roomNames[$entry->roomId] ?? null) : null,
-                'description' => $entry->meta,
+                'description' => $this->describe($entry->meta, $production),
+                'url' => $production?->getPermalink(),
                 'status' => $entry->cancelled ? 'CANCELLED' : ($entry->tentative ? 'TENTATIVE' : 'CONFIRMED'),
             ];
         }
@@ -118,12 +128,44 @@ class CalendarFeedBuilder
                 'end' => $appointment->isAllDay() ? $end->setTime(0, 0)->modify('+1 day') : $end,
                 'allDay' => $appointment->isAllDay(),
                 'location' => $appointment->getRoom() !== null ? ($roomNames[$appointment->getRoom()->getId()] ?? null) : null,
-                'description' => trim('Status: ' . $assignment->getStatus()->label() . ($tasks !== [] ? "\nAufgabe: " . implode(', ', $tasks) : '')),
+                'description' => $this->describe(trim('Status: ' . $assignment->getStatus()->label() . ($tasks !== [] ? "\nAufgabe: " . implode(', ', $tasks) : '')), $appointment->getProduction() ?? $performance?->getProduction()),
+                'url' => ($appointment->getProduction() ?? $performance?->getProduction())?->getPermalink(),
                 'status' => $assignment->isConfirmed() ? 'CONFIRMED' : 'TENTATIVE',
             ];
         }
 
         return $events;
+    }
+
+    /**
+     * The entry's own details, then the infoscreen text and the website link of its
+     * production. Most calendar apps only show the description, so the link goes there too.
+     */
+    private function describe(?string $details, ?Production $production): string
+    {
+        $parts = [trim((string) $details)];
+        if ($production !== null) {
+            $parts[] = $this->content->infoscreenText($production);
+            $parts[] = (string) $production->getPermalink();
+        }
+
+        return implode("\n\n", array_filter($parts, static fn (string $p) => $p !== ''));
+    }
+
+    /** The production behind a calendar entry (performance, appointment or stay). */
+    private function productionOf(string $panel): ?Production
+    {
+        [$kind, $id] = array_pad(explode('-', $panel, 2), 2, '');
+        if (!ctype_digit($id)) {
+            return null;
+        }
+
+        return match ($kind) {
+            'p' => $this->productions->find((int) $id),
+            'pe' => $this->performances->find((int) $id)?->getProduction(),
+            'a' => $this->appointments->find((int) $id)?->getProduction(),
+            default => null,
+        };
     }
 
     /**
@@ -161,6 +203,9 @@ class CalendarFeedBuilder
             }
             if ($event['description']) {
                 $lines[] = 'DESCRIPTION:' . self::escape($event['description']);
+            }
+            if ($event['url'] ?? null) {
+                $lines[] = 'URL:' . $event['url'];
             }
             $lines[] = 'STATUS:' . $event['status'];
             $lines[] = 'TRANSP:OPAQUE';
