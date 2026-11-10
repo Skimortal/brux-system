@@ -50,6 +50,16 @@
                     <input class="input" type="email" id="office-email" name="office_email" value="{{ office_email }}" required>
                     <p class="help small muted">Zusagen, Absagen und Interesse an ausgeschriebenen Terminen.</p>
                 </div>
+                <div class="field">
+                    <label class="check"><input type="checkbox" name="digest_enabled" value="1" {{ digest_enabled ? 'checked' }}> Sammelmail an Techniker:innen und Freiwillige</label>
+                    <p class="help small muted">Einteilungen, Bestätigungen und Ausschreibungen kommen einmal täglich gesammelt in einer Mail. Termine in den nächsten 48 Stunden gehen sofort raus.</p>
+                </div>
+                <div class="field">
+                    <label for="digest-hour">Sammelmail täglich um</label>
+                    <select class="input" id="digest-hour" name="digest_hour">
+                        {% for hour in 6..22 %}<option value="{{ hour }}" {{ hour == digest_hour ? 'selected' }}>{{ '%02d'|format(hour) }}:00 Uhr</option>{% endfor %}
+                    </select>
+                </div>
             </div>
             <div class="card-foot"><button class="btn btn-primary btn-sm" type="submit">{{ ux_icon('lucide:save') }} Speichern</button></div>
         </form>

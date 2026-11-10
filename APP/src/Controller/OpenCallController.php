@@ -74,7 +74,7 @@ final class OpenCallController extends AbstractController
 
     private function sendOut(Appointment $appointment, Request $request): Response
     {
-        $this->addFlash(...OpenCall::message($this->openCall->send($appointment)));
+        $this->addFlash(...$this->openCall->message($appointment, $this->openCall->send($appointment)));
 
         return $this->backToCalendar($request, $this->page);
     }

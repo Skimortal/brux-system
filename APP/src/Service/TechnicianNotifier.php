@@ -6,7 +6,9 @@ use App\Entity\Appointment;
 use App\Entity\AppointmentTechnician;
 use App\Entity\AppointmentVolunteer;
 use App\Entity\Contact;
+use App\Entity\DigestItem;
 use App\Entity\User;
+use App\Enum\DigestKind;
 use App\Enum\EmailTemplateKey;
 use App\Enum\TechnicianStatus;
 use App\Repository\UserRepository;
@@ -21,6 +23,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 /**
  * E-mails around technician assignments: to the technician when assigned or confirmed and
  * for open calls, to the office when a technician answers. Volunteers hear when assigned.
+ * News for technicians and volunteers waits for the daily digest unless it is short notice.
  */
 class TechnicianNotifier
 {
@@ -35,6 +38,7 @@ class TechnicianNotifier
         private readonly LoggerInterface $logger,
         private readonly AppSettings $settings,
         private readonly UserRepository $users,
+        private readonly TechnicianDigest $digest,
     ) {
     }
 
@@ -55,6 +59,17 @@ class TechnicianNotifier
         $appointment = $assignment->getAppointment();
         $contact = $assignment->getContact();
         if ($contact === null) {
+            return;
+        }
+        $kind = match ($assignment->getStatus()) {
+            TechnicianStatus::ASSIGNED => DigestKind::ASSIGNED,
+            TechnicianStatus::CONFIRMED => DigestKind::CONFIRMED,
+            // answers go to the office right away
+            default => null,
+        };
+        if ($kind !== null && $this->digest->defers($appointment)) {
+            $this->digest->queue($kind, $contact, $appointment, \count($upcoming) - 1);
+
             return;
         }
         $context = [
@@ -93,6 +108,11 @@ class TechnicianNotifier
         if ($upcoming === [] || ($contact = $upcoming[0]->getContact()) === null) {
             return;
         }
+        if ($this->digest->defers($upcoming[0]->getAppointment())) {
+            $this->digest->queue(DigestKind::VOLUNTEER, $contact, $upcoming[0]->getAppointment(), \count($upcoming) - 1);
+
+            return;
+        }
         $tasks = array_map(static fn ($task) => $task->label(), $upcoming[0]->getTaskEnums());
         $this->send(EmailTemplateKey::VOLUNTEER_ASSIGNED, $contact->getEmail(), [
             'name' => $contact->getName(),
@@ -102,16 +122,22 @@ class TechnicianNotifier
     }
 
     /**
-     * Sends the open call to the given technicians.
+     * Sends the open call to the given technicians, or adds it to their digest.
      *
      * @param iterable<Contact> $contacts
      *
-     * @return int how many mails went out
+     * @return int how many people get it (by mail now or with the digest)
      */
     public function openCall(Appointment $appointment, iterable $contacts): int
     {
         $sent = 0;
+        $deferred = $this->digest->defers($appointment);
         foreach ($contacts as $contact) {
+            if ($deferred) {
+                $this->digest->queue(DigestKind::OPEN_CALL, $contact, $appointment);
+                ++$sent;
+                continue;
+            }
             $sent += $this->send(EmailTemplateKey::TECHNICIAN_OPEN_CALL, $contact->getEmail(), [
                 'name' => $contact->getName(),
                 'appointment' => $this->describe($appointment, null),
@@ -122,6 +148,82 @@ class TechnicianNotifier
         }
 
         return $sent;
+    }
+
+    /**
+     * The daily digest for one person: what is still true of the news collected for them.
+     *
+     * @param list<DigestItem> $items same person, earliest appointment first
+     *
+     * @return bool whether a mail went out (false when nothing is left to tell)
+     */
+    public function digest(Contact $contact, array $items): bool
+    {
+        $now = $this->clock->now();
+        $account = $this->users->findOneBy(['contact' => $contact]) !== null;
+        $sections = ['assigned' => [], 'confirmed' => [], 'open_calls' => [], 'volunteer' => []];
+        $seen = [];
+        foreach ($items as $item) {
+            $appointment = $item->getAppointment();
+            if ($appointment === null || $appointment->getEndDate() === null || $appointment->getEndDate() < $now || isset($seen[$item->getKind()->value . '|' . $appointment->getId()])) {
+                continue;
+            }
+            $seen[$item->getKind()->value . '|' . $appointment->getId()] = true;
+            $assignment = $appointment->getAssignmentOf($contact);
+            $line = ['more' => $item->getMore()];
+            // only what still holds: the office may have changed its mind since
+            switch ($item->getKind()) {
+                case DigestKind::ASSIGNED:
+                    if ($assignment?->getStatus() !== TechnicianStatus::ASSIGNED) {
+                        continue 2;
+                    }
+                    $sections['assigned'][] = $line + [
+                        'appointment' => $this->describe($appointment, $assignment),
+                        'accept_url' => $account ? null : $this->answerUrl($assignment, TechnicianStatus::ACCEPTED),
+                        'decline_url' => $account ? null : $this->answerUrl($assignment, TechnicianStatus::DECLINED),
+                    ];
+                    break;
+                case DigestKind::CONFIRMED:
+                    if ($assignment?->getStatus() !== TechnicianStatus::CONFIRMED) {
+                        continue 2;
+                    }
+                    $sections['confirmed'][] = $line + ['appointment' => $this->describe($appointment, $assignment)];
+                    break;
+                case DigestKind::OPEN_CALL:
+                    if ($appointment->getOpenCallAt() === null || $assignment !== null) {
+                        continue 2;
+                    }
+                    $sections['open_calls'][] = $line + [
+                        'appointment' => $this->describe($appointment, null),
+                        'interest_url' => $this->interestUrl($appointment, $contact),
+                    ];
+                    break;
+                case DigestKind::VOLUNTEER:
+                    $volunteer = null;
+                    foreach ($appointment->getAppointmentVolunteers() as $candidate) {
+                        if ($candidate->getContact() === $contact) {
+                            $volunteer = $candidate;
+                        }
+                    }
+                    if ($volunteer === null) {
+                        continue 2;
+                    }
+                    $tasks = array_map(static fn ($task) => $task->label(), $volunteer->getTaskEnums());
+                    $sections['volunteer'][] = $line + ['appointment' => ['tasks' => $tasks !== [] ? implode(', ', $tasks) : null] + $this->describe($appointment, null)];
+                    break;
+            }
+        }
+        $count = array_sum(array_map('count', $sections));
+        if ($count === 0) {
+            return false;
+        }
+
+        return $this->send(EmailTemplateKey::TECHNICIAN_DIGEST, $contact->getEmail(), $sections + [
+            'name' => $contact->getName(),
+            'count' => $count,
+            // people with an account answer and find everything in their area
+            'url' => $account ? $this->urls->generate('app_technician', [], UrlGeneratorInterface::ABSOLUTE_URL) : null,
+        ]);
     }
 
     public function invite(User $user, string $setPasswordUrl, bool $board = false): bool

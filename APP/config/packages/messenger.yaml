@@ -26,4 +26,5 @@ framework:
             Symfony\Component\Notifier\Message\SmsMessage: async
 
             # Route your messages to the transports
+            App\Message\SendDigest: async
             # 'App\Message\YourMessage': async

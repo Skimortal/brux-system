@@ -19,6 +19,7 @@ final class OpenCall
         private readonly TechnicianNotifier $notifier,
         private readonly ContactRepository $contacts,
         private readonly ClockInterface $clock,
+        private readonly TechnicianDigest $digest,
     ) {
     }
 
@@ -47,11 +48,14 @@ final class OpenCall
      *
      * @return array{0: string, 1: string} type and text
      */
-    public static function message(?int $sent): array
+    public function message(Appointment $appointment, ?int $sent): array
     {
+        $people = sprintf('%d Techniker:in%s', (int) $sent, $sent === 1 ? '' : 'nen');
+
         return match (true) {
             $sent === null => ['danger', 'Der Termin ist schon vorbei.'],
-            $sent > 0 => ['success', sprintf('Ausgeschrieben an %d Techniker:in%s.', $sent, $sent === 1 ? '' : 'nen')],
+            $sent > 0 && $this->digest->defers($appointment) => ['success', sprintf('Ausgeschrieben an %s, die Mail kommt mit der Sammelmail %s.', $people, $this->digest->nextRunLabel())],
+            $sent > 0 => ['success', 'Ausgeschrieben an ' . $people . '.'],
             default => ['warning', 'Ausgeschrieben, aber niemand bekam eine Mail (keine Techniker:innen mit E-Mail-Adresse ohne Einteilung).'],
         };
     }

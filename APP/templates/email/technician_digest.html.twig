@@ -1,0 +1,49 @@
+{% extends 'email/_layout.html.twig' %}
+{% block subject %}BRUX: {{ count == 1 ? 'eine Neuigkeit' : count ~ ' Neuigkeiten' }} zu deinen Terminen{% endblock %}
+{% block content %}
+    <p>Hallo {{ name }},</p>
+    <p>hier ist alles Neue seit unserer letzten Mail auf einen Blick.</p>
+
+    {% if assigned %}
+        <h3 style="font-size: 16px; margin: 24px 0 4px;">Eingeteilt – bitte sag uns, ob du kannst</h3>
+        {% for line in assigned %}
+            {{ include('email/_appointment.html.twig', {appointment: line.appointment}) }}
+            {% if line.more %}<p style="margin-top: -8px;">Dazu kommen <strong>{{ line.more }} weitere Termine</strong> (z. B. einer Serie).</p>{% endif %}
+            {% if line.accept_url %}
+                <p style="margin: 0 0 18px;">
+                    <a href="{{ line.accept_url }}" style="display: inline-block; background: #14532d; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 8px; margin-right: 8px;">Zusagen</a>
+                    <a href="{{ line.decline_url }}" style="display: inline-block; background: #ffffff; color: #1f1f1d; text-decoration: none; padding: 7px 15px; border-radius: 8px; border: 1px solid #cccccc;">Absagen</a>
+                </p>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    {% if confirmed %}
+        <h3 style="font-size: 16px; margin: 24px 0 4px;">Bestätigt – wir rechnen mit dir</h3>
+        {% for line in confirmed %}
+            {{ include('email/_appointment.html.twig', {appointment: line.appointment}) }}
+            {% if line.more %}<p style="margin-top: -8px;">Dazu kommen <strong>{{ line.more }} weitere Termine</strong> (z. B. einer Serie).</p>{% endif %}
+        {% endfor %}
+    {% endif %}
+
+    {% if open_calls %}
+        <h3 style="font-size: 16px; margin: 24px 0 4px;">Technik gesucht – hast du Zeit und Lust?</h3>
+        {% for line in open_calls %}
+            {{ include('email/_appointment.html.twig', {appointment: line.appointment}) }}
+            <p style="margin: 0 0 18px;"><a href="{{ line.interest_url }}" style="display: inline-block; background: #1f1f1d; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 8px;">Ich habe Interesse</a></p>
+        {% endfor %}
+    {% endif %}
+
+    {% if volunteer %}
+        <h3 style="font-size: 16px; margin: 24px 0 4px;">Danke, dass du mithilfst! Wir haben dich eingeteilt:</h3>
+        {% for line in volunteer %}
+            {{ include('email/_appointment.html.twig', {appointment: line.appointment}) }}
+            {% if line.more %}<p style="margin-top: -8px;">Dazu kommen <strong>{{ line.more }} weitere Termine</strong> (z. B. einer Serie).</p>{% endif %}
+        {% endfor %}
+        <p>Falls du bei einem Termin doch nicht kannst, antworte bitte einfach auf diese Mail.</p>
+    {% endif %}
+
+    {% if url %}
+        {{ include('email/_button.html.twig', {url: url, label: 'Meine Einsätze im Haussystem'}) }}
+    {% endif %}
+{% endblock %}

@@ -36,6 +36,8 @@ final class SettingsController extends AbstractController
             'wordpress_leads' => !$ownership->canCreatePerformances(),
             'missing_roles' => $missingRoles,
             'office_email' => $settings->officeEmail(),
+            'digest_enabled' => $settings->digestEnabled(),
+            'digest_hour' => $settings->digestHour(),
         ]);
     }
 
@@ -51,7 +53,8 @@ final class SettingsController extends AbstractController
             $this->addFlash('danger', 'Bitte eine gültige E-Mail-Adresse angeben.');
         } else {
             $settings->setOfficeEmail($email);
-            $this->addFlash('success', 'Gespeichert: Antworten der Techniker:innen gehen an ' . $email . '.');
+            $settings->setDigest($request->request->getBoolean('digest_enabled'), $request->request->getInt('digest_hour', 17));
+            $this->addFlash('success', 'Gespeichert.');
         }
 
         return $this->redirectToRoute('app_settings', [], Response::HTTP_SEE_OTHER);

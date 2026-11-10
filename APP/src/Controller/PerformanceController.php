@@ -56,7 +56,7 @@ final class PerformanceController extends AbstractController
             if ($form->get('openCall')->getData()) {
                 $staffing = $manager->staffingFor($performance);
                 $manager->saveStaffing($performance, $staffing);
-                $this->addFlash(...OpenCall::message($openCall->send($staffing)));
+                $this->addFlash(...$openCall->message($staffing, $openCall->send($staffing)));
             }
 
             return $this->backToCalendar($request, $this->page, ['panel' => 'pe-' . $performance->getId(), 'date' => $performance->getDate()?->format('Y-m-d')]);

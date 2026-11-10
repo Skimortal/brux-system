@@ -36,7 +36,7 @@ final class AppointmentController extends AbstractController
             $this->manager->create($appointment, $frequency, $until);
             $this->addFlash('success', $frequency ? 'Terminserie angelegt.' : 'Termin angelegt.');
             if ($form->has('openCall') && $form->get('openCall')->getData() && $appointment->getType()->hasAssignments()) {
-                $this->addFlash(...OpenCall::message($openCall->send($appointment)));
+                $this->addFlash(...$openCall->message($appointment, $openCall->send($appointment)));
             }
 
             // the dialog closes after saving

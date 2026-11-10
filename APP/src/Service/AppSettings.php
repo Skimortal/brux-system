@@ -13,6 +13,9 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 class AppSettings
 {
     private const OFFICE_EMAIL = 'office_email';
+    private const DIGEST_ENABLED = 'digest_enabled';
+    private const DIGEST_HOUR = 'digest_hour';
+    private const DEFAULT_DIGEST_HOUR = 17;
 
     public function __construct(
         private readonly SettingRepository $settings,
@@ -35,5 +38,34 @@ class AppSettings
         $setting->setValue(trim($email));
         $this->em->persist($setting);
         $this->em->flush();
+    }
+
+    /** Whether news for technicians and volunteers is collected into one mail a day. */
+    public function digestEnabled(): bool
+    {
+        // on unless switched off in the administration
+        return $this->settings->find(self::DIGEST_ENABLED)?->getValue() !== '0';
+    }
+
+    /** Full hour (Vienna time) the digest mails go out. */
+    public function digestHour(): int
+    {
+        $value = $this->settings->find(self::DIGEST_HOUR)?->getValue();
+
+        return is_numeric($value) && (int) $value >= 0 && (int) $value <= 23 ? (int) $value : self::DEFAULT_DIGEST_HOUR;
+    }
+
+    public function setDigest(bool $enabled, int $hour): void
+    {
+        $this->store(self::DIGEST_ENABLED, $enabled ? '1' : '0');
+        $this->store(self::DIGEST_HOUR, (string) max(0, min(23, $hour)));
+        $this->em->flush();
+    }
+
+    private function store(string $name, string $value): void
+    {
+        $setting = $this->settings->find($name) ?? new Setting($name);
+        $setting->setValue($value);
+        $this->em->persist($setting);
     }
 }
