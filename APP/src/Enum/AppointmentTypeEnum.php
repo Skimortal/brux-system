@@ -47,7 +47,7 @@ enum AppointmentTypeEnum: string
             self::SCHOOL_EVENT => 'mit Technik und Freiwilligen',
             self::INTERNAL => 'Besprechung, Blocker',
             self::CLEANING => 'Extra-Reinigung mit Bereichen',
-            self::HOLIDAY => 'Schulferien, Fenstertage – ganztägig, im Kalender „Feiertage & Ferien“',
+            self::HOLIDAY => 'Semesterferien, Fenstertage – ganztägig, zu Feiertagen und Schulferien',
         };
     }
 

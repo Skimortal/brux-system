@@ -196,6 +196,18 @@ final class CalendarBuilder
                 icon: 'lucide:flag',
             );
         }
+        foreach (SchoolHolidays::between($from, $to) as $holiday) {
+            $entries[] = new CalendarEntry(
+                panel: 'sh-' . $holiday['key'],
+                group: EntryGroup::HOLIDAY,
+                colorKey: 'holiday',
+                title: $holiday['name'],
+                start: $holiday['start'],
+                end: $holiday['end'],
+                allDay: true,
+                icon: 'lucide:school',
+            );
+        }
         foreach ($this->cleaningSchedules->findActiveBetween($from, $to) as $schedule) {
             for ($day = $from; $day < $to; $day = $day->modify('+1 day')) {
                 if (!$schedule->occursOn($day)) {

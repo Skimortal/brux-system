@@ -1,11 +1,13 @@
-{% set h = panel.holiday %}
+{# kind "holiday": chip, title, from, until, note; public holidays and school holidays alike #}
 {{ include('calendar/panel/_head.html.twig', {
-    chip: 'Feiertag',
+    chip: panel.chip,
     chip_class: 'badge-square t-holiday',
-    title: h.name,
-    when: panel.day|de_date('EEEE, d. MMMM y') ~ ' · ganztägig',
+    title: panel.title,
+    when: panel.from == panel.until
+        ? panel.from|de_date('EEEE, d. MMMM y') ~ ' · ganztägig'
+        : panel.from|de_date('EE d. MMMM') ~ ' – ' ~ panel.until|de_date('EE d. MMMM y'),
 }) }}
 <div class="panel-body">
-    <div class="note">{{ ux_icon('lucide:flag') }}<span>{{ h.note ? h.note|capitalize ~ '.' : 'Gesetzlicher Feiertag in Österreich.' }} Steht automatisch im Kalender und lässt sich über „Feiertage &amp; Ferien“ in der Filterleiste ausblenden.</span></div>
-    <a class="btn btn-block" href="{{ cal_path(query, {panel: 'a-new'}) }}&type=holiday&start={{ panel.day|date('Y-m-d') }}T00:00">{{ ux_icon('lucide:plus') }} Ferien oder Fenstertag eintragen</a>
+    <div class="note">{{ ux_icon('lucide:flag') }}<span>{{ panel.note }} Steht automatisch im Kalender und lässt sich über „Feiertage &amp; Ferien“ in der Filterleiste ausblenden.</span></div>
+    <a class="btn btn-block" href="{{ cal_path(query, {panel: 'a-new'}) }}&type=holiday&start={{ panel.from|date('Y-m-d') }}T00:00">{{ ux_icon('lucide:plus') }} Ferien oder Fenstertag eintragen</a>
 </div>

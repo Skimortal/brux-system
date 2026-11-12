@@ -162,6 +162,7 @@ final class CalendarPage
             'cr' => $this->cleaningPanel((int) $id, $parts[2] ?? ''),
             'k' => $this->keyPanel((int) $id),
             'h' => $this->holidayPanel((string) $id),
+            'sh' => $this->schoolHolidayPanel($id . '-' . ($parts[2] ?? '')),
             'kl' => $id === 'new' ? $this->newLoanPanel($request, $overrides) : $this->loanPanel((int) $id, $overrides),
             default => throw new NotFoundHttpException(),
         };
@@ -343,10 +344,29 @@ final class CalendarPage
     {
         $day = \DateTimeImmutable::createFromFormat('!Ymd', $date) ?: throw new NotFoundHttpException();
 
+        $holiday = PublicHolidays::on($day) ?? throw new NotFoundHttpException('Kein Feiertag an diesem Tag.');
+
         return [
             'kind' => 'holiday',
-            'day' => $day,
-            'holiday' => PublicHolidays::on($day) ?? throw new NotFoundHttpException('Kein Feiertag an diesem Tag.'),
+            'chip' => 'Feiertag',
+            'title' => $holiday['name'],
+            'from' => $day,
+            'until' => $day,
+            'note' => $holiday['note'] !== null ? ucfirst($holiday['note']) . '.' : 'Gesetzlicher Feiertag in Österreich.',
+        ];
+    }
+
+    private function schoolHolidayPanel(string $key): array
+    {
+        $holiday = SchoolHolidays::find($key) ?? throw new NotFoundHttpException('Keine Ferien gefunden.');
+
+        return [
+            'kind' => 'holiday',
+            'chip' => 'Schulferien',
+            'title' => $holiday['name'],
+            'from' => $holiday['start'],
+            'until' => $holiday['end']->modify('-1 day'),
+            'note' => 'Nach dem Schulzeitgesetz berechnet; einzelne Schulen können abweichen. Die Semesterferien tragt ihr selbst als „Ferien“ ein.',
         ];
     }
 
