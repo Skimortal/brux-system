@@ -1,10 +1,12 @@
 {# One joined bar over consecutive days; every day stays its own link. #}
 {% set first = run.segments|first.entry %}
-<div class="cal-run t-{{ first.colorKey }}{{ first.isPast(cal.now) ? ' is-past' }}{{ first.color ? ' has-color' }}{{ first.tentative ? ' is-tentative' }}{{ (mine ?? {})[first.panel] is defined ? ' is-mine is-mine-' ~ mine[first.panel] }}" style="{% if first.color %}--cat: {{ first.color }}; {% endif %}grid-column: {{ run.col + 1 }} / span {{ run.span }}; grid-row: {{ run.row + 1 }}; --span: {{ run.span }}">
-    <a class="cal-run-title" href="{{ first.url ?: (panel_link is defined and first.panel starts with 'pe-' ? panel_link ~ first.panel : cal_path(query, {panel: first.panel})) }}" data-turbo-frame="{{ first.url ? '_top' : (link_frame ?? 'side') }}" data-turbo-action="advance" data-action="{{ link_frame is defined ? '' : 'quick-create#select' }}" data-panel="{{ first.panel }}">
-        {% if first.icon %}{{ ux_icon(first.icon) }}{% endif %}{% if first.premiere %}<span class="premiere-star" title="Premiere">★</span>{% endif %}<span>{{ first.title }}</span>
+{% set banner = run.banner ?? false %}
+<div class="cal-run t-{{ first.colorKey }}{{ banner ? ' is-banner' }}{{ first.isPast(cal.now) ? ' is-past' }}{{ first.color ? ' has-color' }}{{ first.tentative ? ' is-tentative' }}{{ (mine ?? {})[first.panel] is defined ? ' is-mine is-mine-' ~ mine[first.panel] }}" style="{% if first.color %}--cat: {{ first.color }}; {% endif %}grid-column: {{ run.col + 1 }} / span {{ run.span }}; grid-row: {{ run.row + 1 }}; --span: {{ run.span }}">
+    <a class="cal-run-title" href="{{ first.url ?: (panel_link is defined and first.panel starts with 'pe-' ? panel_link ~ first.panel : cal_path(query, {panel: first.panel})) }}" data-turbo-frame="{{ first.url ? '_top' : (link_frame ?? 'side') }}" data-turbo-action="advance" data-action="{{ link_frame is defined ? '' : 'quick-create#select' }}" data-panel="{{ first.panel }}"{% if banner %} title="{{ first.title }}{{ first.meta ? ' · ' ~ first.meta }}"{% endif %}>
+        {% if first.icon and not banner %}{{ ux_icon(first.icon) }}{% endif %}{% if first.premiere %}<span class="premiere-star" title="Premiere">★</span>{% endif %}<span>{{ first.title }}</span>
     </a>
-    {% if run.single %}
+    {% if banner %}
+    {% elseif run.single %}
         <a class="cal-run-seg cal-run-single{{ first.conflict ? ' has-conflict' }}{{ query.panel == first.panel ? ' is-selected' }}" href="{{ first.url ?: (panel_link is defined and first.panel starts with 'pe-' ? panel_link ~ first.panel : cal_path(query, {panel: first.panel})) }}" data-turbo-frame="{{ first.url ? '_top' : (link_frame ?? 'side') }}" data-turbo-action="advance"
            data-action="{{ link_frame is defined ? '' : 'quick-create#select' }}" data-panel="{{ first.panel }}" style="grid-column: 1 / -1" title="{{ first.title }} · {{ first.timeLabel }}">
             <span class="meta">{{ first.allDay ? '' : first.timeLabel ~ (first.meta ? ' · ' : '') }}{{ first.meta }}</span>

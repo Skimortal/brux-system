@@ -5,7 +5,8 @@ namespace App\Calendar;
 /**
  * Lays out a row of days: an entry spanning several days becomes one bar, every
  * other entry stays on its day. Entries on consecutive days are not joined, so each
- * performance keeps its own place, colour and time order.
+ * performance keeps its own place, colour and time order. Holidays are always a bar on top,
+ * even for a single day, like the all-day row of other calendars.
  */
 final class RunLayout
 {
@@ -40,15 +41,16 @@ final class RunLayout
             if ($indices === []) {
                 continue;
             }
-            if (\count($indices) > 1 && $count > 1) {
-                $runs[] = self::run(array_map(static fn (int $i) => ['day' => $days[$i], 'entry' => $entry, 'index' => $i], $indices), true);
+            $banner = $entry->group === EntryGroup::HOLIDAY;
+            if ((\count($indices) > 1 || $banner) && $count > 1) {
+                $runs[] = self::run(array_map(static fn (int $i) => ['day' => $days[$i], 'entry' => $entry, 'index' => $i], $indices), true) + ['banner' => $banner];
                 continue;
             }
             $perDay[$indices[0]][] = $entry;
         }
 
-        // pack runs into rows
-        usort($runs, static fn ($a, $b) => [$a['col'], -$a['span']] <=> [$b['col'], -$b['span']]);
+        // pack runs into rows, holidays first so they stay on top
+        usort($runs, static fn ($a, $b) => [($a['banner'] ?? false) ? 0 : 1, $a['col'], -$a['span']] <=> [($b['banner'] ?? false) ? 0 : 1, $b['col'], -$b['span']]);
         $rowEnds = [];
         foreach ($runs as &$run) {
             $row = 0;
