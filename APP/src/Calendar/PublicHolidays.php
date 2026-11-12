@@ -3,7 +3,8 @@
 namespace App\Calendar;
 
 /**
- * Public holidays in Austria, plus St. Joseph's day, which is a school holiday in Tyrol.
+ * The 13 public holidays of the Arbeitsruhegesetz (§ 7 Abs. 2), the school-free days of Tyrol
+ * (§ 9 T-LSchG: St. Joseph's day, All Souls' day) and a few days people expect to see.
  * Movable feasts are counted from Easter Sunday.
  */
 final class PublicHolidays
@@ -39,16 +40,17 @@ final class PublicHolidays
             [$fixed(1, 1), 'Neujahr', null],
             [$fixed(1, 6), 'Heilige Drei Könige', null],
             [$fixed(3, 19), 'Josefitag', 'Landespatron Tirol, schulfrei, kein gesetzlicher Feiertag'],
-            [$movable(0), 'Ostersonntag', null],
+            [$movable(0), 'Ostersonntag', 'Sonntag, kein eigener gesetzlicher Feiertag'],
             [$movable(1), 'Ostermontag', null],
             [$fixed(5, 1), 'Staatsfeiertag', null],
             [$movable(39), 'Christi Himmelfahrt', null],
-            [$movable(49), 'Pfingstsonntag', null],
+            [$movable(49), 'Pfingstsonntag', 'Sonntag, kein eigener gesetzlicher Feiertag'],
             [$movable(50), 'Pfingstmontag', null],
             [$movable(60), 'Fronleichnam', null],
             [$fixed(8, 15), 'Mariä Himmelfahrt', null],
             [$fixed(10, 26), 'Nationalfeiertag', null],
             [$fixed(11, 1), 'Allerheiligen', null],
+            [$fixed(11, 2), 'Allerseelen', 'in Tirol schulfrei, kein gesetzlicher Feiertag'],
             [$fixed(12, 8), 'Mariä Empfängnis', null],
             [$fixed(12, 24), 'Heiliger Abend', 'kein gesetzlicher Feiertag'],
             [$fixed(12, 25), 'Christtag', null],

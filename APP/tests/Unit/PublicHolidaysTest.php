@@ -29,6 +29,17 @@ final class PublicHolidaysTest extends TestCase
         self::assertSame('2026-10-26', $byName['Nationalfeiertag']);
     }
 
+    public function testAllThirteenStatutoryHolidaysOf2027(): void
+    {
+        // § 7 Abs. 2 ARG, movable dates of 2027 as published for Austria
+        $statutory = array_column(array_filter(PublicHolidays::ofYear(2027), static fn (array $h) => $h['note'] === null), 'date');
+
+        self::assertSame([
+            '2027-01-01', '2027-01-06', '2027-03-29', '2027-05-01', '2027-05-06', '2027-05-17', '2027-05-27',
+            '2027-08-15', '2027-10-26', '2027-11-01', '2027-12-08', '2027-12-25', '2027-12-26',
+        ], array_map(static fn (\DateTimeImmutable $d) => $d->format('Y-m-d'), array_values($statutory)));
+    }
+
     public function testBetweenSpansTheTurnOfTheYear(): void
     {
         $tz = new \DateTimeZone('Europe/Vienna');
@@ -39,6 +50,7 @@ final class PublicHolidaysTest extends TestCase
 
         self::assertSame(['Heiliger Abend', 'Christtag', 'Stefanitag', 'Silvester', 'Neujahr', 'Heilige Drei Könige'], $names);
         self::assertSame('Allerheiligen', PublicHolidays::on(new \DateTimeImmutable('2026-11-01', $tz))['name']);
-        self::assertNull(PublicHolidays::on(new \DateTimeImmutable('2026-11-02', $tz)));
+        self::assertSame('Allerseelen', PublicHolidays::on(new \DateTimeImmutable('2026-11-02', $tz))['name']);
+        self::assertNull(PublicHolidays::on(new \DateTimeImmutable('2026-11-03', $tz)));
     }
 }
