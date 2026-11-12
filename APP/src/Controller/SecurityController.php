@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -12,8 +13,10 @@ final class SecurityController extends AbstractController
     #[Route('/login', name: 'app_login')]
     public function login(AuthenticationUtils $authenticationUtils): Response
     {
-        if ($this->getUser() !== null) {
-            return $this->redirectToRoute('app_calendar');
+        // to their own area: the calendar would send a remembered technician back here
+        $user = $this->getUser();
+        if ($user !== null) {
+            return $this->redirectToRoute($user instanceof User ? $user->getHomeRoute() : 'app_calendar');
         }
 
         return $this->render('security/login.html.twig', [
