@@ -38,6 +38,10 @@ final class AppointmentManager
         } else {
             $appointment->setRoom(null);
         }
+        // holidays and school holidays concern the whole house, for whole days
+        if ($type === AppointmentTypeEnum::HOLIDAY) {
+            $appointment->setRoom(null)->setAllDay(true);
+        }
         if (!$type->hasAssignments()) {
             foreach ($appointment->getAppointmentTechnicians()->toArray() as $technician) {
                 $appointment->removeAppointmentTechnician($technician);

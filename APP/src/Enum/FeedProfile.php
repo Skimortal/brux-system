@@ -11,7 +11,7 @@ enum FeedProfile: string
     case BOARD = 'board';
     /** Everything incl. cleaning, one calendar per room. */
     case TECHNICIANS = 'technicians';
-    /** Everything per room without the stays, and the stays per room as a calendar of their own. */
+    /** Everything per room without the stays, the stays per room and the holidays as calendars of their own. */
     case MANAGEMENT = 'management';
     /** One technician's own assignments. */
     case MINE = 'mine';
@@ -36,7 +36,7 @@ enum FeedProfile: string
         return match ($this) {
             self::BOARD => ['veranstaltungen' => ['label' => 'Veranstaltungen', 'rooms' => false], 'premieren' => ['label' => 'Premieren', 'rooms' => false]],
             self::TECHNICIANS => ['termine' => ['label' => 'Alle Termine', 'rooms' => true]],
-            self::MANAGEMENT => ['termine' => ['label' => 'Termine', 'rooms' => true], 'aufenthalte' => ['label' => 'Im Haus', 'rooms' => true]],
+            self::MANAGEMENT => ['termine' => ['label' => 'Termine', 'rooms' => true], 'aufenthalte' => ['label' => 'Im Haus', 'rooms' => true], 'feiertage' => ['label' => 'Feiertage & Ferien', 'rooms' => false]],
             self::MINE => ['einsaetze' => ['label' => 'Meine Einsätze', 'rooms' => false]],
         };
     }

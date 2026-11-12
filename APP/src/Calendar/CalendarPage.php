@@ -161,6 +161,7 @@ final class CalendarPage
             'a' => $id === 'new' ? $this->newAppointmentPanel($request, $overrides) : $this->appointmentPanel((int) $id, $overrides),
             'cr' => $this->cleaningPanel((int) $id, $parts[2] ?? ''),
             'k' => $this->keyPanel((int) $id),
+            'h' => $this->holidayPanel((string) $id),
             'kl' => $id === 'new' ? $this->newLoanPanel($request, $overrides) : $this->loanPanel((int) $id, $overrides),
             default => throw new NotFoundHttpException(),
         };
@@ -334,7 +335,19 @@ final class CalendarPage
             ->setType($type)
             ->setStartDate($start)
             ->setEndDate((clone $start)->modify('+1 hour'))
-            ->setRoom($type === AppointmentTypeEnum::CLEANING ? null : $room);
+            ->setRoom(\in_array($type, [AppointmentTypeEnum::CLEANING, AppointmentTypeEnum::HOLIDAY], true) ? null : $room)
+            ->setAllDay($type === AppointmentTypeEnum::HOLIDAY);
+    }
+
+    private function holidayPanel(string $date): array
+    {
+        $day = \DateTimeImmutable::createFromFormat('!Ymd', $date) ?: throw new NotFoundHttpException();
+
+        return [
+            'kind' => 'holiday',
+            'day' => $day,
+            'holiday' => PublicHolidays::on($day) ?? throw new NotFoundHttpException('Kein Feiertag an diesem Tag.'),
+        ];
     }
 
     private function cleaningPanel(int $scheduleId, string $date): array

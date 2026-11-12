@@ -183,6 +183,19 @@ final class CalendarBuilder
                 tentative: $production->isTentative(),
             );
         }
+        foreach (PublicHolidays::between($from, $to) as $holiday) {
+            $entries[] = new CalendarEntry(
+                panel: 'h-' . $holiday['date']->format('Ymd'),
+                group: EntryGroup::HOLIDAY,
+                colorKey: 'holiday',
+                title: $holiday['name'],
+                start: $holiday['date'],
+                end: $holiday['date']->modify('+1 day'),
+                allDay: true,
+                meta: $holiday['note'],
+                icon: 'lucide:flag',
+            );
+        }
         foreach ($this->cleaningSchedules->findActiveBetween($from, $to) as $schedule) {
             for ($day = $from; $day < $to; $day = $day->modify('+1 day')) {
                 if (!$schedule->occursOn($day)) {

@@ -112,6 +112,7 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .t-cleaning { --bg: var(--t-cleaning-bg); --ink: var(--t-cleaning-ink); --line: var(--t-cleaning-line); }
 .t-key { --bg: var(--t-key-bg); --ink: var(--t-key-ink); --line: var(--t-key-line); }
 .t-stay { --bg: var(--t-stay-bg); --ink: var(--t-stay-ink); --line: var(--t-stay-line); }
+.t-holiday { --bg: var(--t-holiday-bg); --ink: var(--t-holiday-ink); --line: var(--t-holiday-line); }
 .swatch-performance { background: var(--t-performance-dot); }
 .swatch-production { background: var(--t-production-dot); }
 .swatch-closed_event { background: var(--t-closed_event-dot); }
@@ -120,6 +121,7 @@ body.is-resizing iframe, body.is-resizing .cal-board { pointer-events: none; }
 .swatch-cleaning { background: var(--t-cleaning-dot); }
 .swatch-key { background: var(--t-key-dot); }
 .swatch-stay { background: var(--t-stay-dot); }
+.swatch-holiday { background: var(--t-holiday-dot); }
 
 /* key lane */
 .cal-keys { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; position: relative; background: #fffcf5; border-bottom: 1px solid var(--line); }

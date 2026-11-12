@@ -10,6 +10,7 @@ enum AppointmentTypeEnum: string
     case SCHOOL_EVENT = 'school_event';
     case INTERNAL = 'internal';
     case CLEANING = 'cleaning';
+    case HOLIDAY = 'holiday';
 
     public function label(): string
     {
@@ -20,6 +21,7 @@ enum AppointmentTypeEnum: string
             self::SCHOOL_EVENT => 'Schulveranstaltung',
             self::INTERNAL => 'Intern',
             self::CLEANING => 'Reinigung',
+            self::HOLIDAY => 'Feiertag / Ferien',
         };
     }
 
@@ -32,6 +34,7 @@ enum AppointmentTypeEnum: string
             self::SCHOOL_EVENT => 'Schule',
             self::INTERNAL => 'Intern',
             self::CLEANING => 'Reinigung',
+            self::HOLIDAY => 'Ferien',
         };
     }
 
@@ -44,6 +47,7 @@ enum AppointmentTypeEnum: string
             self::SCHOOL_EVENT => 'mit Technik und Freiwilligen',
             self::INTERNAL => 'Besprechung, Blocker',
             self::CLEANING => 'Extra-Reinigung mit Bereichen',
+            self::HOLIDAY => 'Schulferien, Fenstertage – ganztägig, im Kalender „Feiertage & Ferien“',
         };
     }
 

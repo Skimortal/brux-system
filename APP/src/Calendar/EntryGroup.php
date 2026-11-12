@@ -17,6 +17,7 @@ enum EntryGroup: string
     case CLEANING = 'cleaning';
     case KEYS = 'keys';
     case STAY = 'stay';
+    case HOLIDAY = 'holiday';
 
     public function label(): string
     {
@@ -29,6 +30,7 @@ enum EntryGroup: string
             self::CLEANING => 'Reinigung',
             self::KEYS => 'Schlüssel',
             self::STAY => 'Im Haus',
+            self::HOLIDAY => 'Feiertage & Ferien',
         };
     }
 
@@ -44,6 +46,7 @@ enum EntryGroup: string
             self::CLEANING => 'cleaning',
             self::KEYS => 'key',
             self::STAY => 'stay',
+            self::HOLIDAY => 'holiday',
         };
     }
 
@@ -55,6 +58,7 @@ enum EntryGroup: string
             AppointmentTypeEnum::PRIVATE => self::PRIVATE,
             AppointmentTypeEnum::INTERNAL => self::INTERNAL,
             AppointmentTypeEnum::CLEANING => self::CLEANING,
+            AppointmentTypeEnum::HOLIDAY => self::HOLIDAY,
         };
     }
 }

@@ -68,7 +68,9 @@ class CalendarFeedBuilder
             [FeedProfile::BOARD, 'premieren'] => static fn (CalendarEntry $e) => $e->premiere,
             [FeedProfile::BOARD, 'veranstaltungen'] => static fn (CalendarEntry $e) => $e->boardVisible,
             [FeedProfile::MANAGEMENT, 'aufenthalte'] => static fn (CalendarEntry $e) => $e->group === EntryGroup::STAY,
-            default => static fn (CalendarEntry $e) => $e->group !== EntryGroup::STAY,
+            [FeedProfile::MANAGEMENT, 'feiertage'] => static fn (CalendarEntry $e) => $e->group === EntryGroup::HOLIDAY,
+            // holidays are a calendar of their own; phones bring the public ones anyway
+            default => static fn (CalendarEntry $e) => $e->group !== EntryGroup::STAY && $e->group !== EntryGroup::HOLIDAY,
         };
         $events = [];
         foreach ($this->calendar->collectEntries($from, $to) as $entry) {

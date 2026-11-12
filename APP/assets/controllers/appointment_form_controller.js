@@ -17,12 +17,20 @@ export default class extends Controller {
         return this.element.querySelector('input[name$="[type]"]:checked')?.value ?? 'private';
     }
 
-    update() {
+    update(event) {
         const type = this.type;
+        // holidays are whole days; tick it once when the type is chosen
+        if (type === 'holiday' && event?.target?.name?.endsWith('[type]')) {
+            const allDay = this.element.querySelector('input[name$="[allDay]"]');
+            if (allDay && !allDay.checked) {
+                allDay.checked = true;
+                allDay.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
         this.toggle(this.titleTargets, !['production', 'cleaning'].includes(type));
         this.toggle(this.productionTargets, type === 'production');
         this.toggle(this.productionOnlyTargets, type === 'production');
-        this.toggle(this.roomTargets, type !== 'cleaning');
+        this.toggle(this.roomTargets, !['cleaning', 'holiday'].includes(type));
         this.toggle(this.cleaningTargets, type === 'cleaning');
         this.toggle(this.assignTargets, ASSIGNMENT_TYPES.includes(type));
         this.toggle(this.noDetailsTargets, type === 'private');
